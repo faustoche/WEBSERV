@@ -8,7 +8,7 @@ NAME = webserv
 #                			     DIRECTORIES                               #
 # ************************************************************************ #
 
-INCLUDES	= includes -I./srcs/response
+INCLUDES	= includes -I./srcs/response -I./srcs/request
 SRCS_DIR	= srcs
 OBJS_DIR	= obj
 
@@ -17,7 +17,8 @@ OBJS_DIR	= obj
 # ************************************************************************ #
 
 WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp\
-										response/response.cpp)
+										response/response.cpp\
+										request/request.cpp)
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}
 OBJS		= ${CPP_OBJS}
@@ -28,7 +29,7 @@ OBJS		= ${CPP_OBJS}
 # ************************************************************************ #
 
 CC			= c++
-CFLAGS		= -Wall -Werror -Wextra -std=c++98 -I$(INCLUDES) -I./response
+CFLAGS		= -Wall -Werror -Wextra -std=c++98 -I$(INCLUDES) -I./response -I./request
 RM			= rm -rf
 
 # ************************************************************************ #

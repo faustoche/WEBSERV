@@ -61,7 +61,8 @@ int main(void)
                 request.append(buffer);
                	fill(buffer, buffer + sizeof(buffer), '\0');
             }
-           cout << "\nClient request:\n" << request << endl;
+           	cout << "\nClient request:\n" << request << endl;
+			c_request my_request(request);
 
             /*if (!keep_alive)
                break ;

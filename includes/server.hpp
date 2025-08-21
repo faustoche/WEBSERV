@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "response.hpp"
+#include "request.hpp"
 
 /*-----------  DEFINE -----------*/
 
