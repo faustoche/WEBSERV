@@ -60,7 +60,7 @@ int main(void)
                 request.append(buffer);
                	fill(buffer, buffer + sizeof(buffer), '\0');
             }
-           cout << "\nRequete client:\n" << request << endl;
+           cout << "\nClient request:\n" << request << endl;
 
             /*if (!keep_alive)
                break ;
