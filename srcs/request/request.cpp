@@ -59,6 +59,12 @@ int c_request::parse_request(const string& raw_request)
             return (1);
         }
     }
+    cout << "*********** Headers map ***********" << endl;
+    
+    for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
+    {
+        cout << it->first << " : " << it->second << endl;// creer une map avec des headers pre-definis
+    }
     
     //---- ETAPE 3: body -----
 
@@ -100,9 +106,10 @@ int c_request::parse_start_line(string& start_line)
         return (1);
     }
 
+    cout << "*********** Start-line ************" << endl;
     cout << "method: " << this->_method << endl;
     cout << "target: " << this->_target << endl;
-    cout << "version: " << this->_version << endl;
+    cout << "version: " << this->_version << endl << endl;
 
     return (0);
     // A quel moment verifier que method, target et version sont ok ?;
@@ -116,7 +123,6 @@ int c_request::parse_headers(string& headers)
     string value;
 
     key = headers.substr(0, pos);
-    cout << "key: " << key << endl;
 
     pos++;
     if (headers[pos] != 32)
@@ -129,9 +135,8 @@ int c_request::parse_headers(string& headers)
         pos++;
     
     value = headers.substr(pos);
-    cout << "value: " << value << endl;
 
-    // this->_headers[key] = value; // creer une map avec des headers pre-definis
+    this->_headers[key] = value;
 
     return (0);
 }
