@@ -1,5 +1,7 @@
 #pragma once
 
+/*-----------  INCLUDES -----------*/
+
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -8,6 +10,8 @@
 #include <errno.h>
 #include <string.h>
 
-#define BUFFER_SIZE 1024
+/*-----------  DEFINE -----------*/
 
+#define BUFFER_SIZE 1024
 using namespace std;
+
