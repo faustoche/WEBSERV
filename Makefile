@@ -8,7 +8,7 @@ NAME = webserv
 #                			     DIRECTORIES                               #
 # ************************************************************************ #
 
-INCLUDES	= includes
+INCLUDES	= includes -I./srcs/response
 SRCS_DIR	= srcs
 OBJS_DIR	= obj
 
@@ -16,7 +16,8 @@ OBJS_DIR	= obj
 #                			 SRCS && OBJECTS FILES                         #
 # ************************************************************************ #
 
-WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp)
+WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp\
+										response/response.cpp)
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}
 OBJS		= ${CPP_OBJS}
@@ -27,7 +28,7 @@ OBJS		= ${CPP_OBJS}
 # ************************************************************************ #
 
 CC			= c++
-CFLAGS		= -Wall -Werror -Wextra -std=c++98 -I$(INCLUDES)
+CFLAGS		= -Wall -Werror -Wextra -std=c++98 -I$(INCLUDES) -I./response
 RM			= rm -rf
 
 # ************************************************************************ #
@@ -42,7 +43,7 @@ $(NAME): includes/colors.hpp $(OBJS_DIR) $(OBJS)
 	@echo "\033[1;32m ./$(NAME) created\n"
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp includes/colors.hpp
-	@mkdir -p $(OBJS_DIR)
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
 $(OBJS_DIR):

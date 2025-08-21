@@ -1,4 +1,4 @@
-#include "../includes/server.hpp"
+#include "server.hpp"
 
 int main(void)
 {
@@ -26,6 +26,7 @@ int main(void)
 	}
 
 	int connected_socket_fd;
+	c_response response_handler;
 
 	while (true)
 	{
@@ -70,8 +71,9 @@ int main(void)
                 keep_alive = false;
             }*/
 
-			char answer[50] = "HTTP/1.1 200 OK \r\n\r\n Vive Snoopy!\n";
-			if (send(connected_socket_fd, answer, strlen(answer), 0) == -1)
+			string response;
+			response = response_handler.define_response_content();
+			if (send(connected_socket_fd, response.c_str(), response.length(), 0) == -1)
 			{
 				cerr << "Error: Message not sent - " << errno << endl;
 				return (-1);

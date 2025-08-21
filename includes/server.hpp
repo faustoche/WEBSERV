@@ -10,8 +10,9 @@
 #include <errno.h>
 #include <string.h>
 
+#include "response.hpp"
+
 /*-----------  DEFINE -----------*/
 
-#define BUFFER_SIZE 1024
-using namespace std;
-
+#define	BUFFER_SIZE 1024
+using	namespace std;
