@@ -73,7 +73,7 @@ int main(void)
             }*/
 
 
-			response_handler.define_response_content();
+			response_handler.define_response_content(request);
 			const string &response = response_handler.get_response();
 			if (send(connected_socket_fd, response.c_str(), response.length(), 0) == -1)
 			{

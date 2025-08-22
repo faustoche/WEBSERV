@@ -18,3 +18,5 @@
 
 #define	BUFFER_SIZE 1024
 using	namespace std;
+
+string int_to_string(int n);
