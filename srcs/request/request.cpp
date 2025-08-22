@@ -2,7 +2,7 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_request::c_request(const string& str) : _method(""), _version("")
+c_request::c_request(const string& str) : _method(""), _version(""), _status_code(200)
 {
     for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         it->second = "";
@@ -24,6 +24,27 @@ c_request::~c_request()
 
 /************ PARSE FUNCTIONS ************/
 
+void c_request::check_required_headers()
+{
+    bool has_body = false;
+    bool has_content_length = this->_headers.count("Content-Length");
+    bool has_transfer_encoding = this->_headers.count("Transfer-Encoding");
+
+    if (this->_method == "POST" || this->_method == "DELETE")
+        has_body = true;
+
+    if (!this->_headers.count("Host"))
+        this->_status_code = 400;
+    
+    if (has_body)
+    {
+        if (!has_content_length && !has_transfer_encoding)
+            this->_status_code = 400;
+        if (has_content_length && has_transfer_encoding)
+            this->_status_code = 400;
+    }     
+}
+
 int c_request::parse_request(const string& raw_request)
 {
     istringstream stream(raw_request);
@@ -31,11 +52,10 @@ int c_request::parse_request(const string& raw_request)
 
     //---- ETAPE 1: start-line -----
     if (!getline(stream, line, '\n'))
-        throw runtime_error("Request is empty");
+        this->_status_code = 400;        
 
     if (line.empty() || line[line.size() - 1] != '\r')
-        throw runtime_error("Invalid header format: missing '\r' at the end of header element");
-
+        this->_status_code = 400;
     line.erase(line.size() - 1);
 
     this->parse_start_line(line);
@@ -44,15 +64,16 @@ int c_request::parse_request(const string& raw_request)
     while (getline(stream, line, '\n'))
     {
         if (line[line.size() - 1] != '\r')
-            throw runtime_error("Invalid header format: missing '\r' at the end of header element");
+            this->_status_code = 400;
 
         line.erase(line.size() - 1);
 
         if (line.empty())
             break ;
         
-        parse_headers(line);
+        this->parse_headers(line);
     }
+    this->check_required_headers();
 
     cout << "*********** Headers map ***********" << endl;
     for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
@@ -70,8 +91,10 @@ int c_request::parse_start_line(string& start_line)
     
     // METHOD
     if (pos == string::npos)
-        throw runtime_error("Invalid start-line: missing ' ' separator");
-
+    {
+        this->_status_code = 400;
+        return (0);
+    }
     this->_method = start_line.substr(start, pos - start);
 
 
@@ -80,8 +103,10 @@ int c_request::parse_start_line(string& start_line)
     pos = start_line.find(' ', start);
 
     if (pos == string::npos)
-        throw runtime_error("Invalid start-line: missing ' ' separator");
-
+    {
+        this->_status_code = 400;
+        return (0);
+    }
     this->_target = start_line.substr(start, pos - start);
     
 
@@ -89,7 +114,10 @@ int c_request::parse_start_line(string& start_line)
     start = pos + 1;
     this->_version = start_line.substr(start);
     if (this->_version.empty())
-        throw runtime_error("Invalid start-line: missing one parameter");
+    {
+        this->_status_code = 400;
+        return (0);
+    }
 
     cout << "*********** Start-line ************" << endl;
     cout << "method: " << this->_method << endl;
@@ -132,11 +160,11 @@ int c_request::parse_headers(string& headers)
 
     key = headers.substr(0, pos);
     if (!is_valid_header_name(key))
-        throw runtime_error("Invalid header name: '" + key + "'");
+        this->_status_code = 400;
 
     pos++;
     if (headers[pos] != 32)
-        throw runtime_error("Invalid header format: missing space after ':'");
+        this->_status_code = 400;
 
     pos++;
     while (pos < headers.length() && headers[pos] == 32)
@@ -145,7 +173,7 @@ int c_request::parse_headers(string& headers)
     size_t end_of_string = headers.find(' ', pos);
     value = headers.substr(pos, end_of_string - pos);
     if (!is_valid_header_value(value))
-        throw runtime_error("Invalid header value: '" + value + "'");
+        this->_status_code = 400;
 
     this->_headers[key] = value;
 
