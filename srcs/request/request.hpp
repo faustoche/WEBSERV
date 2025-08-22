@@ -21,6 +21,11 @@ class c_request
         int parse_start_line(string& str);
         int parse_headers(string& str);
 
+        const string &get_method() const { return _method; }
+        const string &get_target() const { return _target; }
+        const string &get_version() const { return _version; }
+        const map<string, string> &get_headers() const { return _headers; }
+
     private:
         string              _method;
         string              _target;

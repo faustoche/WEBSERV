@@ -72,8 +72,9 @@ int main(void)
                 keep_alive = false;
             }*/
 
-			string response;
-			response = response_handler.define_response_content();
+
+			response_handler.define_response_content();
+			const string &response = response_handler.get_response();
 			if (send(connected_socket_fd, response.c_str(), response.length(), 0) == -1)
 			{
 				cerr << "Error: Message not sent - " << errno << endl;
