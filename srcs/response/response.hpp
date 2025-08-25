@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <iterator>
 
 using namespace std;
 
@@ -19,10 +20,12 @@ class c_response
 {
 private:
 	string _response;
+	string _file_content;
 
 public:
 	void define_response_content(const c_request &request);
 	const string &get_response() const;
+	const string &get_file_content() const { return (_file_content); }
 
 private:
 	/* Méthodes privées pour la construction des réponses*/

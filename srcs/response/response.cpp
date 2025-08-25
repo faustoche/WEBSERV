@@ -7,6 +7,7 @@ const string &c_response::get_response() const {
 void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
+	_file_content.clear();
 	
 	int status_code = request.get_status_code();
 	string method = request.get_method();
@@ -19,8 +20,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(405, version, request);
 		return ;
 	}
-	cout << "ici   ---------------------------------------------------version: " << version << endl;
-	if (version != "HTTP/1.1" || version != "http/1.1")
+	if (version != "HTTP/1.1")
 	{
 		build_error_response(505, version, request);
 		return ;
@@ -31,13 +31,16 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 	string file_path;
-	if (target == "/" || target == "/index.html")
+	if (target == "/")
 		file_path = "www/index.html";
-	else
+	else if (target.substr(0, 1) == "/")
 		file_path = "www" + target;
+	else
+		file_path = "www/" + target;
 
-	string content = load_file_content(file_path);
-	if (content.empty())
+	_file_content = load_file_content(file_path);
+
+	if (_file_content.empty())
 		build_error_response(404, version, request);
 	else
 		build_success_response(file_path, version, request);
@@ -45,19 +48,17 @@ void	c_response::define_response_content(const c_request &request)
 
 string c_response::load_file_content(const string &file_path)
 {
-	ifstream	file(file_path.c_str());
-	string		content;
-	string		line;
+	ifstream	file(file_path.c_str(), ios::binary);
 	
 	if (!file.is_open()) {
 		return ("");
 	}
-	
-	while (getline(file, line))
-		content += line + "\n";
+
+	string	content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
 	file.close();
 	return (content);
 }
+
 
 string c_response::get_content_type(const string &file_path)
 {
@@ -74,6 +75,8 @@ string c_response::get_content_type(const string &file_path)
 		return ("image/jpeg");
 	else if (extension == ".png")
 		return ("image/png");
+	else if (extension == ".ico")
+		return ("image/x-icon");
 	else if (extension == ".gif")
 		return ("image/gif");
 	else if (extension == ".pdf")
@@ -86,14 +89,13 @@ string c_response::get_content_type(const string &file_path)
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
-	string content = load_file_content(file_path);
-	if (content.empty())
+	if (_file_content.empty())
 	{
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
 
-	int content_size = content.length();
+	size_t content_size = _file_content.size();
 	ostringstream oss;
 	oss << content_size;
 
@@ -109,8 +111,8 @@ void c_response::build_success_response(const string &file_path, const string ve
 		connection = "keep-alive";
 	}
 	_response += "Connection: " + connection + "\r\n";
-	_response += "\r\n\r\n";
-	_response += content;
+	_response += "\r\n";
+	_response += _file_content;
 }
 
 /* Vérifier les messages d'erreur s'ils sont cohérents avec un autre site */
@@ -152,7 +154,15 @@ void c_response::build_error_response(int error_code, const string version, cons
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
-	_response += "Connection: close\r\n";
-	_response += "\r\n\r\n";
+
+	string connection;
+	try {
+		connection = request.get_header_value("Connection");
+	} catch (...) {
+		connection = "keep-alive";
+	}
+	_response += "Connection: " + connection + "\r\n";
+	_response += "\r\n";
 	_response += error_content;
+	_file_content.clear();
 }

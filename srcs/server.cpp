@@ -41,45 +41,61 @@ int main(void)
 		}
 		cout << "New client connected !" << endl;
 
-		while (true) // while (keep_alive)
-        {
-            /* Recevoir un message */
-        	string request;
-            char        buffer[BUFFER_SIZE];
-            int         receivedBytes;
-            
-            /* Lire jusqu'a la fin des headers (\r\n\r\n)*/
-            while (request.find("\r\n\r\n") ==string::npos)
-            {
-            	receivedBytes = recv(connected_socket_fd, buffer, sizeof(buffer) - 1, 0);
-                if (receivedBytes <= 0)
-                {
-                   cerr << " Error: message not received - " << errno << endl;
-                    break ;
-                }
-                buffer[receivedBytes] = '\0';
-                request.append(buffer);
-               	fill(buffer, buffer + sizeof(buffer), '\0');
-            }
-           	cout << "\nClient request:\n" << request << endl;
+		bool keep_alive = true;
+	
+		while (keep_alive)
+		{
+
+			string      request;
+			char        buffer[BUFFER_SIZE];
+			int         receivedBytes;
+	
+			while (request.find("\r\n\r\n") == string::npos)
+			{
+				receivedBytes = recv(connected_socket_fd, buffer, sizeof(buffer) - 1, 0);
+				if (receivedBytes <= 0)
+				{
+					if (receivedBytes == 0) {
+						cout << "Client closed connection" << endl;
+					} else {
+						cerr << "Error: message not received - " << errno << endl;
+					}
+					keep_alive = false;
+					break;
+				}
+				buffer[receivedBytes] = '\0';
+				request.append(buffer);
+				fill(buffer, buffer + sizeof(buffer), '\0');
+			}
+			
+			if (!keep_alive || request.empty()) {
+				break;
+			}
+				
+			cout << "\nClient request:\n" << request << endl;
+
 			c_request my_request(request);
 
-            /*if (!keep_alive)
-               break ;
+			try {
+				string connection_header = my_request.get_header_value("Connection");
+				if (connection_header.find("close") != string::npos) {
+					keep_alive = false;
+					cout << "Client requested connection close" << endl;
+				}
+			} catch (...) {
 
-            if (request.find("Connection: close") != string::npos)
-            {
-                keep_alive = false;
-            }*/
+			}
+			response_handler.define_response_content(my_request);
 
-
-			response_handler.define_response_content(request);
 			const string &response = response_handler.get_response();
-			if (send(connected_socket_fd, response.c_str(), response.length(), 0) == -1)
+			if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
 			{
 				cerr << "Error: Message not sent - " << errno << endl;
-				return (-1);
+				keep_alive = false;
+				break;
 			}
+			if (!keep_alive)
+				break;
 		}
 		close(connected_socket_fd);		
 	}
