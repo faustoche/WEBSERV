@@ -7,7 +7,8 @@ const string &c_response::get_response() const {
 void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
-
+	
+	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
 	string version = request.get_version();
@@ -18,26 +19,28 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(405, version, request);
 		return ;
 	}
-	if (version != "HTTP/1.1")
+	cout << "ici   ---------------------------------------------------version: " << version << endl;
+	if (version != "HTTP/1.1" || version != "http/1.1")
 	{
 		build_error_response(505, version, request);
 		return ;
 	}
-	if (target == "/" || target == "/index.html")
-		build_success_response("www/index.html", version, request);
-	if (headers.find("Host") != headers.end())
-		build_success_response("www/index.html", version, request);
-	else if (headers.find("Host") == headers.end())
-		build_error_response(400, version, request);
-	else
+	if (headers.find("Host") == headers.end())
 	{
-		string file_path = "www" + target;
-		string content = load_file_content(file_path);
-		if (content.empty())
-			build_error_response(404, version, request);
-		else
-			build_success_response(file_path, version, request);
+		build_error_response(status_code, version, request);
+		return ;
 	}
+	string file_path;
+	if (target == "/" || target == "/index.html")
+		file_path = "www/index.html";
+	else
+		file_path = "www" + target;
+
+	string content = load_file_content(file_path);
+	if (content.empty())
+		build_error_response(404, version, request);
+	else
+		build_success_response(file_path, version, request);
 }
 
 string c_response::load_file_content(const string &file_path)
@@ -47,11 +50,11 @@ string c_response::load_file_content(const string &file_path)
 	string		line;
 	
 	if (!file.is_open()) {
-		cout << "Error: can't open the file\n";
+		return ("");
 	}
 	
 	while (getline(file, line))
-	content += line + "\n";
+		content += line + "\n";
 	file.close();
 	return (content);
 }
@@ -86,7 +89,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 	string content = load_file_content(file_path);
 	if (content.empty())
 	{
-		build_error_response(404, version, request);
+		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
 
@@ -99,15 +102,13 @@ void c_response::build_success_response(const string &file_path, const string ve
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection = request.get_header_value("Connection");
-
-	if (connection == "close")
-		_response += "Connection: close\r\n";
-	else if (connection == "keep-alive")
-		_response += "Connection: keep-alive\r\n";
-	else
-		_response += "Connection: close\r\n";
-
+	string connection;
+	try {
+		connection = request.get_header_value("Connection");
+	} catch (...) {
+		connection = "keep-alive";
+	}
+	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n\r\n";
 	_response += content;
 }
@@ -118,12 +119,14 @@ void c_response::build_error_response(int error_code, const string version, cons
 {
 	string status;
 	string error_content;
+	(void)request;
 
 	switch (error_code)
 	{
 		case 400:
 			status = "Bad Request";
 			error_content = "<html><body><h1>400 - Bad Request</h1></body></html>";
+			break;
 		case 404:
 			status = "Not Found";
 			error_content = "<html><body><h1>404 - Page Not Found</h1></body></html>";
@@ -149,14 +152,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
-
-	string connection = request.get_header_value("Connection");
-	
-	if (connection == "keep-alive" && (error_code == 404 || error_code == 405))
-		_response += "Connection: keep-alive\r\n";
-	else
-		_response += "Connection: close\r\n";
-	
+	_response += "Connection: close\r\n";
 	_response += "\r\n\r\n";
 	_response += error_content;
 }

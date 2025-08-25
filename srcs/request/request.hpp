@@ -25,7 +25,7 @@ class c_request
         const string &get_method() const { return _method; }
         const string &get_target() const { return _target; }
         const string &get_version() const { return _version; }
-        int &get_status_code() {return _status_code; }
+        const int &get_status_code() const {return _status_code; }
         const map<string, string> &get_headers() const { return _headers; }
         const string &get_header_value(const string& key) const;
 
