@@ -2,7 +2,7 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_request::c_request(const string& str) : _method(""), _version(""), _status_code(200)
+c_request::c_request(const string& str) : _method(""), _version(""), _status_code(200), _content_length(0)
 {
     for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
         it->second = "";
@@ -30,7 +30,7 @@ void c_request::check_required_headers()
     bool has_content_length = this->_headers.count("Content-Length");
     bool has_transfer_encoding = this->_headers.count("Transfer-Encoding");
 
-    if (this->_method == "POST" || this->_method == "DELETE")
+    if (this->_method == "POST")
         has_body = true;
 
     if (!this->_headers.count("Host"))
@@ -78,7 +78,7 @@ int c_request::parse_request(const string& raw_request)
     cout << "*********** Headers map ***********" << endl;
     for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
         cout << it->first << " : " << it->second << endl;
-    
+    cout << endl;
     //---- ETAPE 3: body -----
 
     return (0);
@@ -95,7 +95,12 @@ int c_request::parse_start_line(string& start_line)
         this->_status_code = 400;
         return (0);
     }
-    this->_method = start_line.substr(start, pos - start);
+    this->_method = start_line.substr(start, pos - start);;
+    if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
+    {
+        this->_status_code = 405;
+        return (0);
+    }
 
 
     // TARGET
@@ -118,6 +123,11 @@ int c_request::parse_start_line(string& start_line)
         this->_status_code = 400;
         return (0);
     }
+    if (this->_version != "HTTP/1.1")
+    {
+        this->_status_code = 505;
+        return (0);
+    }   
 
     cout << "*********** Start-line ************" << endl;
     cout << "method: " << this->_method << endl;
@@ -125,6 +135,20 @@ int c_request::parse_start_line(string& start_line)
     cout << "version: " << this->_version << endl << endl;
 
     return (0);
+}
+
+string  ft_trim(const string& str)
+{
+    size_t start = 0;
+    size_t end = str.length();
+
+    while (start < end && (str[start] == ' ' || str[start] == '\t'))
+        start++;
+
+    while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
+        end--;
+    
+    return (str.substr(start, end - start));
 }
 
 bool    is_valid_header_name(const string& key_name)
@@ -141,12 +165,36 @@ bool    is_valid_header_name(const string& key_name)
     return (true);
 }
 
-bool    is_valid_header_value(const string& value)
+bool    c_request::is_valid_header_value(string& key, const string& value)
 {
     for (size_t i = 0; i < value.length(); i++)
     {
-        if ((value[i] < 33 && value[i] != '\t') || value[i] == 127)
+        if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
+        {
+            this->_status_code = 400;
             return (false);
+        }
+    }
+
+    if (key == "Content-Length")
+    {
+        for (size_t i = 0; i < value.length(); i++)
+        {
+            if (!isdigit(value[i]))
+            {
+                this->_status_code = 400;
+                return (false);
+            }
+        }
+        char   *end;
+        long limit_tester = strtol(value.c_str(), &end, 10);
+        if (limit_tester > MAX_BODY_SIZE)
+        {
+            this->_status_code = 413;
+            return (false);
+        }
+        else
+            this->_content_length = limit_tester;
     }
     return (true);
 }
@@ -166,18 +214,17 @@ int c_request::parse_headers(string& headers)
     if (headers[pos] != 32)
         this->_status_code = 400;
 
-    pos++;
-    while (pos < headers.length() && headers[pos] == 32)
-        pos++;
-    
-    size_t end_of_string = headers.find(' ', pos);
-    value = headers.substr(pos, end_of_string - pos);
-    if (!is_valid_header_value(value))
-        this->_status_code = 400;
+    value = ft_trim(headers.substr(pos + 1));
+    is_valid_header_value(key, value);
 
     this->_headers[key] = value;
 
     return (0);
+}
+
+void    c_request::fill_body(const char *buffer, size_t len)
+{
+    this->_body.append(buffer, len);
 }
 
 /************ UTILS ************/
@@ -190,4 +237,9 @@ const string& c_request::get_header_value(const string& key) const
             return (it->second);
     }
     throw std::out_of_range("Header not found: " + key);
+}
+
+void c_request::set_status_code(int code)
+{
+    this->_status_code = code;
 }

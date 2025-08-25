@@ -1,5 +1,18 @@
 #include "server.hpp"
 
+
+void	drain_socket(int sockfd)
+{
+	char tmp[1024];
+	ssize_t extra;
+
+	do
+	{
+		extra = recv(sockfd, tmp, sizeof(tmp), MSG_DONTWAIT);
+	} while (extra > 0);
+	
+}
+
 int main(void)
 {
 	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -41,37 +54,82 @@ int main(void)
 		}
 		cout << "New client connected !" << endl;
 
-		while (true) // while (keep_alive)
+		bool	keep_alive = true;
+		while (keep_alive)
         {
             /* Recevoir un message */
-        	string request;
+        	string 		request;
             char        buffer[BUFFER_SIZE];
             int         receivedBytes;
+			string		line;
             
             /* Lire jusqu'a la fin des headers (\r\n\r\n)*/
-            while (request.find("\r\n\r\n") ==string::npos)
+            while (request.find("\r\n\r\n")== string::npos)
             {
             	receivedBytes = recv(connected_socket_fd, buffer, sizeof(buffer) - 1, 0);
                 if (receivedBytes <= 0)
                 {
-                   cerr << " Error: message not received - " << errno << endl;
-                    break ;
+					cerr << " Error: message not received - " << errno << endl;
+					close(connected_socket_fd);
+					keep_alive = false;
+					cout << "Connexion closed" << endl;
+                	break ;
                 }
                 buffer[receivedBytes] = '\0';
                 request.append(buffer);
                	fill(buffer, buffer + sizeof(buffer), '\0');
             }
-           	cout << "\nClient request:\n" << request << endl;
+			if (!keep_alive)
+				break ;
+
 			c_request my_request(request);
 
-            /*if (!keep_alive)
-               break ;
+			/* Lire jusqu'a la fin du body - Stocker dans un fichier ? */
+			if (my_request.get_method() == "POST"
+				&& my_request.get_content_lentgh() > 0
+				&& my_request.get_status_code() != 400)
+			{
+				size_t 	max_body_size = my_request.get_content_lentgh();
+				size_t	total_bytes = 0;
+				size_t 	header_end = request.find("\r\n\r\n") + 4;
+				string 	body_part = request.substr(header_end);
+
+				my_request.fill_body(body_part.data(), body_part.size());
+				total_bytes += body_part.size();
+				while (total_bytes < max_body_size)
+				{	
+					receivedBytes = recv(connected_socket_fd, buffer, sizeof(buffer) - 1, 0);
+					total_bytes += receivedBytes;
+                	if (receivedBytes <= 0)
+                	    break ;
+                	my_request.fill_body(buffer, receivedBytes);
+               		fill(buffer, buffer + sizeof(buffer), '\0');	
+				}
+				if (total_bytes > max_body_size)
+				{
+					my_request.set_status_code(413);
+					drain_socket(connected_socket_fd);
+					close(connected_socket_fd);
+					cout << "Connexion closed: " << my_request.get_status_code() << endl;
+					keep_alive = false;
+					break ;
+				}
+				drain_socket(connected_socket_fd);
+				fill(buffer, buffer + sizeof(buffer), '\0');
+			}	
+
+			if (my_request.get_method() == "POST")
+			{
+				cout << "*********** Body ************" << endl;
+				cout << my_request.get_body() << endl;
+			}
 
             if (request.find("Connection: close") != string::npos)
             {
                 keep_alive = false;
-            }*/
-
+				close(connected_socket_fd);
+				cout << "Connexion closed: " << my_request.get_status_code() << endl;
+            }
 
 			response_handler.define_response_content();
 			const string &response = response_handler.get_response();
