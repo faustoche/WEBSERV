@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "response.hpp"
 #include "request.hpp"
@@ -21,17 +22,20 @@ using	namespace std;
 
 /*----------- CLASS -----------*/
 
-class server
+class c_server
 {
 private:
+	int					_socket_fd;
+	struct sockaddr_in	_socket_address;
+	//map<int, c_client>	_clients;
 	
 public:
-	server();
-	~server();
+	const int &get_socket_fd() const { return (_socket_fd); }
+	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); }
 	
 	void create_socket();
 	void bind_and_listen();
-	void set_non_blocking(); // gestion des fds non bloquants
+	void set_non_blocking(int fd); // gestion des fds non bloquants
 };
 
 /*----------- FUNCTIONS -----------*/

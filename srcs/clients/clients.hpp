@@ -20,21 +20,18 @@ enum class client_state { READING, PROCESSING, SENDING, DISCONNECTED };
 // 1 taille du buffer
 // 1 timestamps pour g2rer le timeout
 
-class client
+class c_client
 {
 private:
 	string	_fd;
 	string	_state;
 	char	_buffer;
 	struct timeval _timestmps;
-	// vector ? pour pouvoir stocker les différents clients dans un container. 
+	map<int, c_client> _clients; // stocker les clients actifs / int = fd du socket
 
 public:
-	client();
-	~client();
+	c_client add_client();
+	c_client remove_client();
+	c_client find_client();
 
-	// ajouter un client
-	// supprimer un client
-	// trouver un client
-	// 
 };
