@@ -1,6 +1,6 @@
 #pragma once
 
-/*-----------  INCLUDES -----------*/
+/************ INCLUDES ************/
 
 #include <iostream>
 #include <map>
@@ -15,7 +15,7 @@ using namespace std;
 
 #define MAX_BODY_SIZE 1048576
 
-/*-----------  CLASS -----------*/
+/************ CLASS ************/
 
 class c_request
 {

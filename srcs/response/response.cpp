@@ -1,12 +1,12 @@
 #include "response.hpp"
 
-/*---------- GETTERS -----------*/
+/************ GETTERS ************/
 
 const string &c_response::get_response() const {
 	return (_response);
 }
 
-/*---------- FILE CONTENT MANAGEMENT -----------*/
+/************ FILE CONTENT MANAGEMENT ************/
 
 void	c_response::define_response_content(const c_request &request)
 {
@@ -91,7 +91,7 @@ string c_response::get_content_type(const string &file_path)
 		return ("text/plain"); 
 }
 
-/*---------- RESPONSES -----------*/
+/************ RESPONSES ************/
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {

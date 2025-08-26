@@ -1,6 +1,5 @@
 #include "server.hpp"
 
-
 void	drain_socket(int sockfd)
 {
 	char tmp[1024];
@@ -61,18 +60,17 @@ void c_server::set_non_blocking(int fd)
 	int flags = fcntl(fd, F_GETFL, 0); // 
 	if (flags < 0)
 	{
-		cerr << "Error: f getfl - " << errno << endl;
+		cerr << "Error: F_GETFL - " << errno << endl;
 		return ;
 	}
 
 	/* F_SETFL: permet de changer les flags -> ici on ajoute NONBLOCK */
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
 	{
-		cerr << "Error: f setfl - " << errno << endl;
+		cerr << "Error: F_SETFL - " << errno << endl;
 		return ;
 	}
 }
-
 
 int main(void)
 {

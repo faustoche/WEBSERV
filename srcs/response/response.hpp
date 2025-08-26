@@ -1,6 +1,6 @@
 #pragma once
 
-/*-----------  INCLUDES -----------*/
+/************ INCLUDES ************/
 
 #include <fstream>
 #include <sstream>
@@ -9,11 +9,11 @@
 #include <iterator>
 #include "server.hpp"
 
-/*-----------  DEFINE -----------*/
+/************ DEFINE ************/
 
 using namespace std;
 
-/*-----------  CLASS -----------*/
+/************ CLASS ************/
 
 class c_request;
 
