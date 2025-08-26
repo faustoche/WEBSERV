@@ -21,8 +21,7 @@ c_request::~c_request()
 {
 }
 
-
-/************ PARSE FUNCTIONS ************/
+/************ UTILS ************/
 
 void c_request::check_required_headers()
 {
@@ -44,6 +43,70 @@ void c_request::check_required_headers()
             this->_status_code = 400;
     }     
 }
+
+string  ft_trim(const string& str)
+{
+    size_t start = 0;
+    size_t end = str.length();
+
+    while (start < end && (str[start] == ' ' || str[start] == '\t'))
+        start++;
+
+    while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
+        end--;
+    
+    return (str.substr(start, end - start));
+}
+
+bool    is_valid_header_name(const string& key_name)
+{
+    const string allowed_special_chars = "!#$%&'*+-.^_`|~";
+
+    if (key_name.empty())
+        return (false);
+    for (size_t i = 0; i < key_name.length(); i++)
+    {
+        if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
+            return (false);
+    }
+    return (true);
+}
+
+bool    c_request::is_valid_header_value(const string& key, const string& value)
+{
+    for (size_t i = 0; i < value.length(); i++)
+    {
+        if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
+        {
+            this->_status_code = 400;
+            return (false);
+        }
+    }
+
+    if (key == "Content-Length")
+    {
+        for (size_t i = 0; i < value.length(); i++)
+        {
+            if (!isdigit(value[i]))
+            {
+                this->_status_code = 400;
+                return (false);
+            }
+        }
+        char   *end;
+        long limit_tester = strtol(value.c_str(), &end, 10);
+        if (limit_tester > MAX_BODY_SIZE)
+        {
+            this->_status_code = 413;
+            return (false);
+        }
+        else
+            this->_content_length = limit_tester;
+    }
+    return (true);
+}
+
+/************ PARSE FUNCTIONS ************/
 
 int c_request::parse_request(const string& raw_request)
 {
@@ -79,7 +142,6 @@ int c_request::parse_request(const string& raw_request)
     for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
         cout << it->first << " : " << it->second << endl;
     cout << endl;
-    //---- ETAPE 3: body -----
 
     return (0);
 }
@@ -101,7 +163,6 @@ int c_request::parse_start_line(string& start_line)
         this->_status_code = 405;
         return (0);
     }
-
 
     // TARGET
     start = pos + 1;
@@ -137,68 +198,6 @@ int c_request::parse_start_line(string& start_line)
     return (0);
 }
 
-string  ft_trim(const string& str)
-{
-    size_t start = 0;
-    size_t end = str.length();
-
-    while (start < end && (str[start] == ' ' || str[start] == '\t'))
-        start++;
-
-    while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
-        end--;
-    
-    return (str.substr(start, end - start));
-}
-
-bool    is_valid_header_name(const string& key_name)
-{
-    const string allowed_special_chars = "!#$%&'*+-.^_`|~";
-
-    if (key_name.empty())
-        return (false);
-    for (size_t i = 0; i < key_name.length(); i++)
-    {
-        if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
-            return (false);
-    }
-    return (true);
-}
-
-bool    c_request::is_valid_header_value(string& key, const string& value)
-{
-    for (size_t i = 0; i < value.length(); i++)
-    {
-        if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
-        {
-            this->_status_code = 400;
-            return (false);
-        }
-    }
-
-    if (key == "Content-Length")
-    {
-        for (size_t i = 0; i < value.length(); i++)
-        {
-            if (!isdigit(value[i]))
-            {
-                this->_status_code = 400;
-                return (false);
-            }
-        }
-        char   *end;
-        long limit_tester = strtol(value.c_str(), &end, 10);
-        if (limit_tester > MAX_BODY_SIZE)
-        {
-            this->_status_code = 413;
-            return (false);
-        }
-        else
-            this->_content_length = limit_tester;
-    }
-    return (true);
-}
-
 int c_request::parse_headers(string& headers)
 {
     size_t pos = headers.find(':', 0);
@@ -222,12 +221,7 @@ int c_request::parse_headers(string& headers)
     return (0);
 }
 
-void    c_request::fill_body(const char *buffer, size_t len)
-{
-    this->_body.append(buffer, len);
-}
-
-/************ UTILS ************/
+/************ GETTERS & SETTERS ************/
 
 const string& c_request::get_header_value(const string& key) const
 {
@@ -242,4 +236,9 @@ const string& c_request::get_header_value(const string& key) const
 void c_request::set_status_code(int code)
 {
     this->_status_code = code;
+}
+
+void    c_request::fill_body(const char *buffer, size_t len)
+{
+    this->_body.append(buffer, len);
 }

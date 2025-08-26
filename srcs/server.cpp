@@ -149,6 +149,12 @@ int main(void)
 				cout << my_request.get_body() << endl;
 			}
 
+            if (request.find("Connection: close") != string::npos)
+            {
+                keep_alive = false;
+				close(connected_socket_fd);
+				cout << "Connexion closed: " << my_request.get_status_code() << endl;
+            }
 
 			response_handler.define_response_content(my_request);
 
