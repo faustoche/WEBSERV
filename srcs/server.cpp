@@ -69,7 +69,6 @@ int main(void)
         	string 		request;
             char        buffer[BUFFER_SIZE];
             int         receivedBytes;
-			string		line;
 			bool		headers_complete = false;
             
             /* Lire jusqu'a la fin des headers (\r\n\r\n)*/
@@ -148,13 +147,6 @@ int main(void)
 				cout << "*********** Body ************" << endl;
 				cout << my_request.get_body() << endl;
 			}
-
-            if (request.find("Connection: close") != string::npos)
-            {
-                keep_alive = false;
-				close(connected_socket_fd);
-				cout << "Connexion closed: " << my_request.get_status_code() << endl;
-            }
 
 			response_handler.define_response_content(my_request);
 
