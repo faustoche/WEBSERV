@@ -30,13 +30,8 @@ void c_request::check_required_headers()
 	bool has_content_length = this->_headers.count("Content-Length");
 	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding");
 
-<<<<<<< HEAD
     if (this->_method == "POST")
         has_body = true;
-=======
-	if (this->_method == "POST")
-		has_body = true;
->>>>>>> origin/main
 
 	if (!this->_headers.count("Host"))
 		this->_status_code = 400;
@@ -80,42 +75,17 @@ int c_request::parse_request(const string& raw_request)
 	}
 	this->check_required_headers();
 
-<<<<<<< HEAD
-    cout << "*********** Headers map ***********" << endl;
-    for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
-        cout << it->first << " : " << it->second << endl;
-    cout << endl;
-    //---- ETAPE 3: body -----
-=======
 	cout << "*********** Headers map ***********" << endl;
 	for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 		cout << it->first << " : " << it->second << endl;
 	cout << endl;
 	//---- ETAPE 3: body -----
->>>>>>> origin/main
 
 	return (0);
 }
 
 int c_request::parse_start_line(string& start_line)
 {
-<<<<<<< HEAD
-    size_t start = 0;
-    size_t pos = start_line.find(' ', start);
-    
-    // METHOD
-    if (pos == string::npos)
-    {
-        this->_status_code = 400;
-        return (0);
-    }
-    this->_method = start_line.substr(start, pos - start);;
-    if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
-    {
-        this->_status_code = 405;
-        return (0);
-    }
-=======
 	size_t start = 0;
 	size_t pos = start_line.find(' ', start);
 	
@@ -131,7 +101,6 @@ int c_request::parse_start_line(string& start_line)
 		this->_status_code = 405;
 		return (0);
 	}
->>>>>>> origin/main
 
 	// TARGET
 	start = pos + 1;
@@ -163,7 +132,6 @@ int c_request::parse_start_line(string& start_line)
 	cout << "target: " << this->_target << endl;
 	cout << "version: " << this->_version << endl << endl;
 
-<<<<<<< HEAD
     // VERSION
     start = pos + 1;
     this->_version = start_line.substr(start);
@@ -177,10 +145,7 @@ int c_request::parse_start_line(string& start_line)
         this->_status_code = 505;
         return (0);
     }   
-=======
-	return (0);
 }
->>>>>>> origin/main
 
 string  ft_trim(const string& str)
 {
@@ -226,38 +191,6 @@ bool    is_valid_header_name(const string& key_name)
 
 bool    c_request::is_valid_header_value(string& key, const string& value)
 {
-<<<<<<< HEAD
-    for (size_t i = 0; i < value.length(); i++)
-    {
-        if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
-        {
-            this->_status_code = 400;
-            return (false);
-        }
-    }
-
-    if (key == "Content-Length")
-    {
-        for (size_t i = 0; i < value.length(); i++)
-        {
-            if (!isdigit(value[i]))
-            {
-                this->_status_code = 400;
-                return (false);
-            }
-        }
-        char   *end;
-        long limit_tester = strtol(value.c_str(), &end, 10);
-        if (limit_tester > MAX_BODY_SIZE)
-        {
-            this->_status_code = 413;
-            return (false);
-        }
-        else
-            this->_content_length = limit_tester;
-    }
-    return (true);
-=======
 	for (size_t i = 0; i < value.length(); i++)
 	{
 		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
@@ -288,7 +221,6 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 			this->_content_length = limit_tester;
 	}
 	return (true);
->>>>>>> origin/main
 }
 
 int c_request::parse_headers(string& headers)
@@ -306,13 +238,8 @@ int c_request::parse_headers(string& headers)
 	if (headers[pos] != 32)
 		this->_status_code = 400;
 
-<<<<<<< HEAD
-    value = ft_trim(headers.substr(pos + 1));
-    is_valid_header_value(key, value);
-=======
 	value = ft_trim(headers.substr(pos + 1));
 	is_valid_header_value(key, value);
->>>>>>> origin/main
 
 	value = headers.substr(pos);
 	if (!is_valid_header_value(key, value))

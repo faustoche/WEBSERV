@@ -6,10 +6,7 @@
 #include <map>
 #include <string.h>
 #include <sstream>
-<<<<<<< HEAD
-=======
 #include <vector>
->>>>>>> origin/main
 #include <set>
 #include <limits>
 #include <stdlib.h>
