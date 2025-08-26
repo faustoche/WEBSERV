@@ -96,15 +96,20 @@ int main(void)
 			if (!keep_alive || request.empty())
 				break ;
 
+			cout << "Request: " << request << endl;
 			c_request my_request(request);
 
-			try {
+			try 
+			{
 				string connection_header = my_request.get_header_value("Connection");
-				if (connection_header.find("close") != string::npos) {
+				if (connection_header.find("close") != string::npos) 
+				{
 					keep_alive = false;
 					cout << "Client requested connection close" << endl;
 				}
-			} catch (const std::exception &e) {
+			} 
+			catch (const std::exception &e) 
+			{
 				cerr << "Exception caught: " << e.what() << endl;
 			}
 
@@ -147,6 +152,8 @@ int main(void)
 				cout << "*********** Body ************" << endl;
 				cout << my_request.get_body() << endl;
 			}
+
+			cout << "Status code: " << my_request.get_status_code() << endl;
 
 			response_handler.define_response_content(my_request);
 

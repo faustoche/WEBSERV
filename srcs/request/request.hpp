@@ -10,10 +10,19 @@
 #include <set>
 #include <limits>
 #include <stdlib.h>
+#include <algorithm>
 
 using namespace std;
 
 #define MAX_BODY_SIZE 1048576
+
+enum HostType 
+{
+    INVALID,
+    HOSTNAME,
+    IPV4,
+    IPV6
+};
 
 /*-----------  CLASS -----------*/
 
@@ -28,13 +37,17 @@ class c_request
         int     parse_headers(string& str);
         void    check_required_headers();
         bool    is_valid_header_value(string& key, const string& value);
+        bool    check_host_value();
         void    fill_body(const char *buffer, size_t len);
         void    set_status_code(int code);
+        HostType detect_host_type(string& host_field_value);
+        bool     is_host_value_valid(int host_type);
 
         const string &get_method() const { return _method; }
         const string &get_target() const { return _target; }
         const string &get_version() const { return _version; }
         const int &get_status_code() const { return _status_code; }
+        const int &get_port() const { return _port; }
         const size_t &get_content_lentgh() const { return _content_length; }
         const map<string, string> &get_headers() const { return _headers; }
         const string &get_header_value(const string& key) const;
@@ -47,5 +60,7 @@ class c_request
         string              _body;
         map<string, string> _headers;
         int                 _status_code;
+        int                 _port;
+        pair<string, int>   _host_value;
         size_t              _content_length;
 };
