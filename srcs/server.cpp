@@ -27,6 +27,14 @@ int main(void)
 		return (-1);
 	}
 
+	int socket_option = 1;
+
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option)) < 0) {
+		cerr << "Error: socket option - Reusable address - " << errno << endl;
+		close(socket_fd);
+		return (-1);
+	}
+
 	if (bind(socket_fd, (struct sockaddr *) &socket_address, sizeof(socket_address)) < 0)
 	{
 		cerr << "Error: Bind mode - " << errno << endl;
@@ -61,27 +69,44 @@ int main(void)
         	string 		request;
             char        buffer[BUFFER_SIZE];
             int         receivedBytes;
+			bool		headers_complete = false;
             
             /* Lire jusqu'a la fin des headers (\r\n\r\n)*/
-            while (request.find("\r\n\r\n")== string::npos)
+            while (!headers_complete && keep_alive)
             {
             	receivedBytes = recv(connected_socket_fd, buffer, sizeof(buffer) - 1, 0);
-                if (receivedBytes <= 0)
-                {
-					cerr << " Error: message not received - " << errno << endl;
-					close(connected_socket_fd);
+                if (receivedBytes <= 0) {
+					if (receivedBytes == 0) {
+						cout << "Client closed connection" << endl;
+					} else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+						cout << "Error: Timeout - no data received" << endl;
+					} else {
+						cerr << "Error: message not received - " << errno << endl;
+					}
 					keep_alive = false;
-					cout << "Connexion closed" << endl;
-                	break ;
-                }
+					close(connected_socket_fd);
+					break;
+				}
                 buffer[receivedBytes] = '\0';
                 request.append(buffer);
                	fill(buffer, buffer + sizeof(buffer), '\0');
+				if (request.find("\r\n\r\n") != string::npos)
+					headers_complete = true;
             }
 			if (!keep_alive)
 				break ;
 
 			c_request my_request(request);
+
+			try {
+				string connection_header = my_request.get_header_value("Connection");
+				if (connection_header.find("close") != string::npos) {
+					keep_alive = false;
+					cout << "Client requested connection close" << endl;
+				}
+			} catch (const std::exception &e) {
+				cerr << "Exception caught: " << e.what() << endl;
+			}
 
 			/* Lire jusqu'a la fin du body - Stocker dans un fichier ? */
 			if (my_request.get_method() == "POST"
@@ -122,13 +147,6 @@ int main(void)
 				cout << "*********** Body ************" << endl;
 				cout << my_request.get_body() << endl;
 			}
-
-            if (request.find("Connection: close") != string::npos)
-            {
-                keep_alive = false;
-				close(connected_socket_fd);
-				cout << "Connexion closed: " << my_request.get_status_code() << endl;
-            }
 
 			response_handler.define_response_content(my_request);
 			const string &response = response_handler.get_response();
