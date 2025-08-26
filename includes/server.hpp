@@ -20,3 +20,16 @@
 using	namespace std;
 
 string int_to_string(int n);
+
+class server
+{
+private:
+
+public:
+	server();
+	~server();
+
+	void create_socket();
+	void bind_and_listen();
+	void set_non_blocking();
+};
