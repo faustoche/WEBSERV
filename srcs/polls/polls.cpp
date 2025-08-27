@@ -17,7 +17,10 @@ void c_server::setup_pollfd()
 
 	// creation des clients dans une boucle for
 		// add client
-
+	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
+	{
+		int client_fd = it->first;
+	}
 
 	// switch case pour gerer les differents cas des clients
 		// READING -> POLLIN attendre des données / break
