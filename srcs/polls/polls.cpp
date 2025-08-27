@@ -5,27 +5,45 @@ void c_server::setup_pollfd()
 {
 	_poll_fds.clear(); // on vide le vecteur pour commencer à 0
 
-	// initialisation des données de struct pollfd
+	/**** INITIALISATION DES DONNÉES *****/
+	/**** LE SERVEUR DE BASE DOIT ÊTRE EN PREMIER DANS NOTRE CONTAINER *****/
 	struct pollfd server_pollfd;
 	server_pollfd.fd = _socket_fd;
 	server_pollfd.events = POLLIN; // evenements attendus - POLLIN = données en attente de lecture
 	server_pollfd.revents = 0; // evenement detectes et produits. 0 pour commencer
-
-	// on ajoute notre server de base en premier dans notre container
 	_poll_fds.push_back(server_pollfd);
 
-
-	// creation des clients dans une boucle for
-		// add client
 	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
-		int client_fd = it->first;
-	}
+		/**** AJOUT DES CLIENTS ACTIFS *****/
+		int client_fd = it->first; // recoit le descripteur du client concerne
+		c_client &client = it->second; // ref vers l'objet client de la map
+		if (client.get_state() == DISCONNECTED)
+			continue;
 
-	// switch case pour gerer les differents cas des clients
-		// READING -> POLLIN attendre des données / break
-		// PROCESSING -> 0 pas d'event en cours  / break
-		// SENDING -> POLLOUT / break
+	}
+		/***** POLLFD LOCAL POUR LE CLIENT *****/
+		struct pollfd client_pollfd;
+		client_pollfd.fd = client_fd; // fd devient le descripteur client
+		client_pollfd.revents = 0;
+	
+		/***** SWITCH POUR AJUSTER SELON L'ÉTAT *****/
+		// est-ce que je dois égqlment actualiser revent ou ça se fait automatiquement?
+		switch (client.get_state())
+		{
+			case READING:
+				client_pollfd.events = POLLIN;
+				break;
+			case PROCESSING:
+				client_pollfd.events = 0;
+				break;
+			case SENDING:
+				client_pollfd.events = POLLOUT; // ou 0? a tester 
+				break;
+			default:
+				continue ;
+		}
+		_poll_fds.push_back(client_pollfd); // on push dans poll fds
 }
 
 

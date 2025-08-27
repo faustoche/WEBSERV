@@ -8,17 +8,19 @@ const string &c_response::get_response() const {
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-void	c_response::define_response_content(const c_request &request)
+void	c_response::define_response_content(const c_request &request, c_server &server)
 {
 	_response.clear();
 	_file_content.clear();
 	
+	/***** RÉCUPÉRATIONS *****/
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
+	/***** VÉRIFICATIONS *****/
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		build_error_response(405, version, request);
@@ -34,6 +36,13 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
+
+	// 1. Vérifier si on trouve une location qui matche -> fonction find_location()
+	// 2. Est-ce que la méthode est autorisée pour cette location spécifique?
+	// 3. Est-ce qu'on a redéfini une redirection? Si oui -> gérer cette redirection
+
+	/***** CONSTRUCTION DU CHEMIN DU FICHIER - À CHANGER POUR AJOUTER LA LOCATIONS *****/
+	
 	string file_path;
 	if (target == "/")
 		file_path = "www/index.html";
@@ -42,6 +51,8 @@ void	c_response::define_response_content(const c_request &request)
 	else
 		file_path = "www/" + target;
 
+
+	/***** CHARGER LE CONTENU DU FICHIER *****/
 	_file_content = load_file_content(file_path);
 
 	if (_file_content.empty())
