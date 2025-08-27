@@ -16,9 +16,10 @@ OBJS_DIR	= obj
 #                			 SRCS && OBJECTS FILES                         #
 # ************************************************************************ #
 
-WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp\
-										response/response.cpp\
-										request/request.cpp\
+WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp \
+										response/response.cpp \
+										request/request.cpp \
+										request/utils.cpp \
 										utils/utils.cpp)
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}

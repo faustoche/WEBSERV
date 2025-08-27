@@ -37,11 +37,13 @@ class c_request
         int     parse_headers(string& str);
         void    check_required_headers();
         bool    is_valid_header_value(string& key, const string& value);
-        bool    check_host_value();
+        bool    is_valid_header_name(const string& key_name);
+        string  ft_trim(const string& str);
+        int    check_port();
         void    fill_body(const char *buffer, size_t len);
         void    set_status_code(int code);
-        HostType detect_host_type(string& host_field_value);
-        bool     is_host_value_valid(int host_type);
+        // HostType detect_host_type(string& host_field_value);
+        // bool     is_host_value_valid(int host_type);
 
         const string &get_method() const { return _method; }
         const string &get_target() const { return _target; }
@@ -61,6 +63,6 @@ class c_request
         map<string, string> _headers;
         int                 _status_code;
         int                 _port;
-        pair<string, int>   _host_value;
+        // pair<string, int>   _host_value;
         size_t              _content_length;
 };

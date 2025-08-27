@@ -20,7 +20,7 @@ int main(void)
 
 	socket_address.sin_family = AF_INET;
 	socket_address.sin_port = htons(8080);
-	socket_address.sin_addr.s_addr = INADDR_ANY;
+	socket_address.sin_addr.s_addr = INADDR_ANY; // adresse IP du .conf
 
 	if (socket_fd < 0){
 		cerr << "Error: Socket creation - " << errno << endl;
