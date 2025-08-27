@@ -42,8 +42,6 @@ class c_request
         int    check_port();
         void    fill_body(const char *buffer, size_t len);
         void    set_status_code(int code);
-        // HostType detect_host_type(string& host_field_value);
-        // bool     is_host_value_valid(int host_type);
 
         const string &get_method() const { return _method; }
         const string &get_target() const { return _target; }
@@ -63,6 +61,5 @@ class c_request
         map<string, string> _headers;
         int                 _status_code;
         int                 _port;
-        // pair<string, int>   _host_value;
         size_t              _content_length;
 };
