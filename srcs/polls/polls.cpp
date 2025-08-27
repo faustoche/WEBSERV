@@ -19,10 +19,10 @@ void c_server::setup_pollfd()
 		// add client
 
 
-	// switch case pour gerer les differents cas 
-		// READING -> POLLIN attendre des données
-		// PROCESSING -> 0 pas d'event en cours 
-		// SENDING -> POLLOUT
+	// switch case pour gerer les differents cas des clients
+		// READING -> POLLIN attendre des données / break
+		// PROCESSING -> 0 pas d'event en cours  / break
+		// SENDING -> POLLOUT / break
 }
 
 
