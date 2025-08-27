@@ -132,7 +132,7 @@ bool    c_lexer::is_bloc_keyword(string const & word) const
 bool    c_lexer::is_directive_keyword(string const & word) const
 {
     /* list avec des find ? */
-    if (word == "listen" || word == "root" || word == "index")
+    if (word == "listen" || word == "index")
         return true ;
     return false ;
 }

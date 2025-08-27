@@ -36,7 +36,6 @@ private:
     // Configuration informations
     // int                     _IP;
     // int                     _port;
-    string                  _root;
     string                  _index;
     // Defaults values ?
     static const int        DEFAULT_PORT = 80;  
@@ -69,6 +68,8 @@ public:
     // // Validation
     // bool            is_valid() const;
     // string          get_validation_error() const;
+
+    // AVOIR UN OBJET LOCATION ET FAIRE MAP DE LOCATION POUR BOUCLER DESSUS
 };
 
 /************ FUNCTIONS ************/

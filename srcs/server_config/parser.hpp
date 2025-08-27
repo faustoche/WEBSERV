@@ -13,7 +13,7 @@ using namespace std;
 
 /*-----------  CLASS -----------*/
 
-/* utilise les tokens du lexer pour construire les objetcs c_server */
+/* utilise les tokens du lexer pour construire les objects c_server */
 class  c_parser : public c_lexer {
 
 public :
@@ -32,7 +32,13 @@ private :
 
             // principal method
             vector<c_server>    parse();
+            // loop
             vector<c_server>    parse_config();
+            // block
+            c_server    parse_server_block();
+            // directives
+            void        parse_server_directives(c_server & server);
+            void        parse_index_directive(c_server & server);
 
             void    expected_token_type(int expected_type) const;
             // void    expected_token_value(int expected_type) const;
@@ -74,5 +80,9 @@ private :
         expected_token(SEMICOLON)
         advance
     }
+
+    directives
+    root -> peut etre dans nloc server && bloc location
+
 
 */
