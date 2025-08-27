@@ -8,7 +8,7 @@ NAME = webserv
 #                			     DIRECTORIES                               #
 # ************************************************************************ #
 
-INCLUDES	= includes -I./srcs/response -I./srcs/request
+INCLUDES	= includes -I./srcs/response -I./srcs/request -I./srcs/server_config
 SRCS_DIR	= srcs
 OBJS_DIR	= obj
 
@@ -16,10 +16,9 @@ OBJS_DIR	= obj
 #                			 SRCS && OBJECTS FILES                         #
 # ************************************************************************ #
 
-WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp\
-										response/response.cpp\
-										request/request.cpp\
-										utils/utils.cpp)
+WEBSERV		= $(addprefix $(SRCS_DIR)/, parsing_main.cpp\
+										server_config/lexer.cpp\
+										server_config/parser.cpp)
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}
 OBJS		= ${CPP_OBJS}
