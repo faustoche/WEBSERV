@@ -165,6 +165,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 	try {
 		connection = request.get_header_value("Connection");
 	} catch (...) {
+		cerr << "Error: No Header: Connection is kept alive by default" << endl;
 		connection = "keep-alive";
 	}
 	_response += "Connection: " + connection + "\r\n";

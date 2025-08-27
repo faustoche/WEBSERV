@@ -11,7 +11,8 @@
 #include <string.h>
 #include <fcntl.h>
 #include <map>
-
+#include <vector>
+#include <poll.h>
 #include "response.hpp"
 #include "clients.hpp"
 #include "request.hpp"
@@ -27,9 +28,10 @@ using	namespace std;
 class c_server
 {
 private:
-	int					_socket_fd;
-	struct sockaddr_in	_socket_address;
-	map<int, c_client>	_clients;
+	int						_socket_fd;
+	struct sockaddr_in		_socket_address;
+	map<int, c_client>		_clients;
+	vector<struct pollfd>	_poll_fds;
 	
 public:
 	const int &get_socket_fd() const { return (_socket_fd); }
@@ -37,11 +39,13 @@ public:
 	
 	void create_socket();
 	void bind_and_listen();
-	void set_non_blocking(int fd); // gestion des fds non bloquants
+	void set_non_blocking(int fd);
 
 	void		add_client(int client_fd);
 	void		remove_client(int client_fd);
 	c_client	*find_client(int client_fd);
+	void		setup_pollfd(); // mise en place de poll()
+	void		handle_poll_events(); // gestion de chaque event lié à poll(), conserver le suivi 
 };
 
 /************ FUNCTIONS ************/

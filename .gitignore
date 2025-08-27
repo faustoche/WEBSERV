@@ -10,3 +10,7 @@ obj/
 
 # Generated colors header
 includes/colors.hpp
+
+# VS code + DS Store files
+*.vscode
+*.DS_Store

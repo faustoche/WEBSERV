@@ -2,13 +2,13 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_client::c_client() : _fd(-1), _state("none")
+c_client::c_client() : _fd(-1), _state(DISCONNECTED)
 {
 	memset(_buffer, 0, sizeof(_buffer));
 	gettimeofday(&_timestamp, 0);
 }
 
-c_client::c_client(int client_fd) : _fd(client_fd), _state("connected")
+c_client::c_client(int client_fd) : _fd(client_fd), _state(DISCONNECTED)
 {
 	memset(_buffer, 0, sizeof(_buffer));
 	gettimeofday(&_timestamp, 0);
@@ -20,7 +20,6 @@ c_client::~c_client(){}
 
 void	c_server::add_client(int client_fd)
 {
-	// on crée un nouveau client
 	_clients[client_fd] = c_client(client_fd);
 	set_non_blocking(client_fd);
 }
