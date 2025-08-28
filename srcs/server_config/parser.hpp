@@ -25,9 +25,9 @@ public :
             s_token peek_token() const;
             void    advance_token();
             bool    is_at_end() const;
-            
+
 private :
-            vector<s_token>::iterator   _it;
+            vector<s_token>::iterator   _current;
             string                      _error_msg;
 
             // principal method
@@ -44,9 +44,16 @@ private :
             // void    expected_token_value(int expected_type) const;
 
             // utils methods
-            // bool is_valid_port
-            // bool is_valid_path
-            // convert to nb
+            bool    is_token_value(std::string key);
+            bool    is_token_type(int type);
+            bool    is_executable_file(const std::string & path);
+            bool    is_valid_path(string & const path);
+            bool    is_valid_port(string const & port_str);
+
+            // error handling
+            bool            has_error() const;
+            string const &  get_error() const;
+            void            clear_error();
 };
 
 /*
@@ -69,7 +76,7 @@ private :
 
     c_server parse_server_directive
 
-    PATTERN POUR DIRECTIVES 
+    PATTERN POUR DIRECTIVES
     void    parse_listen_directive()
     {
         advance_token // skip dir
@@ -81,8 +88,6 @@ private :
         advance
     }
 
-    directives
-    root -> peut etre dans nloc server && bloc location
 
 
 */

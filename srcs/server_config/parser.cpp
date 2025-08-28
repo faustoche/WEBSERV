@@ -4,7 +4,7 @@
 
 c_parser::c_parser(string const file) : c_lexer(file), _error_msg("")
 {
-    _it = c_lexer::_tokens.begin();
+    _current = c_lexer::_tokens.begin();
     // vector<c_server> servers = parse(); // liste des servers si plusieurs
 
     // fonctions qui check si erreur
@@ -25,65 +25,122 @@ s_token c_parser::current_token() const
 {
     if (is_at_end())
         return s_token(TOKEN_EOF, "", 0, 0);
-    return *(this->_it);
+    return *(this->_current);
 }
 
 s_token c_parser::peek_token() const
 {
-    if (this->_it + 1 >= c_lexer::_tokens.end())
+    if (this->_current + 1 >= c_lexer::_tokens.end())
         return s_token(TOKEN_EOF, "", 0, 0);
-    return *(this->_it + 1);
+    return *(this->_current + 1);
 }
 
 void    c_parser::advance_token()
 {
     if (!is_at_end())
-        this->_it++;
+        this->_current++;
 }
 
 bool    c_parser::is_at_end() const
 {
-    return this->_it >= c_lexer::_tokens.end() || this->_it->type == TOKEN_EOF;
+    return this->_current >= c_lexer::_tokens.end() || this->_current->type == TOKEN_EOF;
 }
 
 /*-----------------   check token -------------------*/
 
 void    c_parser::expected_token_type(int expected_type) const
 {
-    if (expected_type != this->_it->type)
-        throw invalid_argument("Error: problem with the formation of configuration file, not expected => " + _it->value); 
+    if (expected_type != this->_current->type)
+    {
+        string error_msg = "Parse error at line " + to_string(_current->line) +
+                          ", column " + to_string(_current->column) +
+                          ": Expected token type " + to_string(expected_type) +
+                          ", but got '" + _current->value + "'";
+        throw invalid_argument(error_msg);
+    }
 }
 
+bool    c_parser::is_token_value(std::string key)
+{
+    if (this->_current->value == key)
+        return true;
+    return false;
+}
 
-/*-----------------------   check values   ----------------------*/
+bool    c_parser::is_token_type(int type)
+{
+    if (this->_current->type == type)
+        return true;
+    return false;
+}
 
-// void                c_parser::check_index_files()
-// {
-//     // fonction qui prend les fichiers dans l'ordre et check si fichier valide
-//     // si premier fichier n existe pas possible quil y ait un second fichier (check de plusieurs valeurs) 
-// }
+/*-----------------------   utils   ----------------------*/
+
+bool                c_parser::is_valid_port(string const & port_str)
+{
+    try
+    {
+        int port = stoi(port_str);
+        return (port > 0 && port <= 65535);
+    }
+    catch (...)
+    {
+        return false ;
+    }
+}
+
+bool                c_parser::is_valid_path(string & const path)
+{
+    // revoir
+    return !path.empty() && (path[0] == '/' || path.find("./") == 0);
+}
+
+bool                c_parser::is_executable_file(const std::string & path)
+{
+    return access(path.c_str(), X_OK) == 0;
+}
 
 /*-------------------   parse directives   ----------------------*/
 
 void                c_parser::parse_index_directive(c_server & server)
 {
-    advance_token(); // skip nom de la directive
+    advance_token(); // skip "index"
+    // Nging permet plusieurs fichiers index
+    vector<string>  index_files;
+    while (is_token_type(TOKEN_VALUE))
+    {
+        index_files.push_back(current_token().value);
+        advance_token;
+    }
+    if (index_files.empty())
+       throw invalid_argument("Error: index directive requires at least one value");
     expected_token_type(TOKEN_VALUE);
-    // check_index_files()
+    // definir les fichiers index dans le serveur
+    try
+    {
+        server.set_index_files(index_files);
+    }
+    catch (const exception & e)
+    {
+        throw invalid_argument("Error in index directive: " + string(e.what()));
+    }
     // recuperer la valeur dans server
-    advance_token();
     expected_token_type(TOKEN_SEMICOLON);
-
+    advance_token(); // skip semicolon
 }
 
 void                c_parser::parse_server_directives(c_server & server)
 {
-    if (this->_it->value == "root")
+    if (is_token_value("index"))
         parse_index_directive(server)
-    // lister toutes les directives
-    // parse listen IP + port
-    // parse index
-    // certaines dir prennent plusieurs values
+    // else if (is_token_value("server_name"))
+    // else if (is_token_value("listen"))
+    // else if (is_token_value("error_page"))
+    // else if (is_token_value("client_max_body_size"))
+    // else
+    //     throw invalid_argument("Unknown server directive: " + current_token().value);
+
+    // /!\ certaines dir prennent plusieurs values
 }
 
 
@@ -92,21 +149,36 @@ void                c_parser::parse_server_directives(c_server & server)
 c_server            c_parser::parse_server_block()
 {
     c_server    server;
+    bool        has_location = false;
 
-    // expected_token_type(TOKEN_BLOC_KEYWORD);
-    advance_token();
+    advance_token(); // skip "server"
     expected_token_type(TOKEN_LBRACE);
-    advance_token();
-    if (this->_it->type == TOKEN_DIRECTIVE_KEYWORD)
-        parse_server_directives(server);
-    /* si bloc location on ne peut plus avoir de directives serveur apres */
-    // else if (this->_it->type == TOKEN_BLOC_KEYWORD)
-    //     parse_server_locations(); // derriere bloc(location) value(chemin) et pas "";""
-    // else if ()
-    // else if ()
-    // else
-    //     throw invalid_argument("Error: problem with the formation of configuration file, not expected => " + _it->value);
+    advance_token(); // skip "lbrace"
+    while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
+    {
+        if (is_token_type(TOKEN_DIRECTIVE_KEYWORD))
+        {
+            // directives server doivent etre avant les blocs location
+            if (has_location)
+                throw invalid_argument("Error: server directive is forbidden after location block"); // + *(_current)->value
+            parse_server_directives(server);
+        }
+        else if (is_token_type(TOKEN_BLOC_KEYWORD) && is_token_value("location"))
+        {
+            // parse_location_block();
+            has_location = true;
+            // c_location = parse_location_block();
+            // server.add_location(location.get_path(), location);
+        }
+        else
+            throw invalid_argument("Unexpected token in server block: " + current_token().value);
+    }
+
     expected_token_type(TOKEN_RBRACE);
+    advance_token();
+
+    // if (!server.is_valid())
+    //     throw invalid_argument("Invalid server configuration: " + server.get_validation_error());
     return server;
 
 }
@@ -120,17 +192,25 @@ vector<c_server>    c_parser::parse_config()
     while (!is_at_end())
     {
         s_token token = current_token();
-        if (token.type == TOKEN_BLOC_KEYWORD && token.value == "server") // parser un par un les block server
+        if (is_token_value("server") && is_token_type(TOKEN_BLOC_KEYWORD)) // parser un par un les block server
         {
             c_server server = parse_server_block();
             servers.push_back(server);
         }
+        else if (is_token_type(TOKEN_EOF))
+        {
+            break;
+        }
         else
         {
-            // set_error_with_context("Unexpected token / syntax:" + token.value)
+            string error_msg = "Unexpected token at line " + to_string(token.line) +
+                                ", column " + to_string(token.column) + ": " + token.value;
+            throw invalid_argument(error_msg);
             break;
         }
     }
+    if (servers.empty())
+        throw invalid_argument("Configuration file must contain at least one server block");
     return servers;
 }
 
@@ -139,15 +219,30 @@ vector<c_server>    c_parser::parse()
 {
     try
     {
-        return parse_config(); //
+        return parse_config();
     }
     catch (std::exception & e)
     {
-        //set_error(e.what())
-        // return std::vector<c_server>
-        // cout << "exception" << endl;
+        _error_msg = e.what();
         return vector<c_server>();
     }
-    
+
+}
+
+/*-----------------   error handling -------------------*/
+
+bool    c_parser::has_error() const
+{
+    return !_error_msg.empty();
+}
+
+string const &  c_parser::get_error() const
+{
+    return _error_msg;
+}
+
+void    c_parser::clear_error()
+{
+    _error_msg.clear();
 }
 

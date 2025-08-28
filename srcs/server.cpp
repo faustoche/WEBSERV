@@ -10,8 +10,12 @@ void	drain_socket(int sockfd)
 	{
 		extra = recv(sockfd, tmp, sizeof(tmp), MSG_DONTWAIT);
 	} while (extra > 0);
-	
+
 }
+
+/*---------------------   CONFIGURATION FILE   ----------------------*/
+
+
 
 // int main(void)
 // {
@@ -55,7 +59,7 @@ void	drain_socket(int sockfd)
 
 // 		socklen_t addrlen = sizeof(socket_address);
 // 		connected_socket_fd = accept(socket_fd, (struct sockaddr *) &socket_address, &addrlen);
-	
+
 // 		if (connected_socket_fd < 0){
 // 			cerr << "Error: Accepting mode - " << errno << endl;
 // 			return (-1);
@@ -70,7 +74,7 @@ void	drain_socket(int sockfd)
 //             char        buffer[BUFFER_SIZE];
 //             int         receivedBytes;
 // 			bool		headers_complete = false;
-            
+
 //             /* Lire jusqu'a la fin des headers (\r\n\r\n)*/
 //             while (!headers_complete && keep_alive)
 //             {
@@ -121,13 +125,13 @@ void	drain_socket(int sockfd)
 // 				my_request.fill_body(body_part.data(), body_part.size());
 // 				total_bytes += body_part.size();
 // 				while (total_bytes < max_body_size)
-// 				{	
+// 				{
 // 					receivedBytes = recv(connected_socket_fd, buffer, sizeof(buffer) - 1, 0);
 // 					total_bytes += receivedBytes;
 //                 	if (receivedBytes <= 0)
 //                 	    break ;
 //                 	my_request.fill_body(buffer, receivedBytes);
-//                		fill(buffer, buffer + sizeof(buffer), '\0');	
+//                		fill(buffer, buffer + sizeof(buffer), '\0');
 // 				}
 // 				if (total_bytes > max_body_size)
 // 				{
@@ -140,7 +144,7 @@ void	drain_socket(int sockfd)
 // 				}
 // 				drain_socket(connected_socket_fd);
 // 				fill(buffer, buffer + sizeof(buffer), '\0');
-// 			}	
+// 			}
 
 // 			if (my_request.get_method() == "POST")
 // 			{
@@ -159,7 +163,7 @@ void	drain_socket(int sockfd)
 // 			if (!keep_alive)
 // 				break;
 // 		}
-// 		close(connected_socket_fd);		
+// 		close(connected_socket_fd);
 // 	}
 // 	close(socket_fd);
 // 	return (0);
