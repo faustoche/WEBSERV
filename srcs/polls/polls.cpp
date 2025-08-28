@@ -21,12 +21,11 @@ void c_server::setup_pollfd()
 		if (client.get_state() == DISCONNECTED)
 			continue;
 
-	}
 		/***** POLLFD LOCAL POUR LE CLIENT *****/
 		struct pollfd client_pollfd;
 		client_pollfd.fd = client_fd; // fd devient le descripteur client
 		client_pollfd.revents = 0;
-	
+
 		/***** SWITCH POUR AJUSTER SELON L'ÉTAT *****/
 		// est-ce que je dois égqlment actualiser revent ou ça se fait automatiquement?
 		switch (client.get_state())
@@ -44,10 +43,39 @@ void c_server::setup_pollfd()
 				continue ;
 		}
 		_poll_fds.push_back(client_pollfd); // on push dans poll fds
+	}
 }
+
+// je check chaque evenement pour voir l'avancer du poll
+// si pas d'erreur et que notre fds est dispo alors on gere l'entree des nouvelles connexions
+// sinon, on agit sur les sockets clients et donc on lit et on ecrit
+	// ensuite on gere la partie deconnexion
 
 
 void c_server::handle_poll_events()
 {
+	// 1. on appelle poll() et on lui met un timeout genre 1 secondes?
+		// numero d'event = poll()
+
+	// si le numero d'event est ibferieur a 0
+		// erreur avec poll
+
+	// si le numero d'event est 0
+		// il se passe rien
+		// peut-etre verifier les timeout de chaque client?
+	
+	// boucle for : on parcours les fd
+		// on fait un pollfds[i]
+
+		// si revents = 0
+			// on continue
+		
+		// si i =0 ca veut dire qu'on est sur le socket serveur de base
+			// si revennts n'est pas null (il y a des evenements) et que POLLIN n'esdt pas null
+				// on fait une nouvelle connexion
+			// si revents n'est pas null et que on recoit une erreur (pollerr poll hup)
+				// gestion d'erreir
+		// else
+			// 
 
 }

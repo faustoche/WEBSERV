@@ -8,7 +8,7 @@ const string &c_response::get_response() const {
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-void	c_response::define_response_content(const c_request &request, c_server &server)
+void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
 	_file_content.clear();

@@ -78,6 +78,7 @@ int main(void)
 	
 	server.create_socket();
 	server.bind_and_listen();
+	//server.set_non_blocking(server.get_socket_fd());
 	
 	struct sockaddr_in socket_address = server.get_socket_addr();
 	int socket_fd = server.get_socket_fd();

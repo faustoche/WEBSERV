@@ -46,6 +46,6 @@ public:
 	const client_state &get_state() const { return (_state); }
 
 	/******* SETTERS ******* */
-	void set_state(client_state new_state) { (_state == new_state); }
-	void set_bytes_written(size_t bytes) { (_bytes_written == bytes); }
+	//void set_state(client_state new_state) { (_state == new_state); }
+	//void set_bytes_written(size_t bytes) { (_bytes_written == bytes); }
 };
