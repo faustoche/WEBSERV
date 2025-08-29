@@ -18,7 +18,8 @@ OBJS_DIR	= obj
 
 WEBSERV		= $(addprefix $(SRCS_DIR)/, parsing_main.cpp\
 										server_config/lexer.cpp\
-										server_config/parser.cpp)
+										server_config/parser.cpp\
+										server_config/location.cpp)
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}
 OBJS		= ${CPP_OBJS}

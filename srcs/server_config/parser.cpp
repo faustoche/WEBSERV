@@ -5,7 +5,7 @@
 c_parser::c_parser(string const file) : c_lexer(file), _error_msg("")
 {
     _current = c_lexer::_tokens.begin();
-    // vector<c_server> servers = parse(); // liste des servers si plusieurs
+    vector<c_server> servers = parse(); // liste des servers si plusieurs
 
     // fonctions qui check si erreur
 
@@ -52,9 +52,9 @@ void    c_parser::expected_token_type(int expected_type) const
 {
     if (expected_type != this->_current->type)
     {
-        string error_msg = "Parse error at line " + to_string(_current->line) +
-                          ", column " + to_string(_current->column) +
-                          ": Expected token type " + to_string(expected_type) +
+        string error_msg = "Parse error at line " + my_to_string(_current->line) +
+                          ", column " + my_to_string(_current->column) +
+                          ": Expected token type " + my_to_string(expected_type) +
                           ", but got '" + _current->value + "'";
         throw invalid_argument(error_msg);
     }
@@ -74,26 +74,37 @@ bool    c_parser::is_token_type(int type)
     return false;
 }
 
+
 /*-----------------------   utils   ----------------------*/
 
-bool                c_parser::is_valid_port(string const & port_str)
+string      my_to_string(int int_str)
 {
-    try
-    {
-        int port = stoi(port_str);
-        return (port > 0 && port <= 65535);
-    }
-    catch (...)
-    {
-        return false ;
-    }
+    ostringstream stream_str;
+    stream_str << int_str;
+    string  str = stream_str.str();
+    return str;
+
 }
 
-bool                c_parser::is_valid_path(string & const path)
-{
-    // revoir
-    return !path.empty() && (path[0] == '/' || path.find("./") == 0);
-}
+
+// bool                c_parser::is_valid_port(string & port_str)
+// {
+//     try
+//     {
+//         int port = stoi(port_str);
+//         return (port > 0 && port <= 65535);
+//     }
+//     catch (...)
+//     {
+//         return false ;
+//     }
+// }
+
+// bool                c_parser::is_valid_path(string & const path)
+// {
+//     // revoir
+//     return !path.empty() && (path[0] == '/' || path.find("./") == 0);
+// }
 
 bool                c_parser::is_executable_file(const std::string & path)
 {
@@ -104,27 +115,36 @@ bool                c_parser::is_executable_file(const std::string & path)
 
 void                c_parser::parse_index_directive(c_server & server)
 {
-    advance_token(); // skip "index"
-    // Nging permet plusieurs fichiers index
+    advance_token(); // skip keyword "index"
+
+    // Ngnix permet plusieurs fichiers index --> il faut prendre le premier qui fonctionne
     vector<string>  index_files;
+    string          valid_file = "";
+
     while (is_token_type(TOKEN_VALUE))
     {
         index_files.push_back(current_token().value);
-        advance_token;
+        advance_token(); // a la fin devrait etre sur token ";"
     }
     if (index_files.empty())
        throw invalid_argument("Error: index directive requires at least one value");
-    expected_token_type(TOKEN_VALUE);
-    // definir les fichiers index dans le serveur
-    try
+    
+    vector<string>::iterator it = index_files.begin();
+    while (it != index_files.end())
     {
-        server.set_index_files(index_files);
+        if (is_executable_file(*it))
+        {
+            cout << "executable file" << endl;
+            valid_file = *it;
+            break ;
+        }
+        cout << "it = " << *it << endl;
+        it++;
     }
-    catch (const exception & e)
-    {
-        throw invalid_argument("Error in index directive: " + string(e.what()));
-    }
-    // recuperer la valeur dans server
+    cout << "file = " << valid_file << endl;
+    if (valid_file.empty())
+        throw invalid_argument("Error in index directive: there is no valid file");
+    server.set_index_file(valid_file);
     expected_token_type(TOKEN_SEMICOLON);
     advance_token(); // skip semicolon
 }
@@ -132,7 +152,10 @@ void                c_parser::parse_index_directive(c_server & server)
 void                c_parser::parse_server_directives(c_server & server)
 {
     if (is_token_value("index"))
-        parse_index_directive(server)
+        parse_index_directive(server);
+    else /* a enlever / reprendre */
+        advance_token();
+    // cout << "parse index directive = " << this->_current->value << endl;
     // else if (is_token_value("server_name"))
     // else if (is_token_value("listen"))
     // else if (is_token_value("error_page"))
@@ -171,7 +194,10 @@ c_server            c_parser::parse_server_block()
             // server.add_location(location.get_path(), location);
         }
         else
+        {
+            cout << "invalid argument" << endl;
             throw invalid_argument("Unexpected token in server block: " + current_token().value);
+        }
     }
 
     expected_token_type(TOKEN_RBRACE);
@@ -194,17 +220,19 @@ vector<c_server>    c_parser::parse_config()
         s_token token = current_token();
         if (is_token_value("server") && is_token_type(TOKEN_BLOC_KEYWORD)) // parser un par un les block server
         {
+            cout << "SERVER_BLOCK " << endl;
             c_server server = parse_server_block();
             servers.push_back(server);
         }
         else if (is_token_type(TOKEN_EOF))
         {
+            cout << "TOKEN_EOF " << endl;
             break;
         }
         else
         {
-            string error_msg = "Unexpected token at line " + to_string(token.line) +
-                                ", column " + to_string(token.column) + ": " + token.value;
+            string error_msg = "Unexpected token at line " + my_to_string(token.line) +
+                                ", column " + my_to_string(token.column) + ": " + token.value;
             throw invalid_argument(error_msg);
             break;
         }
@@ -224,7 +252,8 @@ vector<c_server>    c_parser::parse()
     catch (std::exception & e)
     {
         _error_msg = e.what();
-        return vector<c_server>();
+        cerr << _error_msg << endl;
+        return vector<c_server>(); // revoir
     }
 
 }

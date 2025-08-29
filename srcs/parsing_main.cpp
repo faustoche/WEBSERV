@@ -24,13 +24,13 @@ int main(int argc, char **argv)
     {
         c_parser myparser(argv[1]);
         
-        vector<s_token> my_tok = myparser.get_list_of_token();
-        vector<s_token>::iterator it;
-        for (it = my_tok.begin(); it != my_tok.end(); it++)
-        {
-            cout << "Value = " << (*it).value;
-            cout << " ; Type = " << (*it).type << endl;
-        }
+        // vector<s_token> my_tok = myparser.get_list_of_token();
+        // vector<s_token>::iterator it;
+        // for (it = my_tok.begin(); it != my_tok.end(); it++)
+        // {
+        //     cout << "Value = " << (*it).value;
+        //     cout << " ; Type = " << (*it).type << endl;
+        // }
     }
     return 0;
 }

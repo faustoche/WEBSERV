@@ -40,15 +40,16 @@ private :
             void        parse_server_directives(c_server & server);
             void        parse_index_directive(c_server & server);
 
-            void    expected_token_type(int expected_type) const;
+            void        expected_token_type(int expected_type) const;
             // void    expected_token_value(int expected_type) const;
 
             // utils methods
-            bool    is_token_value(std::string key);
-            bool    is_token_type(int type);
-            bool    is_executable_file(const std::string & path);
-            bool    is_valid_path(string & const path);
-            bool    is_valid_port(string const & port_str);
+            // string      my_to_string(int int_str);
+            bool        is_token_value(std::string key);
+            bool        is_token_type(int type);
+            bool        is_executable_file(const std::string & path);
+            // bool    is_valid_path(string & const path);
+            // bool    is_valid_port(string & port_str);
 
             // error handling
             bool            has_error() const;
@@ -56,6 +57,7 @@ private :
             void            clear_error();
 };
 
+string      my_to_string(int int_str);
 /*
     1) parse -> parse_config -> parse server bloc -> parse server directive
                                                              --> parse listen --> parse root ...

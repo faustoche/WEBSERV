@@ -26,6 +26,8 @@ using	namespace std;
 
 /************ CLASS ************/
 
+class c_location;
+
 class c_server
 {
 private:
@@ -34,15 +36,21 @@ private:
 	// map<int, c_client>		_clients;
 	// vector<struct pollfd>	_poll_fds;
 
-    // Configuration informations
+    // CONFIGURATION FILE
     // int                     _IP;
     // int                     _port;
-    string                  _index;
-    std::map<std::string, c_location> location_map;
+    string                              _index;
+    std::map<std::string, c_location>   location_map;
     // Defaults values ?
     static const int        DEFAULT_PORT = 80;
     static const string DEFAULT_ROOT;
     static const string DEFAULT_INDEX;
+
+    // // Setters
+    void                set_index_file(string & index);
+    // // Validation
+    // bool            is_valid() const;
+    // string          get_validation_error() const;
 
 public:
 	// const int &get_socket_fd() const { return (_socket_fd); }
@@ -58,18 +66,9 @@ public:
 	// void		setup_pollfd(); // mise en place de poll()
 	// void		handle_poll_events(); // gestion de chaque event lié à poll(), conserver le suivi
 
-    // // Configuration information
+    // CONFIGURATION FILE
     // // Getters
-    // int             get_listen() const;
-    // string const &  get_index() const;
-    // // Setters
-    // void            set_listen(int port);
-    // void            set_index(string & index);
-    // // Validation
-    // bool            is_valid() const;
-    // string          get_validation_error() const;
-
-    // AVOIR UN OBJET LOCATION ET FAIRE MAP DE LOCATION POUR BOUCLER DESSUS
+    string const &      get_index_file() const;
 };
 
 /************ FUNCTIONS ************/

@@ -15,7 +15,18 @@ void	drain_socket(int sockfd)
 
 /*---------------------   CONFIGURATION FILE   ----------------------*/
 
+/*-------------------------   setters   -----------------------------*/
+void	c_server::set_index_file(string & index)
+{
+	this->_index = index;
+}
 
+/*-------------------------   setters   -----------------------------*/
+
+string const &	c_server::get_index_file() const
+{
+	return this->_index;
+}
 
 // int main(void)
 // {
