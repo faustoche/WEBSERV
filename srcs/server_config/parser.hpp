@@ -39,6 +39,7 @@ private :
             vector<c_server>    parse_config();
             // block
             c_server    parse_server_block();
+            void        parse_location_block(c_server & server);
             // directives
             void        parse_server_directives(c_server & server);
             void        parse_index_directive(c_server & server);

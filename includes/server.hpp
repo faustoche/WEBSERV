@@ -59,7 +59,8 @@ public:
 
     // CONFIGURATION FILE
     // Setters
-    void                set_index_file(string & index);
+    void                set_index_file(string const & index);
+    void                set_location(string const & path, c_location const & loc);
     // Getters
     string const &      get_index_file() const;
 

@@ -162,6 +162,16 @@ void                c_parser::parse_server_directives(c_server & server)
 
 /*-------------------   parse block ---------------------*/
 
+void                c_parser::parse_location_block(c_server & servre)
+{
+    advance_token(); // skip "location"
+    expected_token_type(TOKEN_VALUE);
+    if (current_token().value[0] != '/')
+        throw invalid_argument("invalid path for the location : " + current_token().value); // completer msg d'erreur -> ajout ligne
+    // parser le path, les differentes directives
+    
+}
+
 c_server            c_parser::parse_server_block()
 {
     c_server    server;
@@ -183,6 +193,7 @@ c_server            c_parser::parse_server_block()
         {
             // parse_location_block();
             has_location = true;
+            // server::_locations
             // c_location = parse_location_block();
             // server.add_location(location.get_path(), location);
         }
