@@ -28,6 +28,13 @@ string const &	c_server::get_index_file() const
 	return this->_index;
 }
 
+
+/*-------------------------   debug   -----------------------------*/
+void	c_server::print_config() const
+{
+	cout << "Index file configuration: " << this->_index << endl;
+}
+
 // int main(void)
 // {
 // 	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);

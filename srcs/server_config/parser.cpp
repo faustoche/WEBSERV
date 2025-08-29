@@ -5,10 +5,6 @@
 c_parser::c_parser(string const file) : c_lexer(file), _error_msg("")
 {
     _current = c_lexer::_tokens.begin();
-    vector<c_server> servers = parse(); // liste des servers si plusieurs
-
-    // fonctions qui check si erreur
-
 }
 
 /*-----------------  DESTRUCTOR -------------------*/
@@ -86,6 +82,10 @@ string      my_to_string(int int_str)
 
 }
 
+bool                c_parser::is_executable_file(const std::string & path)
+{
+    return access(path.c_str(), X_OK) == 0;
+}
 
 // bool                c_parser::is_valid_port(string & port_str)
 // {
@@ -105,11 +105,6 @@ string      my_to_string(int int_str)
 //     // revoir
 //     return !path.empty() && (path[0] == '/' || path.find("./") == 0);
 // }
-
-bool                c_parser::is_executable_file(const std::string & path)
-{
-    return access(path.c_str(), X_OK) == 0;
-}
 
 /*-------------------   parse directives   ----------------------*/
 
@@ -134,14 +129,12 @@ void                c_parser::parse_index_directive(c_server & server)
     {
         if (is_executable_file(*it))
         {
-            cout << "executable file" << endl;
             valid_file = *it;
             break ;
         }
         cout << "it = " << *it << endl;
         it++;
     }
-    cout << "file = " << valid_file << endl;
     if (valid_file.empty())
         throw invalid_argument("Error in index directive: there is no valid file");
     server.set_index_file(valid_file);
@@ -220,7 +213,7 @@ vector<c_server>    c_parser::parse_config()
         s_token token = current_token();
         if (is_token_value("server") && is_token_type(TOKEN_BLOC_KEYWORD)) // parser un par un les block server
         {
-            cout << "SERVER_BLOCK " << endl;
+            // cout << "SERVER_BLOCK " << endl;
             c_server server = parse_server_block();
             servers.push_back(server);
         }

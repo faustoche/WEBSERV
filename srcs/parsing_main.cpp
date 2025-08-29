@@ -1,36 +1,31 @@
-#include "parser.hpp"
-#include "lexer.hpp"
-#include "parser.hpp"
+#include "werbserv_config.hpp"
 
 /* il s'agit dun main de test exclusivement pour le parsing du .conf */
 
-// int main()
-// {
-//     c_lexer mylexer("server_config_file/default.conf"); // adapter la maniere de passer le chemin
-    
-//     vector<s_token> my_tok = mylexer.get_list_of_token();
-//     vector<s_token>::iterator it;
-//     for (it = my_tok.begin(); it != my_tok.end(); it++)
-//     {
-//         cout << "Value = " << (*it).value;
-//         cout << " ; Type = " << (*it).type << endl;
-//     }
-//     return 0;
-// }
-
 int main(int argc, char **argv)
 {
-    if (argc == 2)
+    try
     {
-        c_parser myparser(argv[1]);
-        
-        // vector<s_token> my_tok = myparser.get_list_of_token();
-        // vector<s_token>::iterator it;
-        // for (it = my_tok.begin(); it != my_tok.end(); it++)
-        // {
-        //     cout << "Value = " << (*it).value;
-        //     cout << " ; Type = " << (*it).type << endl;
-        // }
+        if (argc == 2)
+        {
+            c_webserv_config webserv(argv[1]);
+
+            if (!webserv.load_configuration())
+                throw invalid_argument("Invalid server configuration");
+            // vector<c_server> & servers = webserv.get_servers();
+            webserv.print_configurations();
+            // vector<s_token> my_tok = myparser.get_list_of_token();
+            // vector<s_token>::iterator it;
+            // for (it = my_tok.begin(); it != my_tok.end(); it++)
+            // {
+            //     cout << "Value = " << (*it).value;
+            //     cout << " ; Type = " << (*it).type << endl;
+            // }
+        }
+    }
+    catch (exception & e)
+    {
+        cerr << e.what() << endl; // a revoir 
     }
     return 0;
 }

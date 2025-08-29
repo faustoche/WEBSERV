@@ -11,6 +11,7 @@
 
 using namespace std;
 
+
 /*-----------  CLASS -----------*/
 
 /* utilise les tokens du lexer pour construire les objects c_server */
@@ -19,6 +20,9 @@ class  c_parser : public c_lexer {
 public :
             c_parser(string const file);
             ~c_parser();
+
+            // principal method
+            vector<c_server>    parse();
 
             // tokens
             s_token current_token() const;
@@ -30,8 +34,7 @@ private :
             vector<s_token>::iterator   _current;
             string                      _error_msg;
 
-            // principal method
-            vector<c_server>    parse();
+            
             // loop
             vector<c_server>    parse_config();
             // block

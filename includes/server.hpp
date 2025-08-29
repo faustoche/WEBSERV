@@ -17,7 +17,7 @@
 // #include "clients.hpp"
 #include "request.hpp"
 #include "location.hpp"
-// #include "colors.hpp"
+#include "colors.hpp"
 
 /************ DEFINE ************/
 
@@ -37,20 +37,11 @@ private:
 	// vector<struct pollfd>	_poll_fds;
 
     // CONFIGURATION FILE
-    // int                     _IP;
-    // int                     _port;
-    string                              _index;
-    std::map<std::string, c_location>   location_map;
-    // Defaults values ?
-    static const int        DEFAULT_PORT = 80;
-    static const string DEFAULT_ROOT;
-    static const string DEFAULT_INDEX;
-
-    // // Setters
-    void                set_index_file(string & index);
-    // // Validation
-    // bool            is_valid() const;
-    // string          get_validation_error() const;
+    // int                                 _ip;
+    // int                                 _port;
+    // int                                 _root; // root propre au serveur a definir en dur
+    string                              _index; // recuperation du premier fichier valide dans le parsing (possible plusieurs fichiers) 
+    std::map<std::string, c_location>   _location_map;
 
 public:
 	// const int &get_socket_fd() const { return (_socket_fd); }
@@ -67,8 +58,13 @@ public:
 	// void		handle_poll_events(); // gestion de chaque event lié à poll(), conserver le suivi
 
     // CONFIGURATION FILE
-    // // Getters
+    // Setters
+    void                set_index_file(string & index);
+    // Getters
     string const &      get_index_file() const;
+
+    // Debug
+    void    print_config() const;
 };
 
 /************ FUNCTIONS ************/
