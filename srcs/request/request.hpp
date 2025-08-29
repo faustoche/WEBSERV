@@ -44,28 +44,30 @@ class c_request
         int     parse_request(const string& str);
         int     parse_start_line(string& str);
         int     parse_headers(string& str);
-        int     parse_body(char *cursor, char *end, int connected_socket_fd);
+        void    fill_body_with_bytes(const char *buffer, size_t len);
+        void    fill_body_with_chunks(string &accumulator);
+
         void    check_required_headers();
+        void     check_port();
         bool    is_valid_header_value(string& key, const string& value);
         bool    is_valid_header_name(const string& key_name);
-        string  ft_trim(const string& str);
-        int     check_port();
-        void    fill_body_with_bytes(const char *buffer, size_t len);
-        int     fill_body_with_chunks(const char *buffer);
-        void    set_status_code(int code);
-        void    print_full_request();
-        size_t  parse_chunk_size(const char *cursor, const char *end, string request);
 
-        const string &get_method() const { return _method; }
-        const string &get_target() const { return _target; }
-        const string &get_version() const { return _version; }
-        const int &get_status_code() const { return _status_code; }
-        const int &get_port() const { return _port; }
-        bool get_has_body() {return _has_body; }
-        const size_t &get_content_lentgh() const { return _content_length; }
+        string  ft_trim(const string& str);
+        void    print_full_request();
+        void    init_request();
+
+        const string    &get_method() const { return _method; }
+        const string    &get_target() const { return _target; }
+        const string    &get_version() const { return _version; }
+        const int       &get_status_code() const { return _status_code; }
+        const int       &get_port() const { return _port; }
+        bool            get_has_body() {return _has_body; }
+        const size_t    &get_content_lentgh() const { return _content_length; }
+        const string    &get_header_value(const string& key) const;
+        const string    &get_body() const { return _body; }
+        void            set_status_code(int code);
+
         const map<string, string> &get_headers() const { return _headers; }
-        const string &get_header_value(const string& key) const;
-        const string &get_body() const { return _body; }
 
     private:
         string              _method;
@@ -73,8 +75,16 @@ class c_request
         string              _version;
         string              _body;
         map<string, string> _headers;
+
         int                 _status_code;
         int                 _port;
-        int                 _has_body;
+    
+        bool                _request_fully_parsed;
+        bool                _error;
+        bool                _has_body;
+
+        int                 _chunk_line_count;
+        string              _chunk_accumulator;
         size_t              _content_length;
+        size_t              _expected_chunk_size;
 };
