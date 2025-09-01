@@ -47,10 +47,9 @@ public:
 	const int &get_socket_fd() const { return (_socket_fd); }
 	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); }
 	
-	void create_socket();
-	void bind_and_listen();
-	void set_non_blocking(int fd);
-
+	void 		create_socket();
+	void 		bind_and_listen();
+	void 		set_non_blocking(int fd);
 	void		add_client(int client_fd);
 	void		remove_client(int client_fd);
 	c_client	*find_client(int client_fd);
@@ -58,7 +57,8 @@ public:
 	void		handle_poll_events();
 	void		handle_new_connection();
 	void		handle_client_read(int client_fd);
-	void		handle_client_write();
+	void		handle_client_write(int client_fd);
+	void		process_client_request(int client_fd);
 
 	    // CONFIGURATION FILE
     // Setters

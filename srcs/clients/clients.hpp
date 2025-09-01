@@ -19,8 +19,6 @@ enum client_state {
 
 /************ CLASS ************/
 
-/* On conserve l'heure de connection du derneir client pour pouvoir définir un timeout ou identifier une inactivité*/
-
 class c_client
 {
 private:
@@ -44,8 +42,9 @@ public:
 	const string &get_write_buffer() const { return (_write_buffer); }
 	const size_t &get_bytes_written() const { return (_bytes_written); }
 	const client_state &get_state() const { return (_state); }
-
+	
 	/******* SETTERS ******* */
-	//void set_state(client_state new_state) { (_state == new_state); }
-	//void set_bytes_written(size_t bytes) { (_bytes_written == bytes); }
+	void append_to_read_buffer(const string &data) { _read_buffer += data; }
+	void set_state(client_state new_state) { (_state == new_state); }
+	void set_bytes_written(size_t bytes) { (_bytes_written == bytes); }
 };
