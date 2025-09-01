@@ -28,13 +28,12 @@ using	namespace std;
 
 class c_location;
 
-<<<<<<< HEAD
 class c_server
 {
 private:
 	int						_socket_fd;
 	struct sockaddr_in		_socket_address;
-	map<int, c_client>		_clients;
+	//map<int, c_client>		_clients;
 	vector<struct pollfd>	_poll_fds;
 
 	    // CONFIGURATION FILE
@@ -54,7 +53,7 @@ public:
 
 	void		add_client(int client_fd);
 	void		remove_client(int client_fd);
-	c_client	*find_client(int client_fd);
+	//c_client	*find_client(int client_fd);
 	void		setup_pollfd();
 	void		handle_poll_events();
 	void		handle_new_connection();

@@ -24,19 +24,7 @@ using namespace std;
 
 #define MAX_BODY_SIZE 1048576
 
-<<<<<<< HEAD
-enum HostType 
-{
-    INVALID,
-    HOSTNAME,
-    IPV4,
-    IPV6
-};
-
-/*-----------  CLASS -----------*/
-=======
 /************ CLASS ************/
->>>>>>> faustoche
 
 class c_request
 {
