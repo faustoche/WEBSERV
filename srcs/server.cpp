@@ -21,10 +21,7 @@ void	c_server::set_location(string const & path, c_location const & loc)
 
 /*-------------------------   setters   -----------------------------*/
 
-string const &	c_server::get_index_file() const
-{
-	return this->_index;
-}
+
 
 
 /*-------------------------   debug   -----------------------------*/

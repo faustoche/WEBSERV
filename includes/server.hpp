@@ -36,7 +36,7 @@ private:
 	//map<int, c_client>		_clients;
 	vector<struct pollfd>	_poll_fds;
 
-	    // CONFIGURATION FILE
+	// CONFIGURATION FILE (completer)
     // int                                 _ip;
     // int                                 _port;
     // int                                 _root; // root propre au serveur a definir en dur
@@ -60,12 +60,12 @@ public:
 	void		handle_client_read();
 	void		handle_client_write();
 
-	    // CONFIGURATION FILE
+	// CONFIGURATION FILE
     // Setters
     void                set_index_file(string const & index);
     void                set_location(string const & path, c_location const & loc);
     // Getters
-    string const &      get_index_file() const;
+    string const &      get_index_file() const { return (_index); };
 
     // Debug
     void    print_config() const;
