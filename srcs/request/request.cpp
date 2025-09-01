@@ -31,7 +31,7 @@ int	c_request::read_request(int socket_fd)
 		{
 			if (receivedBytes == 0) 
 			{
-				cout << "(Request) no data received, client closed connection" << endl;
+				cout << "(Request)  received, client closed connection" << endl;
 				this->_error = true;
 				return (400);
 			} 
@@ -54,93 +54,9 @@ int	c_request::read_request(int socket_fd)
 	this->parse_request(request);
 
 	/* -----Lire le body -----*/
-	size_t 	body_start = request.find("\r\n\r\n") + 4;
-	string 	body_part = request.substr(body_start);
-
-	/* ----- 1. Cas Content-Length ----- */
-	if (this->_has_body && this->get_content_lentgh())
-	{
-		size_t 	max_body_size = this->_content_length;
-		size_t	total_bytes = 0;
-
-		this->fill_body_with_bytes(body_part.data(), body_part.size());
-		total_bytes += body_part.size();
-		while (total_bytes < max_body_size)
-		{	
-			fill(buffer, buffer + sizeof(buffer), '\0');
-			receivedBytes = recv(socket_fd, buffer, sizeof(buffer) -1, 0);
-			
-    		if (receivedBytes == 0)
-			{
-				// Connexion fermee avant d'avoir tout recu
-				cerr << "(Request) Error: Incomplete body" << endl;
-				this->_error = true;
-    		    return (400);
-			}
-			if (receivedBytes < 0)
-			{
-				// Reessayer en cas d'erreur reseau
-				if (errno == EAGAIN || errno == EWOULDBLOCK)
-					continue ;
-				this->_error = true;
-				return (500);
-			}
-
-			buffer[receivedBytes] = '\0';
-			total_bytes += receivedBytes;
-			if (total_bytes > max_body_size)
-			{
-				cerr << "(Request) Error: actual body size (" << total_bytes 
-					<< ") excess announced size (" << max_body_size << ")" << endl;
-				this->_error = true;
-				return (413);
-			}
-    		this->fill_body_with_bytes(buffer, receivedBytes);
-			if (total_bytes == max_body_size)
-				break;
-		}
-		fill(buffer, buffer + sizeof(buffer), '\0');
-	}
-
-	/* ----- 2. Cas chunked ----- */
-	if (this->_has_body && this->get_header_value("Transfer-Encoding") == "chunked")
-	{
-		if (!body_part.empty())
-			this->fill_body_with_chunks(body_part);
-
-		while (!this->_request_fully_parsed && !this->_error)
-		{
-			fill(buffer, buffer + sizeof(buffer), '\0');
-			receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
-			if (string(buffer) == "\0\r\n\r\n")
-				break;
-        	if (receivedBytes <= 0) 
-			{
-				if (receivedBytes == 0) 
-				{
-					cout << "Client closed connection" << endl;
-					this->_error = true;
-					return (400);
-				} 
-				else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-				{
-					cout << "Error: Timeout - no data received" << endl;
-					this->_error = true;
-					return (408);
-				} 
-				else 
-				{
-					cerr << "Error: message not received - " << errno << endl;
-					this->_error = true;
-					return (500);
-				}
-			}
-			buffer[receivedBytes] = '\0';
-			this->_chunk_accumulator.append(buffer, receivedBytes);
-			this->fill_body_with_chunks(this->_chunk_accumulator);
-		}
-	}
-	else
+	this->determine_body_reading_strategy(socket_fd, buffer, request);
+	
+	if (!this->_error)
 		this->_request_fully_parsed = true;
 	return (this->_status_code);
 }
@@ -300,14 +216,13 @@ void c_request::fill_body_with_chunks(string &accumulator)
         if (this->_chunk_line_count % 2 == 1)
         {
             // On lit la taille du chunk
-            cout << "Lecture taille chunk: " << tmp << endl;
             this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
             cout << "Taille en bytes: " << this->_expected_chunk_size << endl;
             
             // Si taille = 0, c'est le chunk final
             if (this->_expected_chunk_size == 0)
             {
-                cout << "*** Chunk final détecté - Body complet ***" << endl;
+                cout << "*** Chunk final détecté - Body complet ***\n" << endl;
                 this->_request_fully_parsed = true;
 				accumulator.clear();
                 return;
@@ -337,6 +252,113 @@ void c_request::fill_body_with_chunks(string &accumulator)
             this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size);
         }
     }
+}
+
+
+void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string request)
+{
+	size_t 	body_start = request.find("\r\n\r\n") + 4;
+	string 	body_part = request.substr(body_start);
+	int		receivedBytes;
+
+	if (!body_part.empty())
+		this->fill_body_with_chunks(body_part);
+	while (!this->_request_fully_parsed && !this->_error)
+	{
+		fill(buffer, buffer + sizeof(buffer), '\0');
+		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
+		if (string(buffer) == "\0\r\n\r\n")
+			break;
+    	if (receivedBytes <= 0) 
+		{
+			if (receivedBytes == 0) 
+			{
+				cout << "Client closed connection" << endl;
+				this->_error = true;
+				this->_status_code = 400;
+			} 
+			else if (errno == EAGAIN || errno == EWOULDBLOCK) 
+			{
+				cout << "Error: Timeout - no data received" << endl;
+				this->_error = true;
+				this->_status_code = 408;
+			} 
+			else 
+			{
+				cerr << "Error: message not received - " << errno << endl;
+				this->_error = true;
+				this->_status_code = 500;
+			}
+		}
+		buffer[receivedBytes] = '\0';
+		this->_chunk_accumulator.append(buffer, receivedBytes);
+		this->fill_body_with_chunks(this->_chunk_accumulator);
+	}
+}
+
+void	c_request::read_body_with_length(int socket_fd, char* buffer, string request)
+{
+	size_t 	body_start = request.find("\r\n\r\n") + 4;
+	string 	body_part = request.substr(body_start);
+
+	size_t 	max_body_size = this->_content_length;
+	int		receivedBytes;
+	size_t	total_bytes = 0;
+
+	if (!body_part.empty())
+		this->fill_body_with_bytes(body_part.data(), body_part.size());
+
+	total_bytes += body_part.size();
+	while (total_bytes < max_body_size)
+	{	
+		fill(buffer, buffer + sizeof(buffer), '\0');
+		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) -1, 0);
+		
+    	if (receivedBytes == 0)
+		{
+			// Connexion fermee avant d'avoir tout recu
+			cerr << "(Request) Error: Incomplete body" << endl;
+			this->_error = true;
+    	    this->_status_code = 400;
+		}
+		if (receivedBytes < 0)
+		{
+			// Reessayer en cas d'erreur reseau
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				continue ;
+			this->_error = true;
+			this->_status_code = 500;
+		}
+		buffer[receivedBytes] = '\0';
+		total_bytes += receivedBytes;
+		if (total_bytes > max_body_size)
+		{
+			cerr << "(Request) Error: actual body size (" << total_bytes 
+				<< ") excess announced size (" << max_body_size << ")" << endl;
+			this->_error = true;
+			this->_status_code = 413;
+		}
+    	this->fill_body_with_bytes(buffer, receivedBytes);
+		if (total_bytes == max_body_size)
+			break;
+	}
+	fill(buffer, buffer + sizeof(buffer), '\0');
+}
+
+
+void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, string request)
+{
+	if (this->_has_body)
+	{
+		if (this->get_content_length())
+		{
+			this->read_body_with_length(socket_fd, buffer, request);
+		}
+		else
+			this->read_body_with_chunks(socket_fd, buffer, request);
+	}
+	else
+		this->_request_fully_parsed = true;
 }
 
 /************ SETTERS & GETTERS ************/

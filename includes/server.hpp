@@ -21,7 +21,7 @@
 
 /************ DEFINE ************/
 
-#define	BUFFER_SIZE 10
+#define	BUFFER_SIZE 4096
 using	namespace std;
 
 /************ CLASS ************/
@@ -41,7 +41,7 @@ private:
     // int                                 _port;
     // int                                 _root; // root propre au serveur a definir en dur
     string                              _index; // recuperation du premier fichier valide dans le parsing (possible plusieurs fichiers) 
-    std::map<std::string, c_location>   _location_map;
+    std::map<std::string, c_location>   _location_map; // WARNING constructeur copy pour c_location
 	
 public:
 	const int &get_socket_fd() const { return (_socket_fd); }

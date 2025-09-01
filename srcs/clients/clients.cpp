@@ -30,6 +30,8 @@
 // 	_clients.erase(client_fd);
 // }
 
+
+// WARNING : constructeur copy pour c_clients
 // c_client	*c_server::find_client(int client_fd)
 // {
 // 	map<int, c_client>::iterator it = _clients.find(client_fd);

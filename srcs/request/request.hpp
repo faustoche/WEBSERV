@@ -36,11 +36,14 @@ class c_request
         int     parse_request(const string& str);
         int     parse_start_line(string& str);
         int     parse_headers(string& str);
+        void    determine_body_reading_strategy(int socket_fd, char* buffer, string request);
+        void    read_body_with_length(int socket_fd, char* buffer, string request);
+        void    read_body_with_chunks(int socket_fd, char* buffer, string request);
         void    fill_body_with_bytes(const char *buffer, size_t len);
         void    fill_body_with_chunks(string &accumulator);
 
         void    check_required_headers();
-        void     check_port();
+        void    check_port();
         bool    is_valid_header_value(string& key, const string& value);
         bool    is_valid_header_name(const string& key_name);
 
@@ -54,7 +57,7 @@ class c_request
         const int       &get_status_code() const { return _status_code; }
         const int       &get_port() const { return _port; }
         bool            get_has_body() {return _has_body; }
-        const size_t    &get_content_lentgh() const { return _content_length; }
+        const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;
         const string    &get_body() const { return _body; }
         void            set_status_code(int code);
