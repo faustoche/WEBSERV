@@ -44,8 +44,11 @@ public:
 	void		add_client(int client_fd);
 	void		remove_client(int client_fd);
 	c_client	*find_client(int client_fd);
-	void		setup_pollfd(); // mise en place de poll()
-	void		handle_poll_events(); // gestion de chaque event lié à poll(), conserver le suivi 
+	void		setup_pollfd();
+	void		handle_poll_events();
+	void		handle_new_connection();
+	void		handle_client_read();
+	void		handle_client_write();
 };
 
 /************ FUNCTIONS ************/

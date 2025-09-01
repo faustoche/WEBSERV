@@ -54,28 +54,96 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
-	// 1. on appelle poll() et on lui met un timeout genre 1 secondes?
-		// numero d'event = poll()
+	// timeout de 1000 millisecondes = 1 seconde pour le moment, à tester
+	// va retourner le nombre d'evenements (POLLIN POLLOUT etc) dans un poll()
+	/**** VÉRIFICATION DES ÉVÉNEMENTS *****/
+	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 1000);
+	if (num_events < 0) // nb d'evenemtn inferieur = erreur
+	{
+		cerr << "Error: Poll() failed\n"; 
+		return ;
+	}
+	if (num_events == 0) // aucun evenement donc rien ne se passe
+	{
+		return ;
+		// gestion des timeouts client
+	}
 
-	// si le numero d'event est ibferieur a 0
-		// erreur avec poll
+	/**** BOUCLE À TRAVERS LES FDS *****/
+	for (size_t i = 0; i < _poll_fds.size(); i++) // on boucle a travers tous les fd pour le reste
+	{
+		struct pollfd &pfd = _poll_fds[i];
+		if (pfd.revents == 0)
+			continue ;
+		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
+		if (i == 0)
+		{
+			if (pfd.revents && POLLIN)
+			{
+				handle_new_connection();
+				return ;
+			}
+			if (pfd.revents && (POLLERR || POLLHUP || POLLNVAL))
+			{
+				cerr << "Error: Socket server\n";
+				// gestion d'erreur du serveur, fermeture etc
+			}
+		}
+		else
+		{
+			/**** SINON GESTION CÔTÉ SERVEURS CLIENTS *****/
+			int client_fd = pfd.fd;
+			if (pfd.revents && POLLIN)
+			{
+				return ;
+				// gestion de la lecture client
+			}
+			else if (pfd.revents && POLLOUT)
+			{
+				return ;
+				// gestion écriture client
+			}
+			else if (pfd.revents && (POLLERR || POLLHUP || POLLNVAL))
+			{
+				return ;
+				// gestion de la déconnexion du (client_fd)
+			}
 
-	// si le numero d'event est 0
-		// il se passe rien
-		// peut-etre verifier les timeout de chaque client?
-	
-	// boucle for : on parcours les fd
-		// on fait un pollfds[i]
+		}
+	}
+}
 
-		// si revents = 0
-			// on continue
-		
-		// si i =0 ca veut dire qu'on est sur le socket serveur de base
-			// si revennts n'est pas null (il y a des evenements) et que POLLIN n'esdt pas null
-				// on fait une nouvelle connexion
-			// si revents n'est pas null et que on recoit une erreur (pollerr poll hup)
-				// gestion d'erreir
-		// else
-			// 
+void	c_server::handle_new_connection()
+{
+	// accepter toutes les connexions en attente
+	while (true)
+	{
+		socklen_t addrlen = sizeof(_socket_address);
+		int client_fd = accept(_socket_fd, (struct sockaddr*)&_socket_address, &addrlen);
+		if (client_fd < 0)
+		{
+			// ressource temporairement unavailable
+			if (errno == EAGAIN || errno == EWOULDBLOCK) // aucune connexion en attente 
+				break ;
+			else
+			{
+				cerr << "Error: Accept()\n";
+				return ;
+			}
+		}
+		// configuration des nouveaux clients
+		set_non_blocking(client_fd);
+		add_client(client_fd);
+		cout << "Nouvelle connexion acceptée : " << client_fd << endl;
+	}
+}
+
+void	c_server::handle_client_read()
+{
+
+}
+
+void	c_server::handle_client_write()
+{
 
 }
