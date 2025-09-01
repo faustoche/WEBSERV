@@ -106,7 +106,23 @@ bool                c_parser::is_executable_file(const std::string & path)
 //     return !path.empty() && (path[0] == '/' || path.find("./") == 0);
 // }
 
-/*-------------------   parse directives   ----------------------*/
+
+
+/*----------------------------   LOCATION   -----------------------------*/
+
+void                c_parser::parse_location_block(c_server & server)
+{
+    (void)server;
+    advance_token(); // skip "location"
+    expected_token_type(TOKEN_VALUE);
+    if (current_token().value[0] != '/')
+        throw invalid_argument("invalid path for the location : " + current_token().value); // completer msg d'erreur -> ajout ligne
+    // parser le path, les differentes directives  
+}
+
+
+
+/*-------------------   parse server directives   ----------------------*/
 
 void                c_parser::parse_index_directive(c_server & server)
 {
@@ -160,17 +176,7 @@ void                c_parser::parse_server_directives(c_server & server)
 }
 
 
-/*-------------------   parse block ---------------------*/
-
-void                c_parser::parse_location_block(c_server & servre)
-{
-    advance_token(); // skip "location"
-    expected_token_type(TOKEN_VALUE);
-    if (current_token().value[0] != '/')
-        throw invalid_argument("invalid path for the location : " + current_token().value); // completer msg d'erreur -> ajout ligne
-    // parser le path, les differentes directives
-    
-}
+/*-------------------   parse server block ---------------------*/
 
 c_server            c_parser::parse_server_block()
 {
@@ -182,6 +188,7 @@ c_server            c_parser::parse_server_block()
     advance_token(); // skip "lbrace"
     while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
     {
+
         if (is_token_type(TOKEN_DIRECTIVE_KEYWORD))
         {
             // directives server doivent etre avant les blocs location
@@ -189,14 +196,16 @@ c_server            c_parser::parse_server_block()
                 throw invalid_argument("Error: server directive is forbidden after location block"); // + *(_current)->value
             parse_server_directives(server);
         }
-        else if (is_token_type(TOKEN_BLOC_KEYWORD) && is_token_value("location"))
-        {
-            // parse_location_block();
-            has_location = true;
-            // server::_locations
-            // c_location = parse_location_block();
-            // server.add_location(location.get_path(), location);
-        }
+        // else if (is_token_type(TOKEN_BLOC_KEYWORD) && is_token_value("location"))
+        // {
+        //     // parse_location_block();
+        //     has_location = true;
+        //     // server::_locations
+        //     // c_location = parse_location_block();
+        //     // server.add_location(location.get_path(), location);
+            
+        //     // cout << "ICI" << endl;
+        // }
         else
         {
             cout << "invalid argument" << endl;
