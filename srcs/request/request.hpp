@@ -1,6 +1,6 @@
 #pragma once
 
-/*-----------  INCLUDES -----------*/
+/************ INCLUDES ************/
 
 #include <iostream>
 #include <map>
@@ -24,6 +24,7 @@ using namespace std;
 
 #define MAX_BODY_SIZE 1048576
 
+<<<<<<< HEAD
 enum HostType 
 {
     INVALID,
@@ -33,6 +34,9 @@ enum HostType
 };
 
 /*-----------  CLASS -----------*/
+=======
+/************ CLASS ************/
+>>>>>>> faustoche
 
 class c_request
 {

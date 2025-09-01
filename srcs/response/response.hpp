@@ -1,20 +1,22 @@
 #pragma once
 
-/*-----------  INCLUDES -----------*/
+/************ INCLUDES ************/
 
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <iostream>
 #include <iterator>
+#include "server.hpp"
+
+/************ DEFINE ************/
 
 using namespace std;
 
-#include "server.hpp"
-
-/*-----------  CLASS -----------*/
+/************ CLASS ************/
 
 class c_request;
+class c_server;
 
 class c_response
 {
@@ -24,11 +26,11 @@ private:
 
 public:
 	void define_response_content(const c_request &request);
+	//void define_response_content(const c_request &request, c_server &server);
 	const string &get_response() const;
 	const string &get_file_content() const { return (_file_content); }
 
 private:
-	/* Méthodes privées pour la construction des réponses*/
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
 	void	build_error_response(int error_code, const string version, const c_request &request);
 	string	load_file_content(const string &file_path);

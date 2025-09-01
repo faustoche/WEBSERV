@@ -1,20 +1,26 @@
 #include "response.hpp"
 
+/************ GETTERS ************/
+
 const string &c_response::get_response() const {
 	return (_response);
 }
+
+/************ FILE CONTENT MANAGEMENT ************/
 
 void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
 	_file_content.clear();
 	
+	/***** RÉCUPÉRATIONS *****/
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
+	/***** VÉRIFICATIONS *****/
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		build_error_response(405, version, request);
@@ -30,6 +36,13 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
+
+	// 1. Vérifier si on trouve une location qui matche -> fonction find_location()
+	// 2. Est-ce que la méthode est autorisée pour cette location spécifique?
+	// 3. Est-ce qu'on a redéfini une redirection? Si oui -> gérer cette redirection
+
+	/***** CONSTRUCTION DU CHEMIN DU FICHIER - À CHANGER POUR AJOUTER LA LOCATIONS *****/
+	
 	string file_path;
 	if (target == "/")
 		file_path = "www/index.html";
@@ -38,6 +51,8 @@ void	c_response::define_response_content(const c_request &request)
 	else
 		file_path = "www/" + target;
 
+
+	/***** CHARGER LE CONTENU DU FICHIER *****/
 	_file_content = load_file_content(file_path);
 
 	if (_file_content.empty())
@@ -86,6 +101,8 @@ string c_response::get_content_type(const string &file_path)
 	else
 		return ("text/plain"); 
 }
+
+/************ RESPONSES ************/
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
@@ -159,6 +176,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 	try {
 		connection = request.get_header_value("Connection");
 	} catch (...) {
+		cerr << "Error: No Header: Connection is kept alive by default" << endl;
 		connection = "keep-alive";
 	}
 	_response += "Connection: " + connection + "\r\n";

@@ -10,3 +10,10 @@ obj/
 
 # Generated colors header
 includes/colors.hpp
+<<<<<<< HEAD
+=======
+
+# VS code + DS Store files
+*.vscode
+*.DS_Store
+>>>>>>> faustoche
