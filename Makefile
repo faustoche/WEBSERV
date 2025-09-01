@@ -8,7 +8,7 @@ NAME = webserv
 #                			     DIRECTORIES                               #
 # ************************************************************************ #
 
-INCLUDES	= includes -I./srcs/response -I./srcs/request -I./srcs/clients
+INCLUDES	= includes -I./srcs/response -I./srcs/request -I./srcs/clients -I./srcs/server_config
 SRCS_DIR	= srcs
 OBJS_DIR	= obj
 
@@ -16,18 +16,19 @@ OBJS_DIR	= obj
 #                			 SRCS && OBJECTS FILES                         #
 # ************************************************************************ #
 
-<<<<<<< HEAD
 WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp \
 										response/response.cpp \
 										request/request.cpp \
 										request/utils.cpp \
-=======
-WEBSERV		= $(addprefix $(SRCS_DIR)/, server.cpp\
 										response/response.cpp\
 										request/request.cpp\
 										clients/clients.cpp\
->>>>>>> faustoche
-										utils/utils.cpp)
+										utils/utils.cpp\
+										parsing_main.cpp\
+										server_config/lexer.cpp\
+										server_config/parser.cpp\
+										server_config/location.cpp\
+										server_config/webserv_config.cpp)
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}
 OBJS		= ${CPP_OBJS}

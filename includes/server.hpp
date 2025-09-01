@@ -16,6 +16,7 @@
 #include "response.hpp"
 #include "clients.hpp"
 #include "request.hpp"
+#include "location.hpp"
 #include "colors.hpp"
 
 /************ DEFINE ************/
@@ -25,6 +26,9 @@ using	namespace std;
 
 /************ CLASS ************/
 
+class c_location;
+
+<<<<<<< HEAD
 class c_server
 {
 private:
@@ -32,6 +36,13 @@ private:
 	struct sockaddr_in		_socket_address;
 	map<int, c_client>		_clients;
 	vector<struct pollfd>	_poll_fds;
+
+	    // CONFIGURATION FILE
+    // int                                 _ip;
+    // int                                 _port;
+    // int                                 _root; // root propre au serveur a definir en dur
+    string                              _index; // recuperation du premier fichier valide dans le parsing (possible plusieurs fichiers) 
+    std::map<std::string, c_location>   _location_map;
 	
 public:
 	const int &get_socket_fd() const { return (_socket_fd); }
@@ -49,6 +60,16 @@ public:
 	void		handle_new_connection();
 	void		handle_client_read();
 	void		handle_client_write();
+
+	    // CONFIGURATION FILE
+    // Setters
+    void                set_index_file(string const & index);
+    void                set_location(string const & path, c_location const & loc);
+    // Getters
+    string const &      get_index_file() const;
+
+    // Debug
+    void    print_config() const;
 };
 
 /************ FUNCTIONS ************/
