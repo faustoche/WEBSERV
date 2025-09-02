@@ -30,6 +30,7 @@ class c_request
 {
     public:
         c_request();
+        c_request(char* ip_str);
         ~c_request();
     
         int     read_request(int socket_fd);
@@ -52,10 +53,13 @@ class c_request
         void    init_request();
 
         const string    &get_method() const { return _method; }
+        const string    &get_query() const { return _query; }
         const string    &get_target() const { return _target; }
         const string    &get_version() const { return _version; }
+        const int       &get_socket_fd() const { return _socket_fd; }
         const int       &get_status_code() const { return _status_code; }
         const int       &get_port() const { return _port; }
+        const string    &get_ip_client() const { return _ip_client; }
         bool            get_has_body() {return _has_body; }
         const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;
@@ -65,9 +69,12 @@ class c_request
         const map<string, string> &get_headers() const { return _headers; }
 
     private:
+        int                 _socket_fd;
+        string              _ip_client;
         string              _method;
         string              _target;
         string              _version;
+        string              _query;
         string              _body;
         map<string, string> _headers;
 

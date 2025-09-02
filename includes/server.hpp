@@ -13,10 +13,12 @@
 #include <map>
 #include <vector>
 #include <poll.h>
+#include <arpa/inet.h>
 #include "response.hpp"
 #include "clients.hpp"
 #include "request.hpp"
 #include "location.hpp"
+#include "cgi.hpp"
 #include "colors.hpp"
 
 /************ DEFINE ************/

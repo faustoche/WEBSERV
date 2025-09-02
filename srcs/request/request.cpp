@@ -7,6 +7,13 @@ c_request::c_request()
 	this->init_request();
 }
 
+c_request::c_request(char* ip_str)
+{
+	this->init_request();
+	// (void)ip_str;
+	this->_ip_client = static_cast<string>(ip_str);
+}
+
 c_request::~c_request()
 {
 }
@@ -21,6 +28,7 @@ int	c_request::read_request(int socket_fd)
 	string	request;
 	
 	this->init_request();
+	this->_socket_fd = socket_fd;
 
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
@@ -35,12 +43,12 @@ int	c_request::read_request(int socket_fd)
 				this->_error = true;
 				return (400);
 			} 
-			else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-			{
-				cout << "Error: Timeout - no data received" << endl;
-				this->_error = true;
-				return (408);
-			} 
+			// else if (errno == EAGAIN || errno == EWOULDBLOCK) 
+			// {
+			// 	cout << "Error: Timeout - no data received" << endl;
+			// 	this->_error = true;
+			// 	return (408);
+			// } 
 			else 
 			{
 				cerr << "Error: message not received - " << errno << endl;
@@ -107,17 +115,18 @@ int c_request::parse_request(const string& raw_request)
 
 int c_request::parse_start_line(string& start_line)
 {
-	size_t start = 0;
-	size_t pos = start_line.find(' ', start);
+	size_t	start = 0;
+	size_t	space_pos = start_line.find(' ', start);
+	string	tmp = "";
 	
 	/*- ---- Method ----- */
-	if (pos == string::npos)
+	if (space_pos == string::npos)
 	{
 		this->_error = true;
 		this->_status_code = 400;
 		return (0);
 	}
-	this->_method = start_line.substr(start, pos - start);;
+	this->_method = start_line.substr(start, space_pos - start);;
 	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 	{
 		this->_error = true;
@@ -126,19 +135,30 @@ int c_request::parse_start_line(string& start_line)
 	}
 
 	/*- ---- Target ----- */
-	start = pos + 1;
-	pos = start_line.find(' ', start);
+	start = space_pos + 1;
+	space_pos = start_line.find(' ', start);
 
-	if (pos == string::npos)
+	if (space_pos == string::npos)
 	{
 		this->_error = true;
 		this->_status_code = 400;
 		return (0);
 	}
-	this->_target = start_line.substr(start, pos - start);
+	tmp = start_line.substr(start, space_pos - start);
+	size_t	question_pos;
+	if ((question_pos = tmp.find('?')) != string::npos)
+	{
+		this->_query = tmp.substr(0, question_pos);
+		this->_target = tmp.substr(question_pos + 1);
+	}	
+	else
+	{
+		this->_query = "";
+		this->_target = start_line.substr(start, space_pos - start);
+	}
 	
 	/*- ---- Version ----- */
-	start = pos + 1;
+	start = space_pos + 1;
 	this->_version = start_line.substr(start);
 	if (this->_version.empty())
 	{
@@ -277,12 +297,12 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 				this->_error = true;
 				this->_status_code = 400;
 			} 
-			else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-			{
-				cout << "Error: Timeout - no data received" << endl;
-				this->_error = true;
-				this->_status_code = 408;
-			} 
+			// else if (errno == EAGAIN || errno == EWOULDBLOCK) 
+			// {
+			// 	cout << "Error: Timeout - no data received" << endl;
+			// 	this->_error = true;
+			// 	this->_status_code = 408;
+			// } 
 			else 
 			{
 				cerr << "Error: message not received - " << errno << endl;
@@ -321,14 +341,14 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 			this->_error = true;
     	    this->_status_code = 400;
 		}
-		if (receivedBytes < 0)
-		{
-			// Reessayer en cas d'erreur reseau
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				continue ;
-			this->_error = true;
-			this->_status_code = 500;
-		}
+		// if (receivedBytes < 0)
+		// {
+		// 	// // Reessayer en cas d'erreur reseau
+		// 	// if (errno == EAGAIN || errno == EWOULDBLOCK)
+		// 	// 	continue ;
+		// 	this->_error = true;
+		// 	this->_status_code = 500;
+		// }
 		buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
 		if (total_bytes > max_body_size)

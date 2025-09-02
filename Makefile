@@ -18,6 +18,7 @@ OBJS_DIR	= obj
 
 WEBSERV		= $(addprefix $(SRCS_DIR)/, main.cpp \
 										response/response.cpp \
+										response/cgi.cpp \
 										request/utils.cpp \
 										request/request.cpp\
 										clients/clients.cpp\

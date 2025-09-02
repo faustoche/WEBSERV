@@ -91,13 +91,17 @@ int main(void)
 
 		socklen_t addrlen = sizeof(socket_address);
 		connected_socket_fd = accept(socket_fd, (struct sockaddr *) &socket_address, &addrlen);
-		c_request my_request;
+		
 	
 		if (connected_socket_fd < 0)
 		{
 			cerr << "Error: Accepting mode - " << errno << endl;
 			return (-1);
 		}
+		char ip_str[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &(socket_address.sin_addr), ip_str, INET_ADDRSTRLEN);
+		c_request my_request(ip_str);
+		
 		cout << "New client connected !\n" << endl;
 
 		bool	keep_alive = true;
@@ -118,6 +122,7 @@ int main(void)
 			if (!keep_alive)
 				break;
 
+			c_cgi cgi(my_request);
 			// response_handler.define_response_content(my_request);
 
 			// const string &response = response_handler.get_response();

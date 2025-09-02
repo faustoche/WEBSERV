@@ -97,19 +97,24 @@ void	c_request::print_full_request()
 {
 	if (this->_request_fully_parsed)
 	{
-		cout << "*********** Start-line ************" << endl;
+		cout << "************ IP CLIENT ************" << endl;
+		cout << "ip_client: " << this->_ip_client << endl << endl;
+		
+		cout << "*********** START-LINE ************" << endl;
 		cout << "method: " << this->_method << endl;
+		cout << "query: " << this->_query << endl;
 		cout << "target: " << this->_target << endl;
 		cout << "version: " << this->_version << endl << endl;
 
-		cout << "*********** Headers map ***********" << endl;
+		cout << "************ HEADERS *************" << endl;
+		
 		for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 			cout << it->first << " : " << it->second << endl;
 		cout << endl;
 		
 		if (this->_has_body)
 		{
-			cout << "*********** Body ************" << endl;
+			cout << "************* BODY ***************" << endl;
 			cout << this->_body << endl;
 		}
 
@@ -121,6 +126,7 @@ void	c_request::print_full_request()
 void	c_request::init_request()
 {
 	this->_method.clear();
+	this->_query.clear();
 	this->_target.clear();
 	this->_version.clear();
 	this->_body.clear();
