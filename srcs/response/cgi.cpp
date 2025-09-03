@@ -5,30 +5,63 @@ c_cgi::c_cgi()
 
 c_cgi::c_cgi(const c_request &request, c_response &response)
 {
-    this->_socket_fd = request.get_socket_fd();
-    this->_env_vars.push_back("REQUEST_METHOD=" + request.get_method());
-    // this->_env_vars.push_back("SCRIPT_FILENAME=" + script_path);
-    this->_env_vars.push_back("CONTENT_LENGTH=16");
-    this->_env_vars.push_back("CONTENT_TYPE=" + request.get_header_value("Content-Type"));
-    this->_env_vars.push_back("QUERY_STRING=" + request.get_query());
-    this->_env_vars.push_back("SERVER_PROTOCOL=" + request.get_version());
-    this->_env_vars.push_back("GATEWAY_INTERFACE=CGI/1.1");
-    this->_env_vars.push_back("REMOTE_ADDR=" + request.get_ip_client());
-
-    (void)response;
-    // cout << response.get_file_content() << endl;
+    init_cgi(request);
 }
 
 c_cgi::~c_cgi()
 {
 }
 
+void    c_cgi::init_cgi(const c_request &request)
+{
+    this->_env_vars.clear();
+    this->set_environment(request);
+}
+
+void    c_cgi::set_environment(const c_request &request)
+{
+    this->_socket_fd = request.get_socket_fd();
+    this->_env_vars.push_back("REQUEST_METHOD=" + request.get_method());
+    // this->_env_vars.push_back("SCRIPT_FILENAME=" + script_path);
+    // this->_env_vars.push_back("SCRIPT_NAME=WARNING A AJOUTER");
+    this->_env_vars.push_back("CONTENT_LENGTH=16");
+    this->_env_vars.push_back("CONTENT_TYPE=" + request.get_header_value("Content-Type"));
+    this->_env_vars.push_back("QUERY_STRING=" + request.get_query());
+    this->_env_vars.push_back("SERVER_PROTOCOL=" + request.get_version());
+    this->_env_vars.push_back("GATEWAY_INTERFACE=CGI/1.1");
+    this->_env_vars.push_back("REMOTE_ADDR=" + request.get_ip_client());
+    
+    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Accept"));
+    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"User-Agent"));
+    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Accept-Language"));
+    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Cookie"));
+    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Referer"));
+}
+
+string    c_cgi::prepare_env_variable(const c_request &request, string header_key)
+{
+    string tmp;
+
+    for (size_t i = 0; i < header_key.size(); i++)
+    {
+        if (isalpha(header_key[i]))
+            tmp += toupper(header_key[i]);
+        else if (header_key[i] == '-')
+            tmp += '_';
+    }
+
+    tmp += "=";
+    tmp += request.get_header_value(header_key);
+
+    return (tmp);  
+}
+
 string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, const string &body)
 {
-    int in_pipe[2];
-    int out_pipe[2];
+    int server_to_cgi[2];
+    int cgi_to_server[2];
 
-    if (pipe(in_pipe) < 0 || pipe(out_pipe) < 0)
+    if (pipe(server_to_cgi) < 0 || pipe(cgi_to_server) < 0)
     {
         cout << "(CGI): Error de pipe";
         return ("500 Internal server error");
@@ -44,13 +77,15 @@ string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, 
     /**** Processus enfant ****/
     if (pid == 0)
     {
-        /* Redirection stdin depuis le pipe d'entree: permet au parent d'envoyer le body a l'enfant */
-        dup2(in_pipe[0], STDIN_FILENO);
-        close(in_pipe[1]);
+        /* Redirection stdin depuis le pipe d'entree: permet au parent server le body au cgi */
+        // fcntl(server_to_cgi[0], F_SETFL, O_NONBLOCK);
+        dup2(server_to_cgi[0], STDIN_FILENO);
+        close(server_to_cgi[1]);
 
-        /* Redirection stdout vers le pipe de sortie: permet a l'enfant d'envoyer la sortie du CGI a l'enfant */
-        dup2(out_pipe[1], STDOUT_FILENO);
-        close(out_pipe[0]);
+        /* Redirection stdout vers le pipe de sortie: permet au cgi de renvoyer la reponse au server */
+        // fcntl(cgi_to_server[1], F_SETFL, O_NONBLOCK);
+        dup2(cgi_to_server[1], STDOUT_FILENO);
+        close(cgi_to_server[0]);
      
         /**** Convertir en tableau de char* pour execve ****/
         vector<char*> envp;
@@ -70,25 +105,24 @@ string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, 
     else
     {
         /**** Processus parent ****/
-        close(in_pipe[0]);
-        close(out_pipe[1]);
+        close(server_to_cgi[0]);
+        close(cgi_to_server[1]);
 
         /* Envoyer le body au CGI */
         if (!body.empty())
-            write(in_pipe[1], body.c_str(), body.size());
-        close(in_pipe[1]); // signale EOF au script
+            write(server_to_cgi[1], body.c_str(), body.size());
+        close(server_to_cgi[1]); // signale EOF au script
 
         /* Lire la sortie du CGI */
         char buffer[BUFFER_SIZE];
         std::string response;
         ssize_t bytes_read;
-        while ((bytes_read = read(out_pipe[0], buffer, sizeof(buffer) - 1)) > 0)
+        while ((bytes_read = read(cgi_to_server[0], buffer, sizeof(buffer) - 1)) > 0)
         {
-            // send(this->_socket_fd, buffer, bytes_read, 0);
             buffer[bytes_read] = '\0';
             response += buffer;
         }
-        close(out_pipe[0]);
+        close(cgi_to_server[0]);
 
         // Attendre la fin du process enfant
         int status;

@@ -7,11 +7,17 @@ bool    c_request::is_valid_header_name(const string& key_name)
 	const string allowed_special_chars = "!#$%&'*+-.^_`|~";
 
 	if (key_name.empty())
+	{
+		cerr << "(Request) Error: empty header name." << endl;
 		return (false);
+	}
 	for (size_t i = 0; i < key_name.length(); i++)
 	{
 		if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
+		{
+			cerr << "(Request) Error: Invalid char in header name: " << key_name << endl;
 			return (false);
+		}
 	}
 	return (true);
 }
@@ -22,7 +28,7 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 	{
 		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
 		{
-			this->_status_code = 400;
+			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
 			return (false);
 		}
 	}
@@ -33,7 +39,7 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 		{
 			if (!isdigit(value[i]))
 			{
-				this->_status_code = 400;
+				cerr << "(Request) Error: Invalid content length: " << value << endl;
 				return (false);
 			}
 		}
@@ -41,6 +47,11 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 		this->_content_length = strtoul(value.c_str(), &end, 10);
 	}
 
+	if (value.size() > 4096)
+	{
+		cerr << "(Request) Error: Header field too large: " << value << endl;
+		return (false);
+	}
 	return (true);
 }
 
@@ -68,11 +79,13 @@ void c_request::check_required_headers()
 		{
 			this->_error = true;
 			this->_status_code = 400;
+			cerr << "(Request) Error: Missing header about body size" << endl;
 		}
 		if (has_content_length && has_transfer_encoding)
 		{
 			this->_error = true;
 			this->_status_code = 400;
+			cerr << "(Request) Error: only one header required about body size" << endl;
 		}
 	}     
 }
