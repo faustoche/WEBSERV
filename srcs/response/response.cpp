@@ -51,12 +51,18 @@ void	c_response::define_response_content(const c_request &request)
 	else
 		file_path = "www/" + target;
 
-
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	_file_content = load_file_content(file_path);
 
+	/***** IDENTIFICATION D'UN CGI *****/
+	// Grace au location on identifie qu'il s'agit d'un cgi - A FAIRE
+	bool is_cgi = true;
+	c_cgi cgi(request, *this);
+
 	if (_file_content.empty())
 		build_error_response(404, version, request);
+	else if (is_cgi)
+		build_cgi_response(cgi, version, request);
 	else
 		build_success_response(file_path, version, request);
 }
@@ -103,6 +109,14 @@ string c_response::get_content_type(const string &file_path)
 }
 
 /************ RESPONSES ************/
+
+void c_response::build_cgi_response(c_cgi & cgi, const string version, const c_request &request)
+{
+	(void)version;
+
+	const string body = request.get_body();
+	this->_response = cgi.launch_cgi("www/cgi-bin/test.py", "/usr/bin/python3", body);
+}
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {

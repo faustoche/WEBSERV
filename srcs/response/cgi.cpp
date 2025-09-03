@@ -1,7 +1,9 @@
 #include "cgi.hpp"
 
+c_cgi::c_cgi()
+{}
 
-c_cgi::c_cgi(c_request &request)
+c_cgi::c_cgi(const c_request &request, c_response &response)
 {
     this->_socket_fd = request.get_socket_fd();
     this->_env_vars.push_back("REQUEST_METHOD=" + request.get_method());
@@ -13,7 +15,8 @@ c_cgi::c_cgi(c_request &request)
     this->_env_vars.push_back("GATEWAY_INTERFACE=CGI/1.1");
     this->_env_vars.push_back("REMOTE_ADDR=" + request.get_ip_client());
 
-    this->launch_cgi("www/cgi-bin/test.py", "/usr/bin/python3", request.get_body());
+    (void)response;
+    // cout << response.get_file_content() << endl;
 }
 
 c_cgi::~c_cgi()
@@ -81,9 +84,9 @@ string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, 
         ssize_t bytes_read;
         while ((bytes_read = read(out_pipe[0], buffer, sizeof(buffer) - 1)) > 0)
         {
-            send(this->_socket_fd, buffer, bytes_read, 0);
-            // buffer[bytes_read] = '\0';
-            // response += buffer;
+            // send(this->_socket_fd, buffer, bytes_read, 0);
+            buffer[bytes_read] = '\0';
+            response += buffer;
         }
         close(out_pipe[0]);
 

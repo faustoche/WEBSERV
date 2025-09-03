@@ -15,8 +15,9 @@ using namespace std;
 
 /************ CLASS ************/
 
-class c_request;
-class c_server;
+class	c_request;
+class	c_server;
+class	c_cgi;
 
 class c_response
 {
@@ -32,6 +33,7 @@ public:
 
 private:
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
+	void    build_cgi_response(c_cgi & cgi, const string version, const c_request &request);
 	void	build_error_response(int error_code, const string version, const c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);

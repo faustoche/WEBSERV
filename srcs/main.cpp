@@ -122,18 +122,18 @@ int main(void)
 			if (!keep_alive)
 				break;
 
-			c_cgi cgi(my_request);
-			// response_handler.define_response_content(my_request);
+			// c_cgi cgi(my_request);
+			response_handler.define_response_content(my_request);
 
-			// const string &response = response_handler.get_response();
-			// if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
-			// {
-			// 	cerr << "Error: Message not sent - " << errno << endl;
-			// 	keep_alive = false;
-			// 	break;
-			// }
-			// if (!keep_alive)
-			// 	break;
+			const string &response = response_handler.get_response();
+			if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
+			{
+				cerr << "Error: Message not sent - " << errno << endl;
+				keep_alive = false;
+				break;
+			}
+			if (!keep_alive)
+				break;
 		}
 		close(connected_socket_fd);		
 	}
