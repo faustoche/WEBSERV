@@ -115,6 +115,7 @@ bool                c_parser::is_executable_file(const std::string & path)
 
 /*----------------------------   LOCATION   -----------------------------*/
 
+/*---------------------   location : main function   -----------------------------*/
 void                c_parser::parse_location_block(c_server & server)
 {
     (void)server;
@@ -122,12 +123,61 @@ void                c_parser::parse_location_block(c_server & server)
     expected_token_type(TOKEN_VALUE);
     if (current_token().value[0] != '/')
         throw invalid_argument("invalid path for the location : " + current_token().value); // completer msg d'erreur -> ajout ligne
-    // parser le path, les differentes directives  
+    if (current_token().value[current_token().value.length() - 1] == '/')
+        location_url_directory(server);
+    else
+    {
+        // location_file(server);
+        // location directory(server);
+    }
+    expected_token_type(TOKEN_RBRACE);
+}
+
+/*---------------------   location : directory as value   ----------------------*/
+void                c_parser::location_url_directory(c_server & server)
+{
+    c_location  location;
+
+    location.set_url_key(_current->value);
+    location.set_is_directory(true);
+    // location.set_index_files(server.get_index()); // revoir
+    // location.set_body_size(server.get_body_size());
+    // location.set_cgi(server.get_cgi());
+    expected_token_type(TOKEN_LBRACE);
+    while (token_type() != TOKEN_RBRACE && !is_at_end())
+    {
+        if (token_type() == TOKEN_DIRECTIVE_KEYWORD)
+            location_directives(location);
+        else if (token_type() == TOKEN_RBRACE)
+            break ;
+        else
+            throw invalid_argument("invalid in location = " + _current->value);
+    }
+    server.add_location(location.get_url_key(), location);
+}
+
+/*---------------------   location : file as value   ---------------------------*/
+void                c_parser::location_url_file(c_server & server)
+{
+    (void)server;
+}
+
+/*------------------------   location : directives   ---------------------------*/
+void                c_parser::location_directives(c_location & location)
+{
+    (void)location;
+    // string  value = _current->value;
+    // int     flag_cgi = 0;
+
+    // if (is_token_value("index"))
+    // if (is_token_value("autoindex"))
+    // if(is_token_value("max_body_size"))
+    // if (is_token_value("methods"))
+    // if (is_token_value("cgi"))
 }
 
 
-
-/*-------------------   parse server directives   ----------------------*/
+/*-----------------------   server : directives   ------------------------------*/
 
 string              c_parser::parse_ip(string const & value)
 {
@@ -230,7 +280,7 @@ void                c_parser::parse_index_directive(c_server & server)
 
 void                c_parser::parse_server_name(c_server & server)
 {
-    
+    (void)server;
 }
 
 void                c_parser::parse_server_directives(c_server & server)

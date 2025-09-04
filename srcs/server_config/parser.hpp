@@ -50,6 +50,11 @@ private :
             void    parse_server_name(c_server & server);
             string  parse_ip(string const & value);
 
+            // location
+            void    location_url_directory(c_server & server);
+            void    location_url_file(c_server & server);
+            void    location_directives(c_location & location);
+
             // utils
             void        expected_token_type(int expected_type) const;
             bool        is_token_value(std::string key);
