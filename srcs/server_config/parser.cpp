@@ -24,6 +24,11 @@ s_token c_parser::current_token() const
     return *(this->_current);
 }
 
+string const &  c_parser::get_value() const
+{
+    return this->_current->value;
+}
+
 s_token c_parser::peek_token() const
 {
     if (this->_current + 1 >= c_lexer::_tokens.end())
@@ -124,6 +129,72 @@ void                c_parser::parse_location_block(c_server & server)
 
 /*-------------------   parse server directives   ----------------------*/
 
+string              c_parser::parse_ip(string const & value)
+{
+    if (value == "*")
+        return ("0.0.0.0");
+    if (value.find_first_not_of("0123456789.") != string::npos
+        || count(value.begin(), value.end(), '.') != 3
+        || value.empty())
+        throw invalid_argument("invalid IP adress ==> " + value);
+    size_t  pos = 0;
+    long    is_valid_ip;
+    int     i = 0;
+    string  buf;
+    string temp = value;
+    while (i < 4)
+    {
+        pos = temp.find('.');
+        buf = temp.substr(0, pos);
+        if (buf.empty())
+            throw invalid_argument("invalid IP adress ==> " + value);
+        is_valid_ip = strtol(buf.c_str(), NULL, 10);
+        if (errno == ERANGE || is_valid_ip < 0 || is_valid_ip > 255)
+            throw invalid_argument("invalid IP adress ==> " + value);
+        temp.erase(0, pos + 1);
+        i++;
+    }
+    return value;
+}
+
+void                c_parser::parse_listen_directive(c_server & server)
+{
+    long    port = -1;
+    string  str_ip;
+
+    advance_token(); // skip keyword "listen"
+
+    if (get_value().find_first_not_of("0123456789") == string::npos)
+    {
+        port = strtol(get_value().c_str(), NULL, 10);
+        str_ip = "0.0.0.0"; 
+        // si pas de precision -> ecouter sur toutes les interfaces disponibles 
+        // (toutes les adresses IP locales en meme temps)
+        // 127.0.0.1 --> ecoute uniquement sur localhost (acces seulement depuis notre machine)
+    }
+    else
+    {
+        string  str_port;
+        if (count(get_value().begin(), get_value().end(), ':') != 1)
+            throw invalid_argument("invalid port ==> " + get_value());
+        str_port = get_value().substr(get_value().find(':') + 1, get_value().size());
+        if (str_port.empty())
+            throw invalid_argument("invalid port ==> " + get_value());
+        if (str_port.find_first_not_of("0123456789") != string::npos)
+            throw invalid_argument("invalid port ==> " + get_value());
+        port = strtol(str_port.c_str(), NULL, 10);
+        str_ip = parse_ip(get_value().substr(0, get_value().find(':')));
+    }
+    if (port == ERANGE || port < 0 || port > 65535)
+        throw invalid_argument("invalid port [0-65535] ==> " + get_value());
+    server.set_port(static_cast<uint16_t>(port));
+    server.set_ip(str_ip);
+
+    advance_token(); // skip ip+port
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token(); // skip semicolon
+}
+
 void                c_parser::parse_index_directive(c_server & server)
 {
     advance_token(); // skip keyword "index"
@@ -148,7 +219,6 @@ void                c_parser::parse_index_directive(c_server & server)
             valid_file = *it;
             break ;
         }
-        cout << "it = " << *it << endl;
         it++;
     }
     if (valid_file.empty())
@@ -158,15 +228,22 @@ void                c_parser::parse_index_directive(c_server & server)
     advance_token(); // skip semicolon
 }
 
+void                c_parser::parse_server_name(c_server & server)
+{
+    
+}
+
 void                c_parser::parse_server_directives(c_server & server)
 {
     if (is_token_value("index"))
         parse_index_directive(server);
+    else if (is_token_value("listen"))
+        parse_listen_directive(server);
     else /* a enlever / reprendre */
         advance_token();
     // cout << "parse index directive = " << this->_current->value << endl;
     // else if (is_token_value("server_name"))
-    // else if (is_token_value("listen"))
+    
     // else if (is_token_value("error_page"))
     // else if (is_token_value("client_max_body_size"))
     // else
