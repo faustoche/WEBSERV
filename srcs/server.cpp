@@ -16,7 +16,7 @@ void	c_server::set_location(string const & path, c_location const & loc)
 		throw invalid_argument("Path for location is empty");
 	// if (is_valid(loc)) //verifier si location est valide
 	// 	throw invalid_argument("Invalid location");
-	_location_map[path] = loc;
+	this->_location_map[path] = loc;
 }
 
 /*-------------------------   setters   -----------------------------*/

@@ -46,8 +46,9 @@ private:
     std::map<std::string, c_location>   _location_map; // WARNING constructeur copy pour c_location
 	
 public:
-	const int &get_socket_fd() const { return (_socket_fd); }
-	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); }
+	const int &get_socket_fd() const { return (_socket_fd); };
+	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
+	const map<string, c_location>	&get_location_map() const { return _location_map; };
 	
 	void create_socket();
 	void bind_and_listen();

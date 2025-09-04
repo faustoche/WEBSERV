@@ -3,42 +3,83 @@
 c_cgi::c_cgi()
 {}
 
-c_cgi::c_cgi(const c_request &request, c_response &response)
+c_cgi::c_cgi(const c_request &request, c_response &response, map<string, c_location> map_location)
 {
-    init_cgi(request);
+    (void)response;
+    init_cgi(request, map_location);
 }
 
 c_cgi::~c_cgi()
 {
 }
 
-void    c_cgi::init_cgi(const c_request &request)
+const c_location*   c_cgi::find_location(const string &path, map<string, c_location> map_location)
 {
-    this->_env_vars.clear();
+    const c_location* best_match = NULL;
+    size_t  max_len = 0;
+
+    for (map<string, c_location>::iterator it = map_location.begin(); it != map_location.end(); it++)
+    {
+        string loc_path = it->first;
+        if (path.compare(0, loc_path.size(), loc_path) == 0)
+        {
+            if (loc_path.size() > max_len)
+            {
+                best_match = &it->second;
+                max_len = loc_path.size();
+            }
+        }
+    }
+    return (best_match);
+}
+
+void    c_cgi::init_cgi(const c_request &request, map<string, c_location> map_location)
+{
+    this->_map_env_vars.clear();
+    string  path = request.get_path();
+    this->_loc = find_location(path, map_location);
+    size_t pos = path.rfind(this->_loc->get_url_key());
+    this->_real_path = this->_loc->get_location_root() + path.substr(pos + this->_loc->get_url_key().size());
+
+    cout << "this->_interpreter: " << this->_interpreter << endl;
+    this->_interpreter = this->_loc->get_cgi_extension().at(".py");
+    cout << "this->_interpreter: " << this->_interpreter << endl;
+    cout << "real path: " << this->_real_path << endl;
     this->set_environment(request);
+}
+
+void  c_cgi::vectorize_env()
+{
+    map<string, string> map_copy = this->_map_env_vars;
+
+    for (map<string, string>::const_iterator it = map_copy.begin(); it != map_copy.end(); it++)
+        this->_vec_env_vars.push_back(it->first + "=" + it->second);
 }
 
 void    c_cgi::set_environment(const c_request &request)
 {
     this->_socket_fd = request.get_socket_fd();
-    this->_env_vars.push_back("REQUEST_METHOD=" + request.get_method());
-    // this->_env_vars.push_back("SCRIPT_FILENAME=" + script_path);
-    // this->_env_vars.push_back("SCRIPT_NAME=WARNING A AJOUTER");
-    this->_env_vars.push_back("CONTENT_LENGTH=16");
-    this->_env_vars.push_back("CONTENT_TYPE=" + request.get_header_value("Content-Type"));
-    this->_env_vars.push_back("QUERY_STRING=" + request.get_query());
-    this->_env_vars.push_back("SERVER_PROTOCOL=" + request.get_version());
-    this->_env_vars.push_back("GATEWAY_INTERFACE=CGI/1.1");
-    this->_env_vars.push_back("REMOTE_ADDR=" + request.get_ip_client());
-    
-    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Accept"));
-    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"User-Agent"));
-    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Accept-Language"));
-    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Cookie"));
-    this->_env_vars.push_back("HTTP_" + prepare_env_variable(request,"Referer"));
+    this->_map_env_vars["REQUEST_METHOD"] = request.get_method();
+    this->_map_env_vars["PATH_INFO"] = this->_real_path;
+    // this->_map_env_vars.push_back("SCRIPT_NAME=WARNING A AJOUTER");
+    this->_map_env_vars["CONTENT-LENGTH"] = int_to_string(request.get_content_length());
+    this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
+    this->_map_env_vars["QUERY_STRING"] = request.get_query();
+    this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
+    this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
+    this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
+
+    this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
+    this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
+    this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");
+    this->_map_env_vars["HTTP_COOKIE"] = request.get_header_value("Cookie");
+    this->_map_env_vars["HTTP_REFERER"] = request.get_header_value("Referer");
+
+    this->vectorize_env();
+
 }
 
-string    c_cgi::prepare_env_variable(const c_request &request, string header_key)
+string    c_cgi::prepare_http_env_var(const c_request &request, string header_key)
 {
     string tmp;
 
@@ -56,7 +97,9 @@ string    c_cgi::prepare_env_variable(const c_request &request, string header_ke
     return (tmp);  
 }
 
-string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, const string &body)
+
+/* interpreter = loc->_cgi_extension["extension"]*/
+string  c_cgi::launch_cgi(const string &body)
 {
     int server_to_cgi[2];
     int cgi_to_server[2];
@@ -74,6 +117,7 @@ string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, 
         return ("500 Internal server error");        
     }
 
+    
     /**** Processus enfant ****/
     if (pid == 0)
     {
@@ -89,16 +133,16 @@ string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, 
      
         /**** Convertir en tableau de char* pour execve ****/
         vector<char*> envp;
-        for (size_t i = 0; i < this->_env_vars.size(); i++)
-            envp.push_back(const_cast<char *>(this->_env_vars[i].c_str()));
+        for (size_t i = 0; i < this->_vec_env_vars.size(); i++)
+            envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
         envp.push_back(NULL);
 
         char *argv[3];
-        argv[0] = const_cast<char*>(interpreter.c_str());
-        argv[1] = const_cast<char*>(script_path.c_str());
+        argv[0] = const_cast<char*>(this->_interpreter.c_str());
+        argv[1] = const_cast<char*>(this->_map_env_vars["PATH_INFO"].c_str());
         argv[2] = NULL;
 
-        execve(interpreter.c_str(), argv, &envp[0]);
+        execve(this->_interpreter.c_str(), argv, &envp[0]);
         cout << "(CGI) Error execve" << endl;
         exit(1);
     }
@@ -126,8 +170,8 @@ string  c_cgi::launch_cgi(const string &script_path, const string &interpreter, 
 
         // Attendre la fin du process enfant
         int status;
-        waitpid(pid, &status, 0);
-
+        waitpid(pid, &status, WNOHANG);
+        
         return response;
     }
 }

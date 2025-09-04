@@ -21,7 +21,7 @@ c_request::~c_request()
 
 /************ REQUEST ************/
 
-int	c_request::read_request(int socket_fd)
+void	c_request::read_request(int socket_fd)
 {
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
@@ -39,34 +39,28 @@ int	c_request::read_request(int socket_fd)
 		{
 			if (receivedBytes == 0) 
 			{
-				cout << "(Request)  received, client closed connection" << endl;
+				cout << "(Request) client closed connection" << endl;
 				this->_error = true;
-				return (400);
 			} 
-			// else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-			// {
-			// 	cout << "Error: Timeout - no data received" << endl;
-			// 	this->_error = true;
-			// 	return (408);
-			// } 
-			else 
+			else
 			{
-				cerr << "Error: message not received - " << errno << endl;
+				cout << "(Request) Error: client disconnected unexepectedly" << endl;
 				this->_error = true;
-				return (500);
 			}
 		}
 		buffer[receivedBytes] = '\0';
         request.append(buffer);
 	}
 	this->parse_request(request);
+	
 
 	/* -----Lire le body -----*/
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
+
+	
 	
 	if (!this->_error)
 		this->_request_fully_parsed = true;
-	return (this->_status_code);
 }
 
 int c_request::parse_request(const string& raw_request)
@@ -76,28 +70,20 @@ int c_request::parse_request(const string& raw_request)
 
 	/*---- ETAPE 1: start-line -----*/
 	if (!getline(stream, line, '\n'))
-	{
-		this->_error = true;
-		this->_status_code = 400;
-	}   
+		this->_status_code = 400; 
 
 	if (line.empty() || line[line.size() - 1] != '\r')
-	{
-		this->_error = true;
 		this->_status_code = 400;
-	} 
 	line.erase(line.size() - 1);
 
+	
 	this->parse_start_line(line);
-
+	
 	/*---- ETAPE 2: headers -----*/
 	while (getline(stream, line, '\n'))
 	{
 		if (line[line.size() - 1] != '\r')
-		{
-			this->_error = true;
 			this->_status_code = 400;
-		} 
 
 		line.erase(line.size() - 1);
 
@@ -106,6 +92,7 @@ int c_request::parse_request(const string& raw_request)
 		
 		this->parse_headers(line);
 	}
+	
 	this->check_required_headers();
 
 	return (0);
@@ -122,14 +109,12 @@ int c_request::parse_start_line(string& start_line)
 	/*- ---- Method ----- */
 	if (space_pos == string::npos)
 	{
-		this->_error = true;
 		this->_status_code = 400;
 		return (0);
 	}
 	this->_method = start_line.substr(start, space_pos - start);;
 	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 	{
-		this->_error = true;
 		this->_status_code = 405;
 		return (0);
 	}
@@ -140,38 +125,42 @@ int c_request::parse_start_line(string& start_line)
 
 	if (space_pos == string::npos)
 	{
-		this->_error = true;
 		this->_status_code = 400;
 		return (0);
 	}
 	tmp = start_line.substr(start, space_pos - start);
+	this->_target = tmp;
+
+	
 	size_t	question_pos;
 	if ((question_pos = tmp.find('?')) != string::npos)
 	{
-		this->_query = tmp.substr(0, question_pos);
-		this->_target = tmp.substr(question_pos + 1);
+		this->_path = tmp.substr(0, question_pos);
+		this->_query = tmp.substr(question_pos + 1);
 	}	
 	else
 	{
+		this->_path = start_line.substr(start, space_pos - start);
 		this->_query = "";
-		this->_target = start_line.substr(start, space_pos - start);
 	}
 	
+
 	/*- ---- Version ----- */
 	start = space_pos + 1;
 	this->_version = start_line.substr(start);
 	if (this->_version.empty())
 	{
-		this->_error = true;
+		
 		this->_status_code = 400;
 		return (0);
 	}
 	if (this->_version != "HTTP/1.1")
 	{
-		this->_error = true;
+		cout << "this->_version: " << this->_version << endl; 
 		this->_status_code = 505;
 		return (0);
 	}
+	
 	return (1);
 }
 
@@ -188,22 +177,17 @@ int c_request::parse_headers(string& headers)
 	if (!is_valid_header_name(key))
 	{
 		cerr << "(Request) Error: invalid header_name: " << key << endl;
-		this->_error = true;
 		this->_status_code = 400;
 	}
 
 	pos++;
 	if (headers[pos] != 32)
-	{
-		this->_error = true;
 		this->_status_code = 400;
-	}
 
 	value = ft_trim(headers.substr(pos + 1));
 	if (!is_valid_header_value(key, value))
 	{
 		cerr << "(Request) Error: invalid header_value: " << key << endl;
-		this->_error = true;
 		this->_status_code = 400;
 	}
 
@@ -263,7 +247,6 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			{
 				cerr << "(Request) Error: Invalid chunk size: " 
                      << "reçu: " << tmp.size() << " attendu: " << _expected_chunk_size << endl;
-                this->_error = true;
                 this->_status_code = 400;
                 return;				
 			}
@@ -295,19 +278,11 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 			{
 				cout << "Client closed connection" << endl;
 				this->_error = true;
-				this->_status_code = 400;
 			} 
-			// else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-			// {
-			// 	cout << "Error: Timeout - no data received" << endl;
-			// 	this->_error = true;
-			// 	this->_status_code = 408;
-			// } 
-			else 
+			else
 			{
-				cerr << "Error: message not received - " << errno << endl;
+				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;
 				this->_error = true;
-				this->_status_code = 500;
 			}
 		}
 		buffer[receivedBytes] = '\0';
@@ -333,29 +308,26 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 	{	
 		fill(buffer, buffer + sizeof(buffer), '\0');
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) -1, 0);
-		
-    	if (receivedBytes == 0)
+		if (receivedBytes <= 0)
 		{
-			// Connexion fermee avant d'avoir tout recu
-			cerr << "(Request) Error: Incomplete body" << endl;
-			this->_error = true;
-    	    this->_status_code = 400;
+    		if (receivedBytes == 0)
+			{
+				// Connexion fermee avant d'avoir tout recu
+				cerr << "(Request) Error: Incomplete body" << endl;
+				this->_error = true;
+			}
+			else
+			{
+				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;
+				this->_error = true;
+			}
 		}
-		// if (receivedBytes < 0)
-		// {
-		// 	// // Reessayer en cas d'erreur reseau
-		// 	// if (errno == EAGAIN || errno == EWOULDBLOCK)
-		// 	// 	continue ;
-		// 	this->_error = true;
-		// 	this->_status_code = 500;
-		// }
 		buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
 		if (total_bytes > max_body_size)
 		{
 			cerr << "(Request) Error: actual body size (" << total_bytes 
 				<< ") excess announced size (" << max_body_size << ")" << endl;
-			this->_error = true;
 			this->_status_code = 413;
 		}
     	this->fill_body_with_bytes(buffer, receivedBytes);

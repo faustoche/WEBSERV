@@ -57,7 +57,20 @@ void	c_response::define_response_content(const c_request &request)
 	/***** IDENTIFICATION D'UN CGI *****/
 	// Grace au location on identifie qu'il s'agit d'un cgi - A FAIRE
 	bool is_cgi = true;
-	c_cgi cgi(request, *this);
+
+	/* A SUPPRIMER */
+	map<string, c_location> test;
+	c_location loc;
+	map<string, string> cgi_extension;
+	cgi_extension[".py"] = "/usr/bin/python3";
+	loc.set_url_key("/cgi-bin");
+	loc.set_location_root("./www/cgi-bin");
+	loc.set_cgi_extension(cgi_extension);
+	cout << "loc cgi: " << loc.get_cgi_extension().at(".py") << endl;
+	test["/cgi-bin"] = loc;
+	/*********************/
+
+	c_cgi cgi(request, *this, test);
 
 	if (_file_content.empty())
 		build_error_response(404, version, request);
@@ -115,7 +128,8 @@ void c_response::build_cgi_response(c_cgi & cgi, const string version, const c_r
 	(void)version;
 
 	const string body = request.get_body();
-	this->_response = cgi.launch_cgi("www/cgi-bin/test.py", "/usr/bin/python3", body);
+
+	this->_response = cgi.launch_cgi(body);
 }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)

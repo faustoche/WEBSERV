@@ -19,9 +19,17 @@ public:
 		c_location(/* args */);
 		~c_location();
 
+		/************* AC *************/
+		const string& get_url_key() const { return _url_key; };
+		const string& get_location_root() const { return _location_root; };
+		const map<string, string>& get_cgi_extension() const { return _cgi_extension; };
+		void	set_url_key(string new_key) { _url_key = new_key; };
+		void	set_location_root(string new_root) { _location_root = new_root; };
+		void	set_cgi_extension(map<string, string> cgi_ext) { _cgi_extension = cgi_ext; };
+		/******************************/
 
 private:
-		string				_location_path; // cle de la map dans le server
+		string				_url_key; // cle de la map dans le server
 		string				_location_root; // ou alias --> racine des fichiers pour cette location (si non definit, herite du root du serveur)
 		vector<string>		_location_index_files; // liste des fichiers index possibles
 		vector<string>		_location_methods; // methodes HTTP autorisees (GET, POST, DELETE)

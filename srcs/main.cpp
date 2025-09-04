@@ -107,22 +107,19 @@ int main(void)
 		bool	keep_alive = true;
 		while (keep_alive)
         {
-			int status_code;
-			status_code = my_request.read_request(connected_socket_fd);
-			if (status_code == 400 || status_code == 408 || status_code == 413)
-			{
-				my_request.set_status_code(status_code);
-				close(connected_socket_fd);
+			my_request.read_request(connected_socket_fd);
+			if (my_request.get_error())
 				keep_alive = false;
-			}
 			drain_socket(connected_socket_fd);
-
-			my_request.print_full_request();
-
 			if (!keep_alive)
 				break;
 
-			// c_cgi cgi(my_request);
+			my_request.print_full_request();
+
+
+
+			// Passer le keep alive de la socket en false en cas d'erreur uniquement 
+			// pour close la socket apres avoir envoye la reponse
 			response_handler.define_response_content(my_request);
 
 			const string &response = response_handler.get_response();
