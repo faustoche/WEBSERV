@@ -29,7 +29,7 @@ private:
 		bool				_auto_index; // activer/desactiver listing de dossier
 		pair<int, string>	_redirect; // code + URL (301 /new_path)
 		map<string, string>	_cgi_extension; // chemin ver lexecutable CGI
-		string				_upload_path; // chemin de stockage pour les fichiers uploades
+		string				_upload_path; // chemin de stockage pour les fichiers uploades (script a executes)
 };
 
 
