@@ -65,7 +65,7 @@ public:
     void                set_index_file(string const & index);
 	void				set_port(uint16_t const & port);
 	void				set_ip(string const & ip);
-    void                set_location(string const & path, c_location const & loc);
+    void                add_location(string const & path, c_location const & loc);
     // Getters
     string const &      get_index_file() const { return (_index); };
 	string const &		get_ip_adress() const {return (_ip); };
