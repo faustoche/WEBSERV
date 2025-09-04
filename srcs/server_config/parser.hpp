@@ -25,10 +25,11 @@ public :
             vector<c_server>    parse();
 
             // tokens
-            s_token current_token() const;
-            s_token peek_token() const;
-            void    advance_token();
-            bool    is_at_end() const;
+            s_token         current_token() const;
+            string const &  get_value() const;
+            s_token         peek_token() const;
+            void            advance_token();
+            bool            is_at_end() const;
 
 private :
             vector<s_token>::iterator   _current;
@@ -37,23 +38,25 @@ private :
             
             // loop
             vector<c_server>    parse_config();
+
             // block
             c_server    parse_server_block();
             void        parse_location_block(c_server & server);
+            
             // directives
-            void        parse_server_directives(c_server & server);
-            void        parse_index_directive(c_server & server);
+            void    parse_server_directives(c_server & server);
+            void    parse_index_directive(c_server & server);
+            void    parse_listen_directive(c_server & server);
+            void    parse_server_name(c_server & server);
+            string  parse_ip(string const & value);
 
+            // utils
             void        expected_token_type(int expected_type) const;
-            // void    expected_token_value(int expected_type) const;
-
-            // utils methods
-            // string      my_to_string(int int_str);
             bool        is_token_value(std::string key);
             bool        is_token_type(int type);
             bool        is_executable_file(const std::string & path);
-            // bool    is_valid_path(string & const path);
-            // bool    is_valid_port(string & port_str);
+
+            // void    expected_token_value(int expected_type) const;
 
             // error handling
             bool            has_error() const;

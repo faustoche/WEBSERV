@@ -51,5 +51,6 @@ void    c_webserv_config::print_configurations()
         cout << nb_server << ") Server = " << endl; // remplacer par le nom du serveur
         it->print_config();
         nb_server++;
+        cout << endl;
     }
 }
