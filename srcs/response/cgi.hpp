@@ -11,17 +11,17 @@ class c_cgi
 {
     public:
         c_cgi();
-        c_cgi(const c_request &request, c_response &response, map<string, c_location> map_location);
+        c_cgi(const c_request &request, c_response &response, map<string, c_location>& map_location);
         ~c_cgi();
 
 
-        void    init_cgi(const c_request &request, map<string, c_location> map_location);
+        void    init_cgi(const c_request &request, map<string, c_location>& map_location);
         string  launch_cgi(const string &body);
         void    set_environment(const c_request &request);
         string  prepare_http_env_var(const c_request &request, string header_key);
         void    vectorize_env();
 
-        const c_location*   find_location(const string &path, map<string, c_location> map_location);
+        // const c_location*   find_location(const string &path, map<string, c_location>& map_location);
         
 
     private:

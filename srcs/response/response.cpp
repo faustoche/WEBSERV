@@ -59,18 +59,20 @@ void	c_response::define_response_content(const c_request &request)
 	bool is_cgi = true;
 
 	/* A SUPPRIMER */
-	map<string, c_location> test;
 	c_location loc;
 	map<string, string> cgi_extension;
 	cgi_extension[".py"] = "/usr/bin/python3";
 	loc.set_url_key("/cgi-bin");
-	loc.set_location_root("./www/cgi-bin");
+	loc.set_root("./www/cgi-bin");
 	loc.set_cgi_extension(cgi_extension);
 	cout << "loc cgi: " << loc.get_cgi_extension().at(".py") << endl;
+	map<string, c_location> test;
 	test["/cgi-bin"] = loc;
 	/*********************/
 
 	c_cgi cgi(request, *this, test);
+
+	cout << "test[/cgi-bin].get_url_key(): " << test["/cgi-bin"].get_url_key() << endl;
 
 	if (_file_content.empty())
 		build_error_response(404, version, request);

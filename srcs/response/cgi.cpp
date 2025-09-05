@@ -1,11 +1,19 @@
 #include "cgi.hpp"
 
-c_cgi::c_cgi()
-{}
+c_cgi::c_cgi() : _loc(NULL), _real_path(""), _interpreter("")
+{
+    this->_map_env_vars.clear();
+    this->_vec_env_vars.clear();
+}
 
-c_cgi::c_cgi(const c_request &request, c_response &response, map<string, c_location> map_location)
+c_cgi::c_cgi(const c_request &request, c_response &response, map<string, c_location>& map_location)
+: _loc(NULL), _real_path(""), _interpreter("")
 {
     (void)response;
+
+    this->_map_env_vars.clear();
+    this->_vec_env_vars.clear();
+
     init_cgi(request, map_location);
 }
 
@@ -13,38 +21,58 @@ c_cgi::~c_cgi()
 {
 }
 
-const c_location*   c_cgi::find_location(const string &path, map<string, c_location> map_location)
+map<string, c_location>::const_iterator   find_location(const string &path, map<string, c_location>& map_location)
 {
-    const c_location* best_match = NULL;
+    // const c_location* best_match = NULL;
+    map<string, c_location>::const_iterator best_match = map_location.end();
     size_t  max_len = 0;
 
-    for (map<string, c_location>::iterator it = map_location.begin(); it != map_location.end(); it++)
+    for (map<string, c_location>::const_iterator it = map_location.begin(); it != map_location.end(); it++)
     {
-        string loc_path = it->first;
-        if (path.compare(0, loc_path.size(), loc_path) == 0)
+        const string& loc_path = it->first;
+        if (path.compare(0, loc_path.size(), loc_path) == 0 && loc_path.size() > max_len)
         {
-            if (loc_path.size() > max_len)
-            {
-                best_match = &it->second;
-                max_len = loc_path.size();
-            }
+            best_match = it;
+            max_len = loc_path.size();
         }
     }
     return (best_match);
 }
 
-void    c_cgi::init_cgi(const c_request &request, map<string, c_location> map_location)
+string  find_extension(const string& real_path)
 {
-    this->_map_env_vars.clear();
-    string  path = request.get_path();
-    this->_loc = find_location(path, map_location);
-    size_t pos = path.rfind(this->_loc->get_url_key());
-    this->_real_path = this->_loc->get_location_root() + path.substr(pos + this->_loc->get_url_key().size());
+    size_t dot_position = real_path.find_last_of('.');
 
-    cout << "this->_interpreter: " << this->_interpreter << endl;
-    this->_interpreter = this->_loc->get_cgi_extension().at(".py");
-    cout << "this->_interpreter: " << this->_interpreter << endl;
-    cout << "real path: " << this->_real_path << endl;
+    if (dot_position != string::npos)
+    {
+        string extension = real_path.substr(dot_position);
+        return (extension);
+    }
+    return (NULL);
+}
+
+void    c_cgi::init_cgi(const c_request &request, map<string, c_location>& map_location)
+{
+    /* Recherche de la location correspondante au path de la requete */
+    string  path = request.get_path();
+    map<string, c_location>::const_iterator it = find_location(path, map_location);
+    if (it == map_location.end()) 
+    {
+        std::cerr << "Error: no location matched path " << path << std::endl;
+        return;
+    }
+    this->_loc = &it->second;
+    this->_loc->print_location();
+
+    /* Construction du real_path du script */
+    size_t pos = path.rfind(this->_loc->get_url_key());
+    this->_real_path = this->_loc->get_root() + path.substr(pos + this->_loc->get_url_key().size());
+
+    /* Recherche de l'interpreteur de fichier selon le langage identifie */
+    string extension = find_extension(this->_real_path);
+    this->_interpreter = this->_loc->get_cgi_extension().at(extension);
+
+    /* Construction de l'environnement pour l'execution du script */
     this->set_environment(request);
 }
 
@@ -58,9 +86,11 @@ void  c_cgi::vectorize_env()
 
 void    c_cgi::set_environment(const c_request &request)
 {
+    /* BIEN SE CALER POUR COMPRENDRE LES VAR SCRIPT_NAME / PATH_INFO ET TRANSLATED_PATH*/
     this->_socket_fd = request.get_socket_fd();
     this->_map_env_vars["REQUEST_METHOD"] = request.get_method();
-    this->_map_env_vars["PATH_INFO"] = this->_real_path;
+    // alias de la location + script_name - nom du fchier + path_info
+    this->_map_env_vars["TRANSLATED_PATH"] = this->_real_path;
     // this->_map_env_vars.push_back("SCRIPT_NAME=WARNING A AJOUTER");
     this->_map_env_vars["CONTENT-LENGTH"] = int_to_string(request.get_content_length());
     this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
