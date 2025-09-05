@@ -36,30 +36,32 @@ private :
             string                      _error_msg;
 
             
-            // loop
+            // loop for creation of all the servers
             vector<c_server>    parse_config();
 
-            // block
-            c_server    parse_server_block();
-            void        parse_location_block(c_server & server);
+            // blocks
+            c_server            parse_server_block();
+            void                parse_location_block(c_server & server);
             
             // directives
-            void    parse_server_directives(c_server & server);
-            void    parse_index_directive(c_server & server);
-            void    parse_listen_directive(c_server & server);
-            void    parse_server_name(c_server & server);
-            string  parse_ip(string const & value);
+            void                parse_server_directives(c_server & server);
+            void                parse_index_directive(c_server & server);
+            void                parse_listen_directive(c_server & server);
+            void                parse_server_name(c_server & server);
+            string              parse_ip(string const & value);
 
-            // location
-            void    location_url_directory(c_server & server);
-            void    location_url_file(c_server & server);
-            void    location_directives(c_location & location);
+            // locations
+            void                location_url_directory(c_server & server);
+            void                location_url_file(c_server & server);
+            void                location_directives(c_location & location);
+            // locations directives
+            void                parse_cgi(c_location & location);
 
             // utils
-            void        expected_token_type(int expected_type) const;
-            bool        is_token_value(std::string key);
-            bool        is_token_type(int type);
-            bool        is_executable_file(const std::string & path);
+            void                expected_token_type(int expected_type) const;
+            bool                is_token_value(std::string key);
+            bool                is_token_type(int type);
+            bool                is_executable_file(const std::string & path);
 
             // void    expected_token_value(int expected_type) const;
 

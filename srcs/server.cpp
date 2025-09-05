@@ -40,6 +40,13 @@ void	c_server::print_config() const
 	cout << "Index file: " << get_index_file() << endl
 			<< "IP adress: " << get_ip_adress() << endl
 			<< "Port: " << get_port() << endl;
-	print_location();
+
+	map<string, c_location>::const_iterator it;
+
+	for (it = get_location().begin(); it != get_location().end(); it++)
+	{
+		it->second.print_location();
+	}
+			
 
 }
