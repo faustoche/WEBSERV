@@ -57,7 +57,7 @@ private:
 		size_t				_location_body_size; // taille max de requete, herite du client_max_body_size du serveur si absent
 		bool				_auto_index; // activer/desactiver listing de dossier --> quand l'URL correspond a un repertoire et qu'aucun fichier index n'existe
 		pair<int, string>	_redirect; // code + URL (301 /new_path) --> pour gerer les return 301 /new_path
-		map<string, string>	_cgi_extension; // extension + chemin ver lexecutable CGI --> si l'URL demandee correspond a un fichier avec cette extension le serveur lance l'executable correspondant
+		map<string, string>	_cgi_extension; // extension + chemin vers lexecutable CGI --> si l'URL demandee correspond a un fichier avec cette extension le serveur lance l'executable correspondant
 		string				_upload_path; // chemin de stockage pour les fichiers uploades recu via POST
 		bool				_is_directory;
 };
@@ -74,7 +74,7 @@ private:
     			}
 		}
 
-				
+			
 
 _url_key = /images/
 _location_root = ./www/media

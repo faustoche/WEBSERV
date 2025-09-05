@@ -185,15 +185,26 @@ void                c_parser::location_directives(c_location & location)
         location.clear_cgi();
         parse_cgi(location);
     }
-    expected_token_type(TOKEN_SEMICOLON);
+    // expected_token_type(TOKEN_SEMICOLON);
 }
-
-/*-----------------------   location : directives   ------------------------------*/
 
 void                c_parser::parse_cgi(c_location & location)
 {
-    (void)location;
+    string  extension;
+    string  path;
+
+    expected_token_type(TOKEN_VALUE);
+    extension = get_value();
+    advance_token(); // skip first value (suppose to be extension)
+    expected_token_type(TOKEN_VALUE);
+    path = get_value();
+    advance_token(); // skip second value (path)
+    expected_token_type(TOKEN_SEMICOLON);
+
+    // verifiation de extension et path
 }
+
+
 /*-----------------------   server : directives   ------------------------------*/
 
 string              c_parser::parse_ip(string const & value)
