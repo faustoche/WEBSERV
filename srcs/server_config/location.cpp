@@ -39,3 +39,26 @@ c_location &    c_location::operator=(c_location const & rhs)
 
 /*-------------------- setters  -------------------*/
 
+
+/*--------------------- utils  --------------------*/
+
+void    c_location::print_location() const
+{
+    cout << "   Location : " << endl
+        << "    URL key = " << get_url_key() << endl
+        << "    Body size = " << get_body_size() << endl
+        << "    Root = " << get_root() << endl
+        // << "Authorised methods = " << get_methods() << endl //revoir
+        // << "Index file = " << get_indexes() << endl
+        << "    Auto index = " << get_auto_index() << endl
+        << "    Upload path = " << get_upload_path() << endl
+        // << "Redirect = " << get_redirect() << endl
+        // << "CGI extension = " << get_cgi() << endl
+        << "    Is directory = " << get_bool_is_directory() << endl;
+}
+
+void    c_location::clear_cgi()
+{
+    if (!_cgi_extension.empty())
+        _cgi_extension.clear();
+}

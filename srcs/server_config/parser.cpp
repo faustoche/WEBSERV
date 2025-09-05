@@ -120,6 +120,7 @@ void                c_parser::parse_location_block(c_server & server)
 {
     (void)server;
     advance_token(); // skip "location"
+
     expected_token_type(TOKEN_VALUE);
     if (current_token().value[0] != '/')
         throw invalid_argument("invalid path for the location : " + current_token().value); // completer msg d'erreur -> ajout ligne
@@ -131,6 +132,7 @@ void                c_parser::parse_location_block(c_server & server)
         // location directory(server);
     }
     expected_token_type(TOKEN_RBRACE);
+    advance_token(); // skip RBRACE
 }
 
 /*---------------------   location : directory as value   ----------------------*/
@@ -143,17 +145,21 @@ void                c_parser::location_url_directory(c_server & server)
     // location.set_index_files(server.get_index()); // revoir
     // location.set_body_size(server.get_body_size());
     // location.set_cgi(server.get_cgi());
+    advance_token(); // skip url location
     expected_token_type(TOKEN_LBRACE);
-    while (token_type() != TOKEN_RBRACE && !is_at_end())
+    advance_token(); // skip LBRACE
+    
+    while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
     {
-        if (token_type() == TOKEN_DIRECTIVE_KEYWORD)
+        if (is_token_type(TOKEN_DIRECTIVE_KEYWORD))
             location_directives(location);
-        else if (token_type() == TOKEN_RBRACE)
+        else if (is_token_type(TOKEN_RBRACE))
             break ;
         else
             throw invalid_argument("invalid in location = " + _current->value);
     }
     server.add_location(location.get_url_key(), location);
+
 }
 
 /*---------------------   location : file as value   ---------------------------*/
@@ -165,18 +171,29 @@ void                c_parser::location_url_file(c_server & server)
 /*------------------------   location : directives   ---------------------------*/
 void                c_parser::location_directives(c_location & location)
 {
-    (void)location;
     // string  value = _current->value;
-    // int     flag_cgi = 0;
+    int     flag_cgi = 0;
 
     // if (is_token_value("index"))
     // if (is_token_value("autoindex"))
     // if(is_token_value("max_body_size"))
     // if (is_token_value("methods"))
-    // if (is_token_value("cgi"))
+
+    if (is_token_value("cgi"))
+    {
+        flag_cgi++;
+        location.clear_cgi();
+        parse_cgi(location);
+    }
+    expected_token_type(TOKEN_SEMICOLON);
 }
 
+/*-----------------------   location : directives   ------------------------------*/
 
+void                c_parser::parse_cgi(c_location & location)
+{
+    (void)location;
+}
 /*-----------------------   server : directives   ------------------------------*/
 
 string              c_parser::parse_ip(string const & value)
@@ -323,16 +340,16 @@ c_server            c_parser::parse_server_block()
                 throw invalid_argument("Error: server directive is forbidden after location block"); // + *(_current)->value
             parse_server_directives(server);
         }
-        // else if (is_token_type(TOKEN_BLOC_KEYWORD) && is_token_value("location"))
-        // {
-        //     // parse_location_block();
-        //     has_location = true;
-        //     // server::_locations
-        //     // c_location = parse_location_block();
-        //     // server.add_location(location.get_path(), location);
+        else if (is_token_type(TOKEN_BLOC_KEYWORD) && is_token_value("location"))
+        {
+            parse_location_block(server);
+            has_location = true;
+            // server::_locations
+            // c_location = parse_location_block();
+            // server.add_location(location.get_path(), location);
             
-        //     // cout << "ICI" << endl;
-        // }
+            // cout << "ICI" << endl;
+        }
         else
         {
             cout << "invalid argument" << endl;
