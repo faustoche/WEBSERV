@@ -1,39 +1,42 @@
+#include "clients.hpp"
 #include "server.hpp"
+#include <cstring>   // memset
+#include <unistd.h>  // close
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_client::c_client() : _fd(-1), _state(DISCONNECTED)
+c_client::c_client() : _fd(-1), _state(READING)
 {
-	memset(_buffer, 0, sizeof(_buffer));
-	gettimeofday(&_timestamp, 0);
+    memset(_buffer, 0, sizeof(_buffer));
+    gettimeofday(&_timestamp, 0);
 }
 
-c_client::c_client(int client_fd) : _fd(client_fd), _state(DISCONNECTED)
+c_client::c_client(int client_fd) : _fd(client_fd), _state(READING)
 {
-	memset(_buffer, 0, sizeof(_buffer));
-	gettimeofday(&_timestamp, 0);
+    memset(_buffer, 0, sizeof(_buffer));
+    gettimeofday(&_timestamp, 0);
 }
 
-c_client::~c_client(){}
+c_client::~c_client() {}
 
 /************ CLIENT CREATION ************/
 
-void	c_server::add_client(int client_fd)
+void c_server::add_client(int client_fd)
 {
-	_clients[client_fd] = c_client(client_fd);
-	set_non_blocking(client_fd);
+    _clients[client_fd] = c_client(client_fd);
+    set_non_blocking(client_fd);
 }
 
-void	c_server::remove_client(int client_fd)
+void c_server::remove_client(int client_fd)
 {
-	close(client_fd);
-	_clients.erase(client_fd);
+    close(client_fd);
+    _clients.erase(client_fd);
 }
 
-c_client	*c_server::find_client(int client_fd)
+c_client *c_server::find_client(int client_fd)
 {
-	map<int, c_client>::iterator it = _clients.find(client_fd);
-	if (it != _clients.end())
-		return &(it->second);
-	return (NULL);
+    map<int, c_client>::iterator it = _clients.find(client_fd);
+    if (it != _clients.end())
+        return &(it->second);
+    return (NULL);
 }

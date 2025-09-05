@@ -27,6 +27,7 @@ using	namespace std;
 /************ CLASS ************/
 
 class c_location;
+class c_client;
 
 class c_server
 {
