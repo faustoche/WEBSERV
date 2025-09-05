@@ -169,7 +169,7 @@ string  c_cgi::launch_cgi(const string &body)
 
         char *argv[3];
         argv[0] = const_cast<char*>(this->_interpreter.c_str());
-        argv[1] = const_cast<char*>(this->_map_env_vars["PATH_INFO"].c_str());
+        argv[1] = const_cast<char*>(this->_map_env_vars["TRANSLATED_PATH"].c_str());
         argv[2] = NULL;
 
         execve(this->_interpreter.c_str(), argv, &envp[0]);
