@@ -17,18 +17,21 @@ class c_cgi
 
         void    init_cgi(const c_request &request, map<string, c_location>& map_location);
         string  launch_cgi(const string &body);
+        void    resolve_cgi_paths(const c_request &request, const c_location* loc);
         void    set_environment(const c_request &request);
-        string  prepare_http_env_var(const c_request &request, string header_key);
+        void    get_header_from_cgi(c_response &response, const string& content_cgi);
+        int     parse_headers(c_response &response, string& headers);
+        bool    is_valid_header_value(string& key, const string& value);
         void    vectorize_env();
-
-        // const c_location*   find_location(const string &path, map<string, c_location>& map_location);
-        
 
     private:
         map<string, string> _map_env_vars;
         vector<string>      _vec_env_vars;
         int                 _socket_fd; // pas necessaire une fois connecte a la classe reponse
         const c_location*   _loc;
-        string              _real_path;
+        string              _script_name;
+        string              _path_info;
+        string              _translated_path;
+        string              _script_filename;
         string              _interpreter;
 };

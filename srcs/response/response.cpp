@@ -65,19 +65,16 @@ void	c_response::define_response_content(const c_request &request)
 	loc.set_url_key("/cgi-bin");
 	loc.set_root("./www/cgi-bin");
 	loc.set_cgi_extension(cgi_extension);
-	cout << "loc cgi: " << loc.get_cgi_extension().at(".py") << endl;
 	map<string, c_location> test;
 	test["/cgi-bin"] = loc;
 	/*********************/
 
 	c_cgi cgi(request, *this, test);
 
-	cout << "test[/cgi-bin].get_url_key(): " << test["/cgi-bin"].get_url_key() << endl;
-
 	if (_file_content.empty())
 		build_error_response(404, version, request);
 	else if (is_cgi)
-		build_cgi_response(cgi, version, request);
+		build_cgi_response(cgi, request);
 	else
 		build_success_response(file_path, version, request);
 }
@@ -125,13 +122,26 @@ string c_response::get_content_type(const string &file_path)
 
 /************ RESPONSES ************/
 
-void c_response::build_cgi_response(c_cgi & cgi, const string version, const c_request &request)
+void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
-	(void)version;
 
-	const string body = request.get_body();
+	this->_status = request.get_status_code();
+	const string request_body = request.get_body();
+	string content_cgi = cgi.launch_cgi(request_body);
+	cgi.get_header_from_cgi(*this, content_cgi);
+	
+	cout << request.get_version() << " " << this->_status << "\r\n";
+	cout << "Server: webserv/1.0\r\n";
+	cout << "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
+	cout << "Content-Length: " + this->_headers_response["Content-Length"] << "\r\n";
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
+		connection = "keep-alive";
+	cout << "Connection: " + connection + "\r\n";
+	cout << "\r\n";
+	cout << this->_body + "\r\n";
 
-	this->_response = cgi.launch_cgi(body);
 }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)

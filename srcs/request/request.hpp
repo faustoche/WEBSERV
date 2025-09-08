@@ -47,9 +47,9 @@ class c_request
         void    check_required_headers();
         void    check_port();
         bool    is_valid_header_value(string& key, const string& value);
-        bool    is_valid_header_name(const string& key_name);
+        
 
-        string  ft_trim(const string& str);
+        // string  ft_trim(const string& str);
         void    print_full_request();
         void    init_request();
 

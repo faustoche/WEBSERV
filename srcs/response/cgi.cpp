@@ -1,13 +1,13 @@
 #include "cgi.hpp"
 
-c_cgi::c_cgi() : _loc(NULL), _real_path(""), _interpreter("")
+c_cgi::c_cgi() : _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 }
 
 c_cgi::c_cgi(const c_request &request, c_response &response, map<string, c_location>& map_location)
-: _loc(NULL), _real_path(""), _interpreter("")
+: _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
     (void)response;
 
@@ -23,7 +23,6 @@ c_cgi::~c_cgi()
 
 map<string, c_location>::const_iterator   find_location(const string &path, map<string, c_location>& map_location)
 {
-    // const c_location* best_match = NULL;
     map<string, c_location>::const_iterator best_match = map_location.end();
     size_t  max_len = 0;
 
@@ -51,6 +50,22 @@ string  find_extension(const string& real_path)
     return (NULL);
 }
 
+void    c_cgi::resolve_cgi_paths(const c_request &request, const c_location* loc)
+{
+    size_t pos_script = request.get_path().find(".py") + 3;
+    this->_script_name = request.get_path().substr(0, pos_script);
+    if (this->_script_name.size() < request.get_path().size())
+    {
+        this->_path_info = request.get_path().substr(pos_script);
+        this->_translated_path = loc->get_root() + this->_path_info;
+    }
+
+    string  root = loc->get_root();
+    string  url_key = loc->get_url_key();
+    string  relative_path = this->_script_name.substr(url_key.size());
+    this->_script_filename = root + relative_path;
+}
+
 void    c_cgi::init_cgi(const c_request &request, map<string, c_location>& map_location)
 {
     /* Recherche de la location correspondante au path de la requete */
@@ -62,14 +77,11 @@ void    c_cgi::init_cgi(const c_request &request, map<string, c_location>& map_l
         return;
     }
     this->_loc = &it->second;
-    this->_loc->print_location();
 
-    /* Construction du real_path du script */
-    size_t pos = path.rfind(this->_loc->get_url_key());
-    this->_real_path = this->_loc->get_root() + path.substr(pos + this->_loc->get_url_key().size());
-
+    resolve_cgi_paths(request, this->_loc);
+    
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
-    string extension = find_extension(this->_real_path);
+    string extension = find_extension(this->_script_name);
     this->_interpreter = this->_loc->get_cgi_extension().at(extension);
 
     /* Construction de l'environnement pour l'execution du script */
@@ -86,12 +98,13 @@ void  c_cgi::vectorize_env()
 
 void    c_cgi::set_environment(const c_request &request)
 {
-    /* BIEN SE CALER POUR COMPRENDRE LES VAR SCRIPT_NAME / PATH_INFO ET TRANSLATED_PATH*/
+    /* BIEN SE CALER POUR COMPRENDRE LES VAR SCRIPT_NAME / PATH_INFO ET TRANSLATED_PATH */
     this->_socket_fd = request.get_socket_fd();
     this->_map_env_vars["REQUEST_METHOD"] = request.get_method();
-    // alias de la location + script_name - nom du fchier + path_info
-    this->_map_env_vars["TRANSLATED_PATH"] = this->_real_path;
-    // this->_map_env_vars.push_back("SCRIPT_NAME=WARNING A AJOUTER");
+    this->_map_env_vars["SCRIPT_NAME"] = this->_script_name;
+    this->_map_env_vars["PATH_INFO"] = this->_path_info;
+    this->_map_env_vars["TRANSLATED_PATH"] = this->_translated_path;
+    this->_map_env_vars["SCRIPT_FILENAME"] = this->_script_filename;
     this->_map_env_vars["CONTENT-LENGTH"] = int_to_string(request.get_content_length());
     this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
     this->_map_env_vars["QUERY_STRING"] = request.get_query();
@@ -106,27 +119,87 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["HTTP_REFERER"] = request.get_header_value("Referer");
 
     this->vectorize_env();
-
 }
 
-string    c_cgi::prepare_http_env_var(const c_request &request, string header_key)
+bool    c_cgi::is_valid_header_value(string& key, const string& value)
 {
-    string tmp;
+	for (size_t i = 0; i < value.length(); i++)
+	{
+		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
+		{
+			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
+			return (false);
+		}
+	}
 
-    for (size_t i = 0; i < header_key.size(); i++)
-    {
-        if (isalpha(header_key[i]))
-            tmp += toupper(header_key[i]);
-        else if (header_key[i] == '-')
-            tmp += '_';
-    }
+	if (key == "Content-Length")
+	{
+		for (size_t i = 0; i < value.length(); i++)
+		{
+			if (!isdigit(value[i]))
+			{
+				cerr << "(Request) Error: Invalid content length: " << value << endl;
+				return (false);
+			}
+		}
+	}
 
-    tmp += "=";
-    tmp += request.get_header_value(header_key);
-
-    return (tmp);  
+	if (value.size() > 4096)
+	{
+		cerr << "(Request) Error: Header field too large: " << value << endl;
+		return (false);
+	}
+	return (true);
 }
 
+int c_cgi::parse_headers(c_response &response, string& headers)
+{
+	size_t pos = headers.find(':', 0);
+	string key;
+	string value;
+
+	key = headers.substr(0, pos);
+	if (!is_valid_header_name(key))
+	{
+		cerr << "(Request) Error: invalid header_name: " << key << endl;
+		// response.set_status(400);
+	}
+
+	pos++;
+	// if (headers[pos] != 32)
+	// 	this->_status = 400;
+
+	value = ft_trim(headers.substr(pos + 1));
+	if (!is_valid_header_value(key, value))
+	{
+		cerr << "(Request) Error: invalid header_value: " << key << endl;
+		// this->_status = 400;
+	}
+
+	response.set_header_value(key, value);
+	return (0);
+}
+
+void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
+{
+	size_t end_of_headers;
+
+	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
+		return ;
+	string headers = content_cgi.substr(0, end_of_headers);
+
+	istringstream stream(headers);
+	string	line;
+	while (getline(stream, line, '\n'))
+	{
+		if (line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
+		parse_headers(response, line);
+	}
+
+	response.set_body(content_cgi.substr(end_of_headers + 4));
+
+}
 
 /* interpreter = loc->_cgi_extension["extension"]*/
 string  c_cgi::launch_cgi(const string &body)
@@ -169,11 +242,11 @@ string  c_cgi::launch_cgi(const string &body)
 
         char *argv[3];
         argv[0] = const_cast<char*>(this->_interpreter.c_str());
-        argv[1] = const_cast<char*>(this->_map_env_vars["TRANSLATED_PATH"].c_str());
+        argv[1] = const_cast<char*>(this->_map_env_vars["SCRIPT_FILENAME"].c_str());
         argv[2] = NULL;
 
         execve(this->_interpreter.c_str(), argv, &envp[0]);
-        cout << "(CGI) Error execve" << endl;
+        cout << "Status: 500 Internal Server Error" << endl;
         exit(1);
     }
     else
@@ -187,22 +260,23 @@ string  c_cgi::launch_cgi(const string &body)
             write(server_to_cgi[1], body.c_str(), body.size());
         close(server_to_cgi[1]); // signale EOF au script
 
+       
         /* Lire la sortie du CGI */
         char buffer[BUFFER_SIZE];
-        std::string response;
+        std::string content_cgi;
         ssize_t bytes_read;
         while ((bytes_read = read(cgi_to_server[0], buffer, sizeof(buffer) - 1)) > 0)
         {
             buffer[bytes_read] = '\0';
-            response += buffer;
+            content_cgi += buffer;
         }
         close(cgi_to_server[0]);
-
+        
         // Attendre la fin du process enfant
         int status;
         waitpid(pid, &status, WNOHANG);
         
-        return response;
+        return content_cgi;
     }
 }
 

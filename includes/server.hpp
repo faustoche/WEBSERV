@@ -77,3 +77,5 @@ public:
 /************ FUNCTIONS ************/
 
 string int_to_string(int n);
+bool   is_valid_header_name(const string& key_name);
+string ft_trim(const string& str);

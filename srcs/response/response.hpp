@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iterator>
 #include "server.hpp"
+#include "request.hpp"
 
 /************ DEFINE ************/
 
@@ -25,15 +26,28 @@ private:
 	string _response;
 	string _file_content;
 
+	/***** AC *****/
+	map<string, string> _headers_response;
+	string				_body;
+	int					_status;
+
 public:
 	void define_response_content(const c_request &request);
 	//void define_response_content(const c_request &request, c_server &server);
 	const string &get_response() const;
 	const string &get_file_content() const { return (_file_content); }
 
+	/****** AC *****/
+	void	set_header_value(const string &key, const string &value) { this->_headers_response[key] = value; };
+	void	set_body(const string &body) { this->_body = body; };
+	void	set_status(const int &status) { this->_status = status; };
+	void 	get_header_from_cgi(const string &content_cgi);
+	int 	parse_headers(string& headers);
+	bool 	is_valid_header_value(string& key, const string& value);
+
 private:
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
-	void    build_cgi_response(c_cgi & cgi, const string version, const c_request &request);
+	void    build_cgi_response(c_cgi & cgi, const c_request &request);
 	void	build_error_response(int error_code, const string version, const c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);

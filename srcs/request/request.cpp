@@ -39,13 +39,15 @@ void	c_request::read_request(int socket_fd)
 		{
 			if (receivedBytes == 0) 
 			{
-				cout << "(Request) client closed connection" << endl;
+				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
+				return ;
 			} 
 			else
 			{
-				cout << "(Request) Error: client disconnected unexepectedly" << endl;
+				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
+				return ;
 			}
 		}
 		buffer[receivedBytes] = '\0';
@@ -73,7 +75,10 @@ int c_request::parse_request(const string& raw_request)
 		this->_status_code = 400; 
 
 	if (line.empty() || line[line.size() - 1] != '\r')
+	{
 		this->_status_code = 400;
+		return (1);
+	}
 	line.erase(line.size() - 1);
 
 	
@@ -83,7 +88,10 @@ int c_request::parse_request(const string& raw_request)
 	while (getline(stream, line, '\n'))
 	{
 		if (line[line.size() - 1] != '\r')
+		{
 			this->_status_code = 400;
+			return (1);
+		}
 
 		line.erase(line.size() - 1);
 
@@ -276,7 +284,7 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 		{
 			if (receivedBytes == 0) 
 			{
-				cout << "Client closed connection" << endl;
+				cout << "Client closed connection: " << __FILE__ << "/" << __LINE__ << endl;
 				this->_error = true;
 			} 
 			else

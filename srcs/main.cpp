@@ -109,13 +109,15 @@ int main(void)
         {
 			my_request.read_request(connected_socket_fd);
 			if (my_request.get_error())
+			{
 				keep_alive = false;
+				break;
+			}
 			drain_socket(connected_socket_fd);
 			if (!keep_alive)
 				break;
 
 			my_request.print_full_request();
-
 
 
 			// Passer le keep alive de la socket en false en cas d'erreur uniquement 
@@ -129,7 +131,7 @@ int main(void)
 				keep_alive = false;
 				break;
 			}
-			if (!keep_alive)
+			if (!keep_alive || my_request.get_header_value("Connection") == "close")
 				break;
 		}
 		close(connected_socket_fd);		
