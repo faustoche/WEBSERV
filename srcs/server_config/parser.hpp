@@ -49,13 +49,17 @@ private :
             void                parse_listen_directive(c_server & server);
             void                parse_server_name(c_server & server);
             string              parse_ip(string const & value);
+            void                parse_server_cgi(c_server & server);
 
             // locations
             void                location_url_directory(c_server & server);
             void                location_url_file(c_server & server);
             void                location_directives(c_location & location);
             // locations directives
-            void                parse_cgi(c_location & location);
+            void                location_cgi(c_location & location);
+            void                location_indexes(c_location & location);
+            void                location_methods(c_location & location);
+            void                location_body_size(c_location & location);
 
             // utils
             void                expected_token_type(int expected_type) const;

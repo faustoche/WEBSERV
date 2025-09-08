@@ -48,7 +48,7 @@ void    c_webserv_config::print_configurations()
 
     for (it = _servers.begin(); it != _servers.end(); it++)
     {
-        cout << nb_server << ") Server = " << endl; // remplacer par le nom du serveur
+        cout << PINK << "Server [ " << nb_server << " ]" << "\033[0m" << endl << endl;
         it->print_config();
         nb_server++;
         cout << endl;

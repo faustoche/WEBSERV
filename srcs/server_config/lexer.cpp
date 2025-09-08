@@ -132,7 +132,9 @@ bool    c_lexer::is_bloc_keyword(string const & word) const
 bool    c_lexer::is_directive_keyword(string const & word) const
 {
     /* list avec des find ? */
-    if (word == "listen" || word == "index")
+    if (word == "listen" || word == "index" || word == "cgi" || word == "autoindex"
+        || word == "redirect" || word == "alias" || word == "methods" || word == "upload_enable"
+        || word == "error_page" || word == "server_name" || word == "client_max_body_size")
         return true ;
     return false ;
 }

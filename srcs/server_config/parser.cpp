@@ -142,9 +142,10 @@ void                c_parser::location_url_directory(c_server & server)
 
     location.set_url_key(_current->value);
     location.set_is_directory(true);
-    // location.set_index_files(server.get_index()); // revoir
-    // location.set_body_size(server.get_body_size());
-    // location.set_cgi(server.get_cgi());
+    location.set_index_files(server.get_indexes());
+    location.set_body_size(server.get_body_size());
+    location.set_root(server.get_root());
+    // location.set_err_page(server.get_err_pages()); // A FAIRE
     advance_token(); // skip url location
     expected_token_type(TOKEN_LBRACE);
     advance_token(); // skip LBRACE
@@ -166,6 +167,8 @@ void                c_parser::location_url_directory(c_server & server)
 void                c_parser::location_url_file(c_server & server)
 {
     (void)server;
+    // le file est a mettre comme index, 
+    // pas besoin de recuperer les fichiers index listes par la directive indexes
 }
 
 /*------------------------   location : directives   ---------------------------*/
@@ -174,24 +177,60 @@ void                c_parser::location_directives(c_location & location)
     // string  value = _current->value;
     int     flag_cgi = 0;
 
-    // if (is_token_value("index"))
+    // if (is_token_value("root"))
     // if (is_token_value("autoindex"))
-    // if(is_token_value("max_body_size"))
-    // if (is_token_value("methods"))
-
+    if(is_token_value("max_body_size"))
+    {
+        advance_token();
+        location_body_size(location);
+    }
+    if (is_token_value("methods"))
+    {
+        advance_token();
+        location_methods(location);
+    }
+    if (is_token_value("index"))
+    {
+        advance_token(); // skip directive
+        location_indexes(location);
+    }
     if (is_token_value("cgi"))
     {
         flag_cgi++;
         location.clear_cgi();
-        parse_cgi(location);
+        advance_token(); // skip directive
+        location_cgi(location);
     }
-    // expected_token_type(TOKEN_SEMICOLON);
 }
 
-void                c_parser::parse_cgi(c_location & location)
+void                c_parser::location_methods(c_location & location)
+{
+    vector<string>  tmp_methods;
+
+    expected_token_type(TOKEN_VALUE);
+
+    while (is_token_type(TOKEN_VALUE))
+    {
+        if (get_value() == "GET" || get_value() == "POST" || get_value() == "DELETE")
+        {    
+            tmp_methods.push_back(get_value());
+            advance_token();
+        }
+        else
+            throw invalid_argument("wrong method ==> " + get_value());
+    }
+    if (tmp_methods.empty())
+        throw invalid_argument("directive method can't be empty");
+    location.set_methods(tmp_methods);
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+}
+
+void                c_parser::location_cgi(c_location & location)
 {
     string  extension;
     string  path;
+    map<string, string> temp;
 
     expected_token_type(TOKEN_VALUE);
     extension = get_value();
@@ -200,9 +239,52 @@ void                c_parser::parse_cgi(c_location & location)
     path = get_value();
     advance_token(); // skip second value (path)
     expected_token_type(TOKEN_SEMICOLON);
-
-    // verifiation de extension et path
+    advance_token(); //skip semicolon
+    
+    if (extension != ".py" && extension != ".sh")
+        throw invalid_argument("invalid extension for the CGI ==> " + extension);
+    if (path[0] != '/')
+        throw invalid_argument("invalid path for the CGI ==> " + path);
+    if (path[path.size() - 1] == '/')
+        throw invalid_argument("invalid path for the CGI ==> " + path);
+    if (!is_executable_file(path))
+        throw invalid_argument("no such file or permission denied ==> " + path);
+    temp[extension] = path;
+    location.set_cgi(temp);
 }
+
+void                c_parser::location_indexes(c_location & location)
+{
+    expected_token_type(TOKEN_VALUE);
+    
+    while (is_token_type(TOKEN_VALUE))
+    {
+        if (location.get_bool_is_directory())
+        {
+            location.add_index_file(_current->value);            
+            advance_token();
+        }
+    }
+    if (location.get_indexes().empty())
+       throw invalid_argument("Error: index directive requires at least one value");
+
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+}
+
+void            c_parser::location_body_size(c_location & location)
+{
+    (void)location;
+    expected_token_type(TOKEN_VALUE);
+    advance_token(); // skip value
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+
+    // recuperer la valeeuuuur
+
+}
+
+
 
 
 /*-----------------------   server : directives   ------------------------------*/
@@ -275,41 +357,82 @@ void                c_parser::parse_listen_directive(c_server & server)
 
 void                c_parser::parse_index_directive(c_server & server)
 {
-    advance_token(); // skip keyword "index"
-
-    // Ngnix permet plusieurs fichiers index --> il faut prendre le premier qui fonctionne
     vector<string>  index_files;
-    string          valid_file = "";
+    advance_token(); // skip keyword "index"
+    expected_token_type(TOKEN_VALUE);
 
     while (is_token_type(TOKEN_VALUE))
     {
         index_files.push_back(current_token().value);
-        advance_token(); // a la fin devrait etre sur token ";"
+        advance_token();
     }
     if (index_files.empty())
        throw invalid_argument("Error: index directive requires at least one value");
-    
-    vector<string>::iterator it = index_files.begin();
-    while (it != index_files.end())
-    {
-        if (is_executable_file(*it))
-        {
-            valid_file = *it;
-            break ;
-        }
-        it++;
-    }
-    if (valid_file.empty())
-        throw invalid_argument("Error in index directive: there is no valid file");
-    server.set_index_file(valid_file);
+    // POUR VERIFIER LA VALIDITE DU FICHIER
+    // vector<string>::iterator it = index_files.begin();
+    // while (it != index_files.end())
+    // {
+    //     if (is_executable_file(*it))
+    //     {
+    //         valid_file = *it;
+    //         break ;
+    //     }
+    //     it++;
+    // }
+    // if (valid_file.empty())
+    //     throw invalid_argument("Error in index directive: there is no valid file");
+    server.set_indexes(index_files);
     expected_token_type(TOKEN_SEMICOLON);
     advance_token(); // skip semicolon
 }
 
 void                c_parser::parse_server_name(c_server & server)
 {
-    (void)server;
+    vector<string>  temp_names;
+    advance_token(); // skip keyword "server_name"
+    expected_token_type(TOKEN_VALUE);
+
+    while (is_token_type(TOKEN_VALUE))
+    {
+        temp_names.push_back(current_token().value);
+        advance_token();
+    }
+    if (temp_names.empty())
+        throw invalid_argument("server_name directive requires at least one value");
+    server.set_name(temp_names);
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token(); // skip semicolon
 }
+
+// void                c_parser::parse_server_cgi(c_server & server)
+// {
+    
+//     string  extension;
+//     string  path;
+//     map<string, string> temp;
+
+//     advance_token();
+//     expected_token_type(TOKEN_VALUE);
+//     extension = get_value();
+//     advance_token(); // skip first value (suppose to be extension)
+//     expected_token_type(TOKEN_VALUE);
+//     path = get_value();
+//     advance_token(); // skip second value (path)
+//     expected_token_type(TOKEN_SEMICOLON);
+//     advance_token(); //skip semicolon
+    
+//     if (extension != ".py" && extension != ".sh")
+//         throw invalid_argument("invalid extension for the CGI ==> " + extension);
+//     if (path[0] != '/')
+//         throw invalid_argument("invalid path for the CGI ==> " + path);
+//     if (path[path.size() - 1] == '/')
+//         throw invalid_argument("invalid path for the CGI ==> " + path);
+//     if (!is_executable_file(path))
+//         throw invalid_argument("no such file or permission denied ==> " + path);
+//     temp[extension] = path;
+//     server.set_cgi(temp);
+// }
+
 
 void                c_parser::parse_server_directives(c_server & server)
 {
@@ -317,6 +440,8 @@ void                c_parser::parse_server_directives(c_server & server)
         parse_index_directive(server);
     else if (is_token_value("listen"))
         parse_listen_directive(server);
+    else if (is_token_value("server_name"))
+        parse_server_name(server);
     else /* a enlever / reprendre */
         advance_token();
     // cout << "parse index directive = " << this->_current->value << endl;
