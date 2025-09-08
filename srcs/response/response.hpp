@@ -41,9 +41,6 @@ public:
 	void	set_header_value(const string &key, const string &value) { this->_headers_response[key] = value; };
 	void	set_body(const string &body) { this->_body = body; };
 	void	set_status(const int &status) { this->_status = status; };
-	void 	get_header_from_cgi(const string &content_cgi);
-	int 	parse_headers(string& headers);
-	bool 	is_valid_header_value(string& key, const string& value);
 
 private:
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
