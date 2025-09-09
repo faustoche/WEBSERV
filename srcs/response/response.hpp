@@ -26,7 +26,7 @@ private:
 
 public:
 	void define_response_content(const c_request &request);
-	//void define_response_content(const c_request &request, c_server &server);
+	void define_response_content(const c_request &request, c_server &server);
 	const string &get_response() const;
 	const string &get_file_content() const { return (_file_content); }
 

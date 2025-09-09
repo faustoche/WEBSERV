@@ -8,7 +8,7 @@ const string &c_response::get_response() const {
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-void	c_response::define_response_content(const c_request &request)
+void	c_response::define_response_content(const c_request &request, c_server &server)
 {
 	_response.clear();
 	_file_content.clear();
@@ -37,21 +37,23 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 
+	c_location *matching_location = server.find_matching_location(target);
+	
 	// 1. Vérifier si on trouve une location qui matche -> fonction find_location()
 	// 2. Est-ce que la méthode est autorisée pour cette location spécifique?
 	// 3. Est-ce qu'on a redéfini une redirection? Si oui -> gérer cette redirection
-
+	
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER - À CHANGER POUR AJOUTER LA LOCATIONS *****/
 	
 	string file_path;
 	if (target == "/")
-		file_path = "www/index.html";
+	file_path = "www/index.html";
 	else if (target.substr(0, 1) == "/")
-		file_path = "www" + target;
+	file_path = "www" + target;
 	else
-		file_path = "www/" + target;
-
-
+	file_path = "www/" + target;
+	
+	
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	_file_content = load_file_content(file_path);
 
@@ -184,3 +186,44 @@ void c_response::build_error_response(int error_code, const string version, cons
 	_response += error_content;
 	_file_content.clear();
 }
+
+
+// trouver la location
+
+c_location	*c_server::find_matching_location(const string &request_path)
+{
+	c_location *best_match = NULL;
+	size_t best_match_length = 0;
+
+	// parcourir toutes les locations de la map
+	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
+	{
+		//je recupere la cle
+		const string &location_path = it->first;
+		// est-ce que le chemin de la requete comment par le chemin de la location?
+		if (request_path.find(location_path) == 0)
+		{
+			// check loction type repertoire qui terminent par /
+			// est-ce que le caracetere suivant est / ou bien on est a la fin ?
+			if (location_path[location_path.length()] - 1 == '/')
+			{
+				if (request_path.length() == location_path.length() || request_path[location_path.length()] == '/')
+				{
+					// on choisi la correspondance la plus long 
+					if (location_path.length() > best_match_length)
+					{
+						best_match = &(it->second);
+						best_match_length = location_path.length();
+					}
+				}
+			}
+			// sinon location exact
+			else
+			{
+				if (request_path == location_path)
+					return (&(it->second));
+			}
+		}
+	}
+}
+

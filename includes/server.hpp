@@ -61,6 +61,8 @@ public:
 	void		handle_client_write(int client_fd);
 	void		process_client_request(int client_fd);
 
+	c_location	*find_matching_location(const string &request_path);
+
 	    // CONFIGURATION FILE
     // Setters
     void                set_index_file(string const & index);
