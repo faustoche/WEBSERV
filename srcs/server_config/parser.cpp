@@ -118,7 +118,6 @@ bool                c_parser::is_executable_file(const std::string & path)
 /*---------------------   location : main function   -----------------------------*/
 void                c_parser::parse_location_block(c_server & server)
 {
-    (void)server;
     advance_token(); // skip "location"
 
     expected_token_type(TOKEN_VALUE);
@@ -144,12 +143,13 @@ void                c_parser::location_url_directory(c_server & server)
     location.set_is_directory(true);
     location.set_index_files(server.get_indexes());
     location.set_body_size(server.get_body_size());
-    location.set_alias(server.get_root()); // verifier sil faut remplacer l'alias par root du serveur si pas de directive alias specifie dans la location
+    // si pas de directive alias ne pas set la valeur avec le root
     // location.set_err_page(server.get_err_pages()); // A FAIRE
+
     advance_token(); // skip url location
     expected_token_type(TOKEN_LBRACE);
     advance_token(); // skip LBRACE
-    
+
     while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
     {
         if (is_token_type(TOKEN_DIRECTIVE_KEYWORD))
@@ -157,10 +157,12 @@ void                c_parser::location_url_directory(c_server & server)
         else if (is_token_type(TOKEN_RBRACE))
             break ;
         else
+        {
+            cout << "type" << _current->type << endl;
             throw invalid_argument("invalid in location = " + _current->value);
+        }
     }
     server.add_location(location.get_url_key(), location);
-
 }
 
 /*---------------------   location : file as value   ---------------------------*/
@@ -174,49 +176,36 @@ void                c_parser::location_url_file(c_server & server)
 /*------------------------   location : directives   ---------------------------*/
 void                c_parser::location_directives(c_location & location)
 {
-    // string  value = _current->value;
     int     flag_cgi = 0;
+    int     flag_upload = 0;
 
-    // if (is_token_value("root"))
-    // if (is_token_value("autoindex"))
-    if(is_token_value("max_body_size"))
-    {
-        advance_token();
-        location_body_size(location);
-    }
-    if (is_token_value("methods"))
-    {
-        advance_token();
-        location_methods(location);
-    }
-    if (is_token_value("index"))
-    {
-        advance_token(); // skip directive
-        location.clear_indexes();   
-        location_indexes(location);
-    }
     if (is_token_value("cgi"))
     {
         flag_cgi++;
         location.clear_cgi();
-        advance_token(); // skip directive
         location_cgi(location);
     }
-    if (is_token_value("alias"))
+    else if (is_token_value("index"))
     {
-        advance_token(); // skip directive
+        location.clear_indexes();   
+        location_indexes(location);
+    }
+    else if (is_token_value("upload_path"))
+    {
+        flag_upload++;
+        if (flag_upload > 1)
+            throw invalid_argument("directive upload_path can be define just once");
+        parse_upload_path(location);
+    }
+    else if (is_token_value("methods"))
+        location_methods(location);
+    else if (is_token_value("alias"))
         location_alias(location);
-    }
-    if (is_token_value("client_max_body_size"))
-    {
-        advance_token();
-        location_body_size(location);
-    }
-    // if (is_token_value("upload_path"))
-    // {
-    //     avance_token();
-    //     location_upload(location);
-    // }
+    else if (is_token_value("client_max_body_size"))
+        parse_body_size(location);
+    else if (is_token_value("autoindex"))
+        parse_auto_index(location);
+    
     else
         return;
 }
@@ -225,6 +214,7 @@ void                c_parser::location_methods(c_location & location)
 {
     vector<string>  tmp_methods;
 
+    advance_token();
     expected_token_type(TOKEN_VALUE);
 
     while (is_token_type(TOKEN_VALUE))
@@ -250,6 +240,7 @@ void                c_parser::location_cgi(c_location & location)
     string  path;
     map<string, string> temp;
 
+    advance_token(); // skip directive
     expected_token_type(TOKEN_VALUE);
     extension = get_value();
     advance_token(); // skip first value (suppose to be extension)
@@ -273,6 +264,7 @@ void                c_parser::location_cgi(c_location & location)
 
 void                c_parser::location_indexes(c_location & location)
 {
+    advance_token(); // skip directive
     expected_token_type(TOKEN_VALUE);
     
     while (is_token_type(TOKEN_VALUE))
@@ -290,74 +282,51 @@ void                c_parser::location_indexes(c_location & location)
     advance_token();
 }
 
-void            c_parser::location_body_size(c_location & location)
+void                c_parser::location_alias(c_location & location)
 {
-    (void)location;
+    advance_token(); // skip directive
     expected_token_type(TOKEN_VALUE);
-    string  str = _current->value;
+    string  alias = _current->value;
     advance_token(); // skip value
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();
 
-    if (str.find_first_not_of("0123456789kKmMgG") != string::npos)
-        throw invalid_argument("invalid argument for max_body_size => " + str);
-    
-    string suffix;
-    size_t  i = 0;
-    size_t  j = 0;
-    while (isdigit(str[i]) && str[i])
-        i++;
-    if (i < str.length())
-    {
-        suffix = str.substr(i);
-        for (j = 0; j + i != str.length(); j++)
-        {
-            if (j >= 1)
-                throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
-            if (suffix.find_first_not_of("kKmMgG") != string::npos)
-                throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
-        
-        }
-    }
-
-    size_t limit = 0;
-    string result;
-    if (suffix.empty())// pas de suffix donc chiffre deja en octet
-        limit = strtol(str.c_str(), NULL, 10); 
-    else
-    {
-        result = str.substr(0, i);
-        limit = strtol(str.c_str(), NULL, 10);
-    }
-    if (errno == ERANGE)
-        throw invalid_argument("invalid argument for max_body_size (conversion of the number) ==> " + str);
-    if (suffix.empty())
-    {
-
-    }
-    else
-    {
-
-    }
-
-    cout << "LIMIT = " << limit << endl;
-    cout << "number " << str << " suffix = " << suffix << endl;
-    
-
-    // recuperer la valeeuuuur
-
-}
-
-void                c_parser::location_alias(c_location & location)
-{
-    expected_token_type(TOKEN_VALUE);
-
-    if (_current->value[0] != '/' && _current->value[0] != '.')
+    if (alias[0] != '/' && alias[0] != '.')
         throw invalid_argument("invalid path for alias ==> " + _current->value);
-    string  alias = _current->value;
     if (alias[alias.length() - 1] != '/')
         alias.push_back('/');
     location.set_alias(alias);
+}
+
+void        c_parser::parse_upload_path(c_location & location)
+{
+    advance_token();
+    expected_token_type(TOKEN_VALUE);
+    string path = _current->value;
+    advance_token();
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+    
+    if (path[0] != '/' && path[0] != '.')
+        throw invalid_argument("invalid path for directive upload_path ==> " + path);
+    if (path[path.length() - 1] != '/')
+       throw invalid_argument("invalid path for directive upload_path ==> " + path);
+    location.set_upload_path(path); 
+}
+
+void        c_parser::parse_auto_index(c_location & location)
+{
+    advance_token(); // skip directive
+    expected_token_type(TOKEN_VALUE);
+    
+    if (_current->value != "ON" && _current->value != "on"
+        && _current->value != "OFF" && _current->value != "off")
+        throw invalid_argument("invalid value for auto_index ==> " + _current->value);
+    if (_current->value == "ON" || _current->value == "on")
+        location.set_auto_index(true);
+    else if (_current->value != "OFF" || _current->value != "off")
+        location.set_auto_index(false);
+    
     advance_token(); // skip value
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();
@@ -481,36 +450,6 @@ void                c_parser::parse_server_name(c_server & server)
     advance_token(); // skip semicolon
 }
 
-// void                c_parser::parse_server_cgi(c_server & server)
-// {
-    
-//     string  extension;
-//     string  path;
-//     map<string, string> temp;
-
-//     advance_token();
-//     expected_token_type(TOKEN_VALUE);
-//     extension = get_value();
-//     advance_token(); // skip first value (suppose to be extension)
-//     expected_token_type(TOKEN_VALUE);
-//     path = get_value();
-//     advance_token(); // skip second value (path)
-//     expected_token_type(TOKEN_SEMICOLON);
-//     advance_token(); //skip semicolon
-    
-//     if (extension != ".py" && extension != ".sh")
-//         throw invalid_argument("invalid extension for the CGI ==> " + extension);
-//     if (path[0] != '/')
-//         throw invalid_argument("invalid path for the CGI ==> " + path);
-//     if (path[path.size() - 1] == '/')
-//         throw invalid_argument("invalid path for the CGI ==> " + path);
-//     if (!is_executable_file(path))
-//         throw invalid_argument("no such file or permission denied ==> " + path);
-//     temp[extension] = path;
-//     server.set_cgi(temp);
-// }
-
-
 void                c_parser::parse_server_directives(c_server & server)
 {
     if (is_token_value("index"))
@@ -519,6 +458,8 @@ void                c_parser::parse_server_directives(c_server & server)
         parse_listen_directive(server);
     else if (is_token_value("server_name"))
         parse_server_name(server);
+    else if (is_token_value("client_max_body_size"))
+        parse_body_size(server);
     else /* a enlever / reprendre */
         advance_token();
     // cout << "parse index directive = " << this->_current->value << endl;
@@ -626,6 +567,40 @@ vector<c_server>    c_parser::parse()
     }
 
 }
+
+
+/*-----------------------   utils -----------------------*/
+
+size_t            c_parser::convert_to_octet(string const & str, string const & suffix, size_t const i) const
+{
+    size_t limit = 0;
+    string result;
+
+    if (suffix.empty())// pas de suffix donc chiffre deja en octet
+        limit = strtol(str.c_str(), NULL, 10); 
+    else
+    {
+        result = str.substr(0, i);
+        limit = strtol(str.c_str(), NULL, 10);
+    }
+    if (errno == ERANGE)
+        throw invalid_argument("invalid argument for max_body_size (conversion of the number) ==> " + str);
+    
+    if (!suffix.empty())
+    {
+        if (suffix == "k" || suffix == "K")
+            limit = limit * 1024;
+        else if (suffix == "m" || suffix == "M")
+            limit = limit * 1024 * 1024;
+        else if (suffix == "g" || suffix == "G")
+            limit = limit * 1024 * 1024 * 1024;
+        else
+            throw invalid_argument("invalid argument for max_body_size (conversion of the number) ==> " + str);
+    }
+
+    return limit;
+}
+
 
 /*-----------------   error handling -------------------*/
 

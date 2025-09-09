@@ -77,6 +77,7 @@ public:
     void                				set_indexes(vector<string> const & index);
 	void								set_port(uint16_t const & port);
 	void								set_ip(string const & ip);
+	void								set_body_size(size_t const & size){_body_size = size; };
 	void								set_root(string const & root); // A FAIRE
 	void								set_err_pages(map<string, vector<int> > err_pages); // A FAIRE
 	// void								set_cgi(map<string, string> const & cgi) {this->_cgi_extension = cgi;};

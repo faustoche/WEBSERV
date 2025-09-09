@@ -57,26 +57,69 @@ private :
             void                location_directives(c_location & location);
             void                location_alias(c_location & location);
             // locations directives
-            void                location_cgi(c_location & location);
+            void                location_cgi(c_location & location); //modifier noms
             void                location_indexes(c_location & location);
             void                location_methods(c_location & location);
-            void                location_body_size(c_location & location);
-
+            void                parse_auto_index(c_location & location);
+            void                parse_upload_path(c_location & location);
+            
             // utils
             void                expected_token_type(int expected_type) const;
             bool                is_token_value(std::string key);
             bool                is_token_type(int type);
             bool                is_executable_file(const std::string & path);
+            size_t              convert_to_octet(string const & str, string const & suffix, size_t const i) const;
 
             // void    expected_token_value(int expected_type) const;
 
             // error handling
-            bool            has_error() const;
-            string const &  get_error() const;
-            void            clear_error();
+            bool                has_error() const;
+            string const &      get_error() const;
+            void                clear_error();
+            
+            template<typename C>
+            void                parse_body_size(C & servloc);
 };
 
+
+template<typename C>
+void            c_parser::parse_body_size(C & servloc)
+{
+    advance_token();
+    expected_token_type(TOKEN_VALUE);
+    string  str = _current->value;
+    advance_token(); // skip value
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+
+    if (str.find_first_not_of("0123456789kKmMgG") != string::npos)
+        throw invalid_argument("invalid argument for max_body_size => " + str);
+    
+    string suffix;
+    size_t  i = 0;
+    size_t  j = 0;
+    while (isdigit(str[i]) && str[i])
+        i++;
+    if (i < str.length())
+    {
+        suffix = str.substr(i);
+        for (j = 0; j + i != str.length(); j++)
+        {
+            if (j >= 1)
+                throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
+            if (suffix.find_first_not_of("kKmMgG") != string::npos)
+                throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
+        
+        }
+    }
+
+    size_t limit = convert_to_octet(str, suffix, i);
+    servloc.set_body_size(limit);
+}
+
 string      my_to_string(int int_str);
+
+
 /*
     1) parse -> parse_config -> parse server bloc -> parse server directive
                                                              --> parse listen --> parse root ...

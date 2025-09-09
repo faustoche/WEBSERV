@@ -6,9 +6,9 @@ c_server::c_server()
 	_names.push_back("default server");
 	_ip = "0.0.0.0";
 	_port = 80;
-	_root = "./www";
+	_root = "./"; // dossier courrant
 	_indexes.push_back("index.html");
-	_body_size = 1; // en Mo
+	_body_size = 1 * 1024; // kilo octet converti en octet ---> ou 0 ?
 	// _err_pages = /* generer une page html simple si non configure */
 
 
@@ -101,7 +101,7 @@ void	c_server::print_config() const
 			cout << endl;
 	cout	<< "	IP adress: " << get_ip_adress() << endl
 			<< "	port: " << get_port() << endl
-			<< "	max body size: " << get_body_size() << endl
+			<< "	max body size: " << get_body_size() << " " << endl
 			<< "	index files: " << flush;
 			print_indexes();
 	cout << endl

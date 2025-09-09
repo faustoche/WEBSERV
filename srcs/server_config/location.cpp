@@ -68,7 +68,7 @@ void	c_location::print_methods() const
 void    c_location::print_location() const
 {
     cout 
-        << "            max body size: " << get_body_size() << endl
+        << "            max body size: " << get_body_size() << " octets" << endl
         << "            alias: " << get_alias() << endl
         << "            authorised methods = ";
         print_methods();
