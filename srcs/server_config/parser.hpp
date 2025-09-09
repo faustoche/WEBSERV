@@ -55,6 +55,7 @@ private :
             void                location_url_directory(c_server & server);
             void                location_url_file(c_server & server);
             void                location_directives(c_location & location);
+            void                location_alias(c_location & location);
             // locations directives
             void                location_cgi(c_location & location);
             void                location_indexes(c_location & location);

@@ -45,7 +45,7 @@ private:
     // string							_host;
 	vector <string>                 _indexes; // plusieurs fichiers index possibles, il faut verifier la validite de l'index au moment de la requete & prendre le premier valide 
     vector <string>					_names;
-	size_t							_body_size;
+	size_t							_body_size; // en octets
 	map<string, c_location>   		_location_map;
 	map<string, vector<int> >		_err_pages;
 	// map<string, string>				_cgi_extension; // revoir la particularite des cgi ac directive dans le serveur 

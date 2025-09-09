@@ -144,7 +144,7 @@ void                c_parser::location_url_directory(c_server & server)
     location.set_is_directory(true);
     location.set_index_files(server.get_indexes());
     location.set_body_size(server.get_body_size());
-    location.set_root(server.get_root());
+    location.set_alias(server.get_root()); // verifier sil faut remplacer l'alias par root du serveur si pas de directive alias specifie dans la location
     // location.set_err_page(server.get_err_pages()); // A FAIRE
     advance_token(); // skip url location
     expected_token_type(TOKEN_LBRACE);
@@ -192,6 +192,7 @@ void                c_parser::location_directives(c_location & location)
     if (is_token_value("index"))
     {
         advance_token(); // skip directive
+        location.clear_indexes();   
         location_indexes(location);
     }
     if (is_token_value("cgi"))
@@ -201,6 +202,23 @@ void                c_parser::location_directives(c_location & location)
         advance_token(); // skip directive
         location_cgi(location);
     }
+    if (is_token_value("alias"))
+    {
+        advance_token(); // skip directive
+        location_alias(location);
+    }
+    if (is_token_value("client_max_body_size"))
+    {
+        advance_token();
+        location_body_size(location);
+    }
+    // if (is_token_value("upload_path"))
+    // {
+    //     avance_token();
+    //     location_upload(location);
+    // }
+    else
+        return;
 }
 
 void                c_parser::location_methods(c_location & location)
@@ -241,7 +259,7 @@ void                c_parser::location_cgi(c_location & location)
     expected_token_type(TOKEN_SEMICOLON);
     advance_token(); //skip semicolon
     
-    if (extension != ".py" && extension != ".sh")
+    if (extension != ".py" && extension != ".sh" && extension != ".php") // verifier toutes les extensions autorisees
         throw invalid_argument("invalid extension for the CGI ==> " + extension);
     if (path[0] != '/')
         throw invalid_argument("invalid path for the CGI ==> " + path);
@@ -276,15 +294,74 @@ void            c_parser::location_body_size(c_location & location)
 {
     (void)location;
     expected_token_type(TOKEN_VALUE);
+    string  str = _current->value;
     advance_token(); // skip value
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();
+
+    if (str.find_first_not_of("0123456789kKmMgG") != string::npos)
+        throw invalid_argument("invalid argument for max_body_size => " + str);
+    
+    string suffix;
+    size_t  i = 0;
+    size_t  j = 0;
+    while (isdigit(str[i]) && str[i])
+        i++;
+    if (i < str.length())
+    {
+        suffix = str.substr(i);
+        for (j = 0; j + i != str.length(); j++)
+        {
+            if (j >= 1)
+                throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
+            if (suffix.find_first_not_of("kKmMgG") != string::npos)
+                throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
+        
+        }
+    }
+
+    size_t limit = 0;
+    string result;
+    if (suffix.empty())// pas de suffix donc chiffre deja en octet
+        limit = strtol(str.c_str(), NULL, 10); 
+    else
+    {
+        result = str.substr(0, i);
+        limit = strtol(str.c_str(), NULL, 10);
+    }
+    if (errno == ERANGE)
+        throw invalid_argument("invalid argument for max_body_size (conversion of the number) ==> " + str);
+    if (suffix.empty())
+    {
+
+    }
+    else
+    {
+
+    }
+
+    cout << "LIMIT = " << limit << endl;
+    cout << "number " << str << " suffix = " << suffix << endl;
+    
 
     // recuperer la valeeuuuur
 
 }
 
+void                c_parser::location_alias(c_location & location)
+{
+    expected_token_type(TOKEN_VALUE);
 
+    if (_current->value[0] != '/' && _current->value[0] != '.')
+        throw invalid_argument("invalid path for alias ==> " + _current->value);
+    string  alias = _current->value;
+    if (alias[alias.length() - 1] != '/')
+        alias.push_back('/');
+    location.set_alias(alias);
+    advance_token(); // skip value
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+}
 
 
 /*-----------------------   server : directives   ------------------------------*/
@@ -445,8 +522,7 @@ void                c_parser::parse_server_directives(c_server & server)
     else /* a enlever / reprendre */
         advance_token();
     // cout << "parse index directive = " << this->_current->value << endl;
-    // else if (is_token_value("server_name"))
-    
+
     // else if (is_token_value("error_page"))
     // else if (is_token_value("client_max_body_size"))
     // else
@@ -517,11 +593,11 @@ vector<c_server>    c_parser::parse_config()
             c_server server = parse_server_block();
             servers.push_back(server);
         }
-        else if (is_token_type(TOKEN_EOF))
-        {
-            cout << "TOKEN_EOF " << endl;
-            break;
-        }
+        // else if (is_token_type(TOKEN_EOF))
+        // {
+        //     cout << "TOKEN_EOF " << endl;
+        //     break;
+        // }
         else
         {
             string error_msg = "Unexpected token at line " + my_to_string(token.line) +

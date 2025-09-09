@@ -24,7 +24,7 @@ public:
 
 		// Setters
 		void								set_url_key(string const & url) {this->_url_key = url; };
-		void								set_root(string const & root) {this->_location_root = root; };
+		void								set_alias(string const & root) {this->_location_root = root; };
 		void								set_index_files(vector<string> const & files) {this->_location_indexes = files; };
 		void								add_index_file(string const & file);
 		void								set_methods(vector<string> const & methods) {this->_location_methods = methods; };
@@ -38,7 +38,7 @@ public:
 
 		// Getters			
 		string const &						get_url_key() const {return _url_key; };
-		string const &						get_root() const {return _location_root; };
+		string const &						get_alias() const {return _location_root; };
 		vector<string> const &				get_indexes() const {return _location_indexes; };
 		vector<string> const &				get_methods() const {return _location_methods; };
 		size_t								get_body_size() const {return _location_body_size; };
@@ -55,13 +55,14 @@ public:
 		void								print_methods() const;
 
 		void								clear_cgi();
+		void								clear_indexes();
 
-private:		
+private:		// remplacer "root" par alias
 		string								_url_key; // cle de la map dans le server
 		string								_location_root; // ou alias --> racine des fichiers pour cette location (si non definit, herite du root du serveur)
 		vector<string>						_location_indexes; // liste des fichiers index possibles si l'URL correspond a un repertoire -> il faut verifier la validite de lindex au moment de la requete
 		vector<string>						_location_methods; // methodes HTTP autorisees (GET, POST, DELETE)
-		size_t								_location_body_size; // taille max de requete, herite du client_max_body_size du serveur si absent
+		size_t								_location_body_size; // en octets, taille max de requete, herite du client_max_body_size du serveur si absent
 		bool								_auto_index; // activer/desactiver listing de dossier --> quand l'URL correspond a un repertoire et qu'aucun fichier index n'existe
 		pair<int, string>					_redirect; // code + URL (301 /new_path) --> pour gerer les return 301 /new_path
 		map<string, string>					_cgi_extension; // extension + chemin vers lexecutable CGI --> si l'URL demandee correspond a un fichier avec cette extension le serveur lance l'executable correspondant
@@ -72,10 +73,13 @@ private:
 
 
 
-/* EXEMPLE =
+/* 
+
+
+EXEMPLE =
 		
 		server {
-    		root ./www;
+    		root ./www; //definit en dur
 
     		location /images/ {
     		    alias ./www/media;
@@ -89,9 +93,10 @@ _location_root = ./www/media
 
 
 url demandee /images/photos.png -> chemin reel = ./www/media/photo.png
+On utilise ALIAS -> remplace completement la partie du chemin correspondant a la location
 pour construire le chemin reel sur le disque :
 	real_path = _location_root + (requested_url - _url_key)
-
+location_root --> remplacer le nom par location_alias
 
 
 EXEMPLE (chemin ou fichier):
@@ -114,5 +119,14 @@ Sinon retourner une erreur 403 ou 404
 CAS D'UN FICHIER apres "location"
 le serveur n'a pas besoin dun fichier index
 il verifie directement si le fichier existe, si autorise pour methode HTTP et s'il faut executer un CGI
+
+
+/!!!!/
+C’est au moment de servir une requête qu'il faut verifier :
+si le chemin mappé existe vraiment,
+si c’est un fichier ou un dossier,
+si on a le droit d’y accéder.
+
+
 
 */

@@ -69,7 +69,7 @@ void    c_location::print_location() const
 {
     cout 
         << "            max body size: " << get_body_size() << endl
-        << "            root: " << get_root() << endl
+        << "            alias: " << get_alias() << endl
         << "            authorised methods = ";
         print_methods();
     cout << endl
@@ -98,5 +98,11 @@ void    c_location::clear_cgi()
 {
     if (!_cgi_extension.empty())
         _cgi_extension.clear();
+}
+
+void    c_location::clear_indexes()
+{
+    if (!_location_indexes.empty())
+        _location_indexes.clear();
 }
 
