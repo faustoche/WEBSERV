@@ -50,13 +50,35 @@ string  find_extension(const string& real_path)
     return (NULL);
 }
 
+size_t c_cgi::identify_script_type(const c_request &request)
+{
+    size_t pos_script = string::npos;
+    string  script_type;
+
+    pos_script = request.get_path().find(".py");
+    if (pos_script == string::npos)
+    {
+        pos_script= request.get_path().find(".php");
+        if (pos_script == string::npos)
+        {
+            cerr << "Error: unknown script type" << endl;
+            return (string::npos);
+        }
+         this->_script_name = request.get_path().substr(0, pos_script + 4);
+        return (pos_script + 4);
+    }
+    this->_script_name = request.get_path().substr(0, pos_script + 3);
+    return (pos_script + 3);
+}
+
 void    c_cgi::resolve_cgi_paths(const c_request &request, const c_location* loc)
 {
-    size_t pos_script = request.get_path().find(".py") + 3;
-    this->_script_name = request.get_path().substr(0, pos_script);
+    size_t ext_pos = identify_script_type(request);
+    if (ext_pos == string::npos)
+        return ;
     if (this->_script_name.size() < request.get_path().size())
     {
-        this->_path_info = request.get_path().substr(pos_script);
+        this->_path_info = request.get_path().substr(ext_pos);
         this->_translated_path = loc->get_root() + this->_path_info;
     }
 
@@ -70,6 +92,7 @@ void    c_cgi::init_cgi(const c_request &request, map<string, c_location>& map_l
 {
     /* Recherche de la location correspondante au path de la requete */
     string  path = request.get_path();
+
     map<string, c_location>::const_iterator it = find_location(path, map_location);
     if (it == map_location.end()) 
     {
@@ -86,6 +109,7 @@ void    c_cgi::init_cgi(const c_request &request, map<string, c_location>& map_l
 
     /* Construction de l'environnement pour l'execution du script */
     this->set_environment(request);
+
 }
 
 void  c_cgi::vectorize_env()
@@ -111,6 +135,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
     this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
+    this->_map_env_vars["REDIRECT_STATUS"] = "200";
 
     this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
     this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
@@ -177,6 +202,8 @@ int c_cgi::parse_headers(c_response &response, string& headers)
 	}
 
 	response.set_header_value(key, value);
+    std::cerr << "Header enregistré : [" << key << "] = [" << value << "]" << std::endl;
+    cout << "******************allo:" << response.get_header_value("Content-Type") << endl;
 	return (0);
 }
 
@@ -187,6 +214,7 @@ void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
 	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
 		return ;
 	string headers = content_cgi.substr(0, end_of_headers);
+    cout << "headers: " << headers << endl;
 
 	istringstream stream(headers);
 	string	line;
@@ -195,10 +223,24 @@ void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
 		if (line[line.size() - 1] == '\r')
 			line.erase(line.size() - 1);
 		parse_headers(response, line);
+        cout << "get header dans getline: " << line << endl;
 	}
 
 	response.set_body(content_cgi.substr(end_of_headers + 4));
 
+    string body = response.get_body();
+    if (response.get_header_value("Content-Length").empty() && !body.empty())
+        response.set_header_value("Content-Length", int_to_string(body.size()));
+
+    cout << "get header dans cgi: " << response.get_header_value("Content-Type") << endl;
+}
+
+string make_absolute(const string &path)
+{
+    char resolved[1000];
+    if (realpath(path.c_str(), resolved))
+        return (string(resolved));
+    return (path);
 }
 
 /* interpreter = loc->_cgi_extension["extension"]*/
@@ -207,6 +249,7 @@ string  c_cgi::launch_cgi(const string &body)
     int server_to_cgi[2];
     int cgi_to_server[2];
 
+    cout << __FILE__ << "/" << __LINE__ << endl;
     if (pipe(server_to_cgi) < 0 || pipe(cgi_to_server) < 0)
     {
         cout << "(CGI): Error de pipe";
@@ -240,6 +283,9 @@ string  c_cgi::launch_cgi(const string &body)
             envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
         envp.push_back(NULL);
 
+        string  abs_path = make_absolute(this->_map_env_vars["SCRIPT_FILENAME"]);
+        this->_map_env_vars["SCRIPT_FILENAME"] = abs_path;
+
         char *argv[3];
         argv[0] = const_cast<char*>(this->_interpreter.c_str());
         argv[1] = const_cast<char*>(this->_map_env_vars["SCRIPT_FILENAME"].c_str());
@@ -251,6 +297,7 @@ string  c_cgi::launch_cgi(const string &body)
     }
     else
     {
+        cout << __FILE__ << "/" << __LINE__ << endl;
         /**** Processus parent ****/
         close(server_to_cgi[0]);
         close(cgi_to_server[1]);
@@ -276,6 +323,7 @@ string  c_cgi::launch_cgi(const string &body)
         int status;
         waitpid(pid, &status, WNOHANG);
         
+        cout << "status: " << status << endl;
         return content_cgi;
     }
 }

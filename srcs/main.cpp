@@ -107,6 +107,7 @@ int main(void)
 		bool	keep_alive = true;
 		while (keep_alive)
         {
+			// cout << __FILE__ << "/" << __LINE__ << endl;
 			my_request.read_request(connected_socket_fd);
 			if (my_request.get_error())
 			{
@@ -119,11 +120,7 @@ int main(void)
 
 			my_request.print_full_request();
 
-
-			// Passer le keep alive de la socket en false en cas d'erreur uniquement 
-			// pour close la socket apres avoir envoye la reponse
 			response_handler.define_response_content(my_request);
-
 			const string &response = response_handler.get_response();
 			if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
 			{
@@ -132,7 +129,7 @@ int main(void)
 				break;
 			}
 			if (!keep_alive || my_request.get_header_value("Connection") == "close")
-				break;
+					break;
 		}
 		close(connected_socket_fd);		
 	}

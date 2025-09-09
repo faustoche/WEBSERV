@@ -20,9 +20,11 @@ class c_cgi
         void    resolve_cgi_paths(const c_request &request, const c_location* loc);
         void    set_environment(const c_request &request);
         void    get_header_from_cgi(c_response &response, const string& content_cgi);
+        const string&   get_interpreter() const { return _interpreter; };
         int     parse_headers(c_response &response, string& headers);
         bool    is_valid_header_value(string& key, const string& value);
         void    vectorize_env();
+        size_t  identify_script_type(const c_request &request);
 
     private:
         map<string, string> _map_env_vars;

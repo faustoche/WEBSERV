@@ -38,9 +38,12 @@ public:
 	const string &get_file_content() const { return (_file_content); }
 
 	/****** AC *****/
-	void	set_header_value(const string &key, const string &value) { this->_headers_response[key] = value; };
-	void	set_body(const string &body) { this->_body = body; };
-	void	set_status(const int &status) { this->_status = status; };
+	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
+	const string 	&get_header_value(const string& key) const;
+	void			set_body(const string &body) { this->_body = body; };
+	void			set_status(const int &status) { this->_status = status; };
+	const string	&get_body() { return this->_body; };
+	void			clear_response();
 
 private:
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
