@@ -172,7 +172,7 @@ void                c_parser::location_url_file(c_server & server)
 void                c_parser::location_directives(c_location & location)
 {
     // string  value = _current->value;
-    int     flag_cgi = 0;
+   // int     flag_cgi = 0;
 
     // if (is_token_value("index"))
     // if (is_token_value("autoindex"))
@@ -181,7 +181,7 @@ void                c_parser::location_directives(c_location & location)
 
     if (is_token_value("cgi"))
     {
-        flag_cgi++;
+        //flag_cgi++;
         location.clear_cgi();
         parse_cgi(location);
     }

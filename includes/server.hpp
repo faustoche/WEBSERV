@@ -42,7 +42,7 @@ private:
     uint16_t                            _port; // dans RFC entier non signe de 16 bits + pas de negatif
     // int                                 _root; // root propre au serveur a definir en dur
     string                              _index; // recuperation du premier fichier valide dans le parsing (possible plusieurs fichiers) 
-    map<string, c_location>   			_location_map;
+    map<string, c_location>   			_location_map; // la cle = le chemin (/images), la valeur = config de cette location
 	
 public:
 	const int &get_socket_fd() const { return (_socket_fd); }
@@ -62,6 +62,8 @@ public:
 	void		process_client_request(int client_fd);
 
 	c_location	*find_matching_location(const string &request_path);
+	bool		is_method_allowed(const c_location *location, const string &method);
+	string		resolve_file_path(const c_location *location, const string &request_path, const string &default_root);
 
 	// CONFIGURATION FILE
     // Setters

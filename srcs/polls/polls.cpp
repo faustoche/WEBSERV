@@ -201,7 +201,7 @@ void c_server::process_client_request(int client_fd)
 	request.parse_request(raw_request);
 	// je cree une reponse base sur la requete
 	c_response response;
-	response.define_response_content(request);
+	response.define_response_content(request, *this);
 
 	// on prépare la réponse à envoyer
 	client->get_write_buffer() = response.get_response();
