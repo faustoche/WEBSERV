@@ -7,20 +7,18 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
 {
     _url_key = "";
     _upload_path = "";
+    _location_body_size = 0;
+    _location_root = "";
+    // _location_path = "";
+    _auto_index = false;
+    _upload_path = "";
+    _cgi_extension.clear();
+
 }
 
-/*-----------------  DESTRUCTOR -------------------*/
-
-c_location::~c_location()
+c_location  const& c_location::operator=(c_location const& rhs)
 {
-
-}
-
-/*----------------- MEMBERS METHODS  --------------*/
-
-c_location &    c_location::operator=(c_location const & rhs)
-{
-    if (this != &rhs)
+    if (this != & rhs)
     {
         _url_key = rhs._url_key;
         _location_body_size = rhs._location_body_size;
@@ -33,11 +31,17 @@ c_location &    c_location::operator=(c_location const & rhs)
         _cgi_extension = rhs._cgi_extension;
         _is_directory = rhs._is_directory;
     }
-    return *this;
+    return (*this);
 }
 
+/*-----------------  DESTRUCTOR -------------------*/
 
-/*-------------------- setters  -------------------*/
+c_location::~c_location()
+{
+
+}
+
+/*----------------- MEMBERS METHODS  --------------*/
 
 
 /*--------------------- utils  --------------------*/

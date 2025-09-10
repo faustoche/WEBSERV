@@ -19,7 +19,7 @@ public:
 		c_location();
 		~c_location();
 
-		c_location &	operator=(c_location const & rhs);
+		c_location const& operator=(c_location const& rhs);
 
 		// Setters
 		void				set_url_key(string const & url) {this->_url_key = url; };
@@ -32,6 +32,7 @@ public:
 		void				set_cgi(map<string, string> cgi) {this->_cgi_extension = cgi; };
 		void				set_upload_path(string const & path) {this->_upload_path = path; };
 		void				set_is_directory(bool const & dir) {this->_is_directory = dir;};
+		void				set_cgi_extension(const map<string, string>& cgi_ext) { _cgi_extension = cgi_ext; }; // a supprimer
 
 		// Getters
 		string const &		get_url_key() const {return _url_key; };
@@ -44,6 +45,7 @@ public:
 		map<string, string>	get_cgi() const {return _cgi_extension; };
 		string const &		get_upload_path() const {return _upload_path; };
 		bool				get_bool_is_directory() const {return _is_directory; };
+		const map<string, string>& get_cgi_extension() const { return _cgi_extension; };
 
 		void				print_location() const;
 

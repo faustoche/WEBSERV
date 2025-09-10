@@ -1,5 +1,17 @@
 #include "response.hpp"
 
+/************ GETTERS ************/
+
+const string& c_response::get_header_value(const string& key) const
+{
+	static const string empty_string = "";
+
+	map<string, string>::const_iterator it = this->_headers_response.find(key);
+	if (it != this->_headers_response.end())
+		return (it->second);
+	return (empty_string);
+}
+
 /************ FILE CONTENT MANAGEMENT ************/
 
 /* Check to see what kind of response must be sent 
@@ -60,7 +72,6 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	
 	string file_path = server.convert_url_to_file_path(matching_location, target, "www");
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
@@ -74,8 +85,41 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 		}
 		build_error_response(404, version, request);
 	}
-	else
-		build_success_response(file_path, version, request);
+	/***** CHARGER LE CONTENU DU FICHIER *****/
+	_file_content = load_file_content(file_path);
+
+	/***** IDENTIFICATION D'UN CGI *****/
+	// // Grace au location on identifie qu'il s'agit d'un cgi - A FAIRE
+	// bool is_cgi = true;
+
+	// /* A SUPPRIMER */
+	// c_location loc;
+	// map<string, string> cgi_extension;
+	// cgi_extension[".php"] = "/usr/bin/php-cgi";
+	// cgi_extension[".py"] = "/usr/bin/python3";
+	// loc.set_url_key("/cgi-bin");
+	// loc.set_root("./www/cgi-bin");
+	// loc.set_cgi_extension(cgi_extension);
+	// map<string, c_location> test;
+	// test["/cgi-bin"] = loc;
+	// /*********************/
+
+	// c_cgi cgi(request, *this, test);
+	// if (is_cgi)
+	// {
+	// 	build_cgi_response(cgi, request);
+	// }
+	// else
+	// {
+	// 	if (_file_content.empty())
+	// 	{
+	// 		build_error_response(404, version, request);
+	// 	}
+	// 	else
+	// 	{
+	// 		build_success_response(file_path, version, request);
+	// 	}
+	// }
 }
 
 /* Proceed to load the file content. Nothing else to say. */
@@ -125,6 +169,34 @@ string c_response::get_content_type(const string &file_path)
 /************ BUILDING RESPONSES ************/
 
 /* Build the successfull request response */
+
+void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
+{
+	this->_status = request.get_status_code();
+	const string request_body = request.get_body();
+
+	if (cgi.get_interpreter().empty())
+		return ;
+	string content_cgi = cgi.launch_cgi(request_body);
+	cgi.get_header_from_cgi(*this, content_cgi);
+
+	this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
+	this->_response += "Server: webserv/1.0\r\n";
+	if (!get_header_value("Content-Type").empty())
+		this->_response += "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
+	else
+		this->_response += "Content-Type: text/plain\r\n";
+	this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
+
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
+		connection = "keep-alive";
+	this->_response += "Connection: " + connection + "\r\n";
+
+	this->_response += "\r\n";
+	this->_response += get_body() + "\r\n";
+}
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {

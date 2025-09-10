@@ -2,19 +2,25 @@
 
 /************ CHECK FUNCTIONS ************/
 
-bool    c_request::is_valid_header_name(const string& key_name)
-{
-	const string allowed_special_chars = "!#$%&'*+-.^_`|~";
+// bool    is_valid_header_name(const string& key_name)
+// {
+// 	const string allowed_special_chars = "!#$%&'*+-.^_`|~";
 
-	if (key_name.empty())
-		return (false);
-	for (size_t i = 0; i < key_name.length(); i++)
-	{
-		if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
-			return (false);
-	}
-	return (true);
-}
+// 	if (key_name.empty())
+// 	{
+// 		cerr << "(Request) Error: empty header name." << endl;
+// 		return (false);
+// 	}
+// 	for (size_t i = 0; i < key_name.length(); i++)
+// 	{
+// 		if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
+// 		{
+// 			cerr << "(Request) Error: Invalid char in header name: " << key_name << endl;
+// 			return (false);
+// 		}
+// 	}
+// 	return (true);
+// }
 
 bool    c_request::is_valid_header_value(string& key, const string& value)
 {
@@ -22,7 +28,7 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 	{
 		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
 		{
-			this->_status_code = 400;
+			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
 			return (false);
 		}
 	}
@@ -33,7 +39,7 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 		{
 			if (!isdigit(value[i]))
 			{
-				this->_status_code = 400;
+				cerr << "(Request) Error: Invalid content length: " << value << endl;
 				return (false);
 			}
 		}
@@ -41,6 +47,11 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 		this->_content_length = strtoul(value.c_str(), &end, 10);
 	}
 
+	if (value.size() > 4096)
+	{
+		cerr << "(Request) Error: Header field too large: " << value << endl;
+		return (false);
+	}
 	return (true);
 }
 
@@ -68,11 +79,13 @@ void c_request::check_required_headers()
 		{
 			this->_error = true;
 			this->_status_code = 400;
+			cerr << "(Request) Error: Missing header about body size" << endl;
 		}
 		if (has_content_length && has_transfer_encoding)
 		{
 			this->_error = true;
 			this->_status_code = 400;
+			cerr << "(Request) Error: only one header required about body size" << endl;
 		}
 	}     
 }
@@ -97,19 +110,24 @@ void	c_request::print_full_request()
 {
 	if (this->_request_fully_parsed)
 	{
-		cout << "*********** Start-line ************" << endl;
+		cout << "************ IP CLIENT ************" << endl;
+		cout << "ip_client: " << this->_ip_client << endl << endl;
+		
+		cout << "*********** START-LINE ************" << endl;
 		cout << "method: " << this->_method << endl;
+		cout << "query: " << this->_query << endl;
 		cout << "target: " << this->_target << endl;
 		cout << "version: " << this->_version << endl << endl;
 
-		cout << "*********** Headers map ***********" << endl;
+		cout << "************ HEADERS *************" << endl;
+		
 		for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 			cout << it->first << " : " << it->second << endl;
 		cout << endl;
 		
 		if (this->_has_body)
 		{
-			cout << "*********** Body ************" << endl;
+			cout << "************* BODY ***************" << endl;
 			cout << this->_body << endl;
 		}
 
@@ -121,6 +139,7 @@ void	c_request::print_full_request()
 void	c_request::init_request()
 {
 	this->_method.clear();
+	this->_query.clear();
 	this->_target.clear();
 	this->_version.clear();
 	this->_body.clear();
@@ -138,19 +157,19 @@ void	c_request::init_request()
 		it->second = "";
 }
 
-string  c_request::ft_trim(const string& str)
-{
-    size_t start = 0;
-    size_t end = str.length();
+// string  c_request::ft_trim(const string& str)
+// {
+//     size_t start = 0;
+//     size_t end = str.length();
 
-    while (start < end && (str[start] == ' ' || str[start] == '\t'))
-        start++;
+//     while (start < end && (str[start] == ' ' || str[start] == '\t'))
+//         start++;
 
-    while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
-        end--;
+//     while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
+//         end--;
     
-    return (str.substr(start, end - start));
-}
+//     return (str.substr(start, end - start));
+// }
 
 // void debugLine(const std::string &s)
 // {

@@ -14,15 +14,17 @@
 #include <vector>
 #include <poll.h>
 #include <dirent.h>
+#include <arpa/inet.h>
 #include "response.hpp"
 #include "clients.hpp"
 #include "request.hpp"
 #include "location.hpp"
+#include "cgi.hpp"
 #include "colors.hpp"
 
 /************ DEFINE ************/
 
-#define	BUFFER_SIZE 10
+#define	BUFFER_SIZE 4096
 using	namespace std;
 
 /************ CLASS ************/
@@ -46,8 +48,9 @@ private:
     map<string, c_location>   			_location_map; // la cle = le chemin (/images), la valeur = config de cette location
 	
 public:
-	const int &get_socket_fd() const { return (_socket_fd); }
-	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); }
+	const int &get_socket_fd() const { return (_socket_fd); };
+	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
+	const map<string, c_location>	&get_location_map() const { return _location_map; };
 	
 	void 		create_socket();
 	void 		bind_and_listen();
@@ -85,3 +88,5 @@ public:
 /************ FUNCTIONS ************/
 
 string int_to_string(int n);
+bool   is_valid_header_name(const string& key_name);
+string ft_trim(const string& str);
