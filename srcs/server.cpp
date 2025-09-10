@@ -67,6 +67,12 @@ void	c_server::add_location(string const & path, c_location const & loc)
 	_location_map[path] = loc;
 }
 
+void	c_server::add_error_page(vecotr<int> const & codes, string path)
+{
+	for (size_t i = 0; i < codes.size(); i++)
+		_err_pages.insert(make_pair(codes[i], path));
+}
+
 /*-------------------------   setters   -----------------------------*/
 
 

@@ -47,7 +47,7 @@ private:
     vector <string>					_names;
 	size_t							_body_size; // en octets
 	map<string, c_location>   		_location_map;
-	map<string, vector<int> >		_err_pages;
+	map<int, string>				_err_pages;
 	// map<string, string>				_cgi_extension; // revoir la particularite des cgi ac directive dans le serveur 
 
 	
@@ -79,8 +79,7 @@ public:
 	void								set_ip(string const & ip);
 	void								set_body_size(size_t const & size){_body_size = size; };
 	void								set_root(string const & root); // A FAIRE
-	void								set_err_pages(map<string, vector<int> > err_pages); // A FAIRE
-	// void								set_cgi(map<string, string> const & cgi) {this->_cgi_extension = cgi;};
+	void								add_error_page(vecotr<int> const & codes, string path);
     void                				add_location(string const & path, c_location const & loc);
     // Getters
     vector<string> const &      		get_indexes() const { return (_indexes); };
@@ -89,7 +88,7 @@ public:
 	string								get_root() const {return (_root);} ;
 	vector<string> const &				get_name() const {return (_names); };
 	size_t								get_body_size() const {return (_body_size); };
-	map<string, vector<int> > const &	get_err_pages() const {return (_err_pages); };
+	map<int, string> const &			get_err_pages() const {return (_err_pages); };
 	map<string, c_location> const &		get_location() const {return (_location_map); };
 	// map<string, string>					get_cgi() const {return _cgi_extension; }; // pas de cgi dans le bloc server
 

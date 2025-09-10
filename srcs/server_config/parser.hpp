@@ -79,8 +79,9 @@ private :
             
             template<typename C>
             void                parse_body_size(C & servloc);
+            template<typename C>
+            void                parse_error_page(C & servloc);
 };
-
 
 template<typename C>
 void            c_parser::parse_body_size(C & servloc)
@@ -115,6 +116,20 @@ void            c_parser::parse_body_size(C & servloc)
 
     size_t limit = convert_to_octet(str, suffix, i);
     servloc.set_body_size(limit);
+}
+
+template<typename C>
+void            c_parser::parse_error_page(C & servloc)
+{
+    advance_token();
+    expected_token_type(TOKEN_VALUE);
+    vector<int> codes;
+    string      path;
+    while (is_token_type(TOKEN_VALUE) && isdigit(_current->value))
+    {
+        codes.push_back(_current->value);
+        advance_token();
+    }
 }
 
 string      my_to_string(int int_str);
