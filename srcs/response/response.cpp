@@ -22,12 +22,12 @@ const string& c_response::get_header_value(const string& key) const
 * We construct the correct path according to locations again
 */
 
-void	c_response::define_response_content(const c_request &request, c_server &server)
+void	c_response::define_response_content(c_request &request, c_server &server)
 {
 	_response.clear();
 	_file_content.clear();
 	
-
+	this->_is_cgi = false;
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
@@ -59,13 +59,34 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	loc.set_url_key("/cgi-bin");
 	loc.set_root("./www/cgi-bin");
 	loc.set_cgi_extension(cgi_extension);
-	map<string, c_location> test;
-	test["/cgi-bin"] = loc;
+	// map<string, c_location> test;
+	// test["/cgi-bin"] = loc;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
 	if (matching_location != NULL && matching_location->get_cgi_extension().size() > 0)
+	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		this->_is_cgi = true;
+	}
+
+	/* A SUPPRIMER */
+	if (target.find("cgi"))
+	{
+		
+		this->_is_cgi = true;
+		cout << __FILE__ << "/" << __LINE__ << endl;
+		request.print_full_request();
+		matching_location = &loc;
+	}
+
+	if (matching_location == NULL)
+	{
+		cout << "no location found !" << endl;
+		build_error_response(404, version, request);
+		return ;
+	}
+	/***************/
 
 	if (!server.is_method_allowed(matching_location, method))
 	{
@@ -91,7 +112,7 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	_file_content = load_file_content(file_path);
 	if (this->_is_cgi)
 	{
-		c_cgi cgi(request, *this, test);
+		c_cgi cgi(request, *this, loc);
 		build_cgi_response(cgi, request);
 	}
 	else

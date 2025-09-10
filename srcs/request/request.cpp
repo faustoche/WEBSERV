@@ -55,12 +55,9 @@ void	c_request::read_request(int socket_fd)
 	}
 	this->parse_request(request);
 	
-
 	/* -----Lire le body -----*/
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
 
-	
-	
 	if (!this->_error)
 		this->_request_fully_parsed = true;
 }

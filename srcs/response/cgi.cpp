@@ -6,15 +6,21 @@ c_cgi::c_cgi() : _loc(NULL), _script_name(""), _path_info(""), _translated_path(
     this->_vec_env_vars.clear();
 }
 
-c_cgi::c_cgi(const c_request &request, c_response &response, map<string, c_location>& map_location)
+c_cgi::c_cgi(c_request &request, c_response &response, c_location &loc)
 : _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
     (void)response;
 
+    this->_status_code = request.get_status_code();
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 
-    init_cgi(request, map_location);
+    if (init_cgi(request, loc))
+    {
+        cerr << "Error while initializing cgi" << __FILE__ << "/" << __LINE__ << endl;
+        request.set_status_code(404);
+        return ;
+    }
 }
 
 c_cgi::~c_cgi()
@@ -68,48 +74,52 @@ size_t c_cgi::identify_script_type(const c_request &request)
         return (pos_script + 4);
     }
     this->_script_name = request.get_path().substr(0, pos_script + 3);
-    cout << "this->_script_name: " << this->_script_name << endl;
     return (pos_script + 3);
 }
 
-void    c_cgi::resolve_cgi_paths(const c_request &request, const c_location* loc)
+int    c_cgi::resolve_cgi_paths(const c_request &request, const c_location &loc)
 {
     size_t ext_pos = identify_script_type(request);
     if (ext_pos == string::npos)
-        return ;
+        return(1);
     if (this->_script_name.size() < request.get_path().size())
     {
         this->_path_info = request.get_path().substr(ext_pos);
-        this->_translated_path = loc->get_root() + this->_path_info;
+        this->_translated_path = loc.get_root() + this->_path_info;
     }
 
-    string  root = loc->get_root();
-    string  url_key = loc->get_url_key();
+    string  root = loc.get_root();
+    string  url_key = loc.get_url_key();
     string  relative_path = this->_script_name.substr(url_key.size());
     this->_script_filename = root + relative_path;
+    
+    return(0);
 }
 
-void    c_cgi::init_cgi(const c_request &request, map<string, c_location>& map_location)
+int    c_cgi::init_cgi(const c_request &request, const c_location &loc)
 {
     /* Recherche de la location correspondante au path de la requete */
-    string  path = request.get_path();
+    // string  path = request.get_path();
 
-    map<string, c_location>::const_iterator it = find_location(path, map_location);
-    if (it == map_location.end()) 
-    {
-        std::cerr << "Error: no location matched path " << path << std::endl;
-        return;
-    }
-    this->_loc = &it->second;
+    // map<string, c_location>::const_iterator it = find_location(path, map_location);
+    // if (it == map_location.end()) 
+    // {
+    //     std::cerr << "Error: no location matched path " << path << std::endl;
+    //     return;
+    // }
+    this->_loc = &loc;
 
-    resolve_cgi_paths(request, this->_loc);
+    if (resolve_cgi_paths(request, loc))
+        return (1);
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
     string extension = find_extension(this->_script_name);
-    this->_interpreter = this->_loc->get_cgi_extension().at(extension);
+    this->_interpreter = loc.get_cgi_extension().at(extension);
 
     /* Construction de l'environnement pour l'execution du script */
-    this->set_environment(request);
+    set_environment(request);
+
+    return (0);
 
 }
 
@@ -187,18 +197,22 @@ int c_cgi::parse_headers(c_response &response, string& headers)
 	if (!is_valid_header_name(key))
 	{
 		cerr << "(Request) Error: invalid header_name: " << key << endl;
-		// response.set_status(400);
+		response.set_status(500);
+        return (1);
 	}
 
 	pos++;
-	// if (headers[pos] != 32)
-	// 	this->_status = 400;
+	if (headers[pos] != 32)
+    {
+		response.set_status(500);
+        return (1);
+    }
 
 	value = ft_trim(headers.substr(pos + 1));
 	if (!is_valid_header_value(key, value))
 	{
 		cerr << "(Request) Error: invalid header_value: " << key << endl;
-		// this->_status = 400;
+		response.set_status(500);
 	}
 
 	response.set_header_value(key, value);
@@ -248,7 +262,7 @@ string  c_cgi::launch_cgi(const string &body)
 
     if (pipe(server_to_cgi) < 0 || pipe(cgi_to_server) < 0)
     {
-        cout << "(CGI): Error de pipe";
+        cout << "(CGI): Error de pipe" << endl;
         return ("500 Internal server error");
     }
 

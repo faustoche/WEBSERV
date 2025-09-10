@@ -11,13 +11,13 @@ class c_cgi
 {
     public:
         c_cgi();
-        c_cgi(const c_request &request, c_response &response, map<string, c_location>& map_location);
+        c_cgi(c_request &request, c_response &response, c_location &loc);
         ~c_cgi();
 
 
-        void    init_cgi(const c_request &request, map<string, c_location>& map_location);
+        int    init_cgi(const c_request &request, const c_location &loc);
         string  launch_cgi(const string &body);
-        void    resolve_cgi_paths(const c_request &request, const c_location* loc);
+        int    resolve_cgi_paths(const c_request &request, const c_location &loc);
         void    set_environment(const c_request &request);
         void    get_header_from_cgi(c_response &response, const string& content_cgi);
         const string&   get_interpreter() const { return _interpreter; };
@@ -30,6 +30,7 @@ class c_cgi
         map<string, string> _map_env_vars;
         vector<string>      _vec_env_vars;
         int                 _socket_fd; // pas necessaire une fois connecte a la classe reponse
+        int                 _status_code;
         const c_location*   _loc;
         string              _script_name;
         string              _path_info;
