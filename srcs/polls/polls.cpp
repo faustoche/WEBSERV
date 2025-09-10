@@ -66,32 +66,25 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
-	// timeout de 1000 millisecondes = 1 seconde pour le moment, à tester
-	// va retourner le nombre d'evenements (POLLIN POLLOUT etc) dans un poll()
-	/**** VÉRIFICATION DES ÉVÉNEMENTS *****/
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 1000);
-	if (num_events < 0) // nb d'evenemtn inferieur = erreur
+	if (num_events < 0)
 	{
 		cerr << "Error: Poll() failed\n"; 
 		return ;
 	}
-	if (num_events == 0) // aucun evenement donc rien ne se passe
+	if (num_events == 0)
 		return ;
-	/**** BOUCLE À TRAVERS LES POLLS QUI ONT DÉCLENCHÉ DES ÉVÉNEMENTS *****/
-	for (size_t i = 0; i < _poll_fds.size(); i++) // on boucle a travers tous les fd pour le reste
+
+	for (size_t i = 0; i < _poll_fds.size(); i++)
 	{
 		struct pollfd &pfd = _poll_fds[i];
 		if (pfd.revents == 0)
 			continue ;
 		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
-		// SI C'est le serveur et qu'il y a une nouvelle connexion
 		if (i == 0)
 		{
 			if (pfd.revents & POLLIN)
-			{
-				// on appelle cette fonction pour accéder les clients en attente
 				handle_new_connection();
-			}
 			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				cerr << "Error: Socket server\n";
@@ -100,8 +93,6 @@ void c_server::handle_poll_events()
 		}
 		else
 		{
-			/**** SINON GESTION CÔTÉ SERVEURS CLIENTS *****/
-			// pour chaque client, on lit les données ou bien on les envois
 			int client_fd = pfd.fd;
 			if (pfd.revents & POLLIN)
 				handle_client_read(client_fd);
@@ -125,67 +116,41 @@ void c_server::handle_poll_events()
 
 void	c_server::handle_new_connection()
 {
-	// boulce pour accepter toutes les connexions en attente
 	while (true)
 	{
 		socklen_t addrlen = sizeof(_socket_address);
 		int client_fd = accept(_socket_fd, (struct sockaddr*)&_socket_address, &addrlen);
 		if (client_fd < 0)
-		{
-			// pas d;autres connexions a accepter-> on sort de la boucle
-			if (errno == EAGAIN || errno == EWOULDBLOCK) // aucune connexion en attente 
-				break ;
-			else
-			{
-				cerr << "Error: Accept()\n";
-				return ;
-			}
-		}
-		// configuration des nouveaux clients
-		set_non_blocking(client_fd); // OPTION socket non bloquante
-		add_client(client_fd); // ajout a la map des clients
+			break ;
+
+		set_non_blocking(client_fd);
+		add_client(client_fd);
 		cout << "Nouvelle connexion acceptée : " << client_fd << endl;
 	}
 }
 
 /*
-* Récupère le client correspondant
-* Lit les données avec recv()
-* Si <= 0
-	* 0 -> client a fermé la connexion
-	* Erreur non eagain/ewouldblock -> logs d'erreurs
-	* dans tous les cas -> remove clients
-* Sinon:
-	* ajoute les données lues au buffer client
-	* si le buffer contient une requête complète (\r\n\r\n)
-		* change l'état du client en pr4ocessing
-		* appelle process client request
+* Vérifie le client
+* Lit la requête via read_request
+* Crée la réponse avec define_response_content
+* Remplit le buffer d'écriture et passe l'état à SENDING
 */
 
-void	c_server::handle_client_read(int client_fd)
+void c_server::handle_client_read(int client_fd)
 {
 	c_client *client = find_client(client_fd);
-	if (client == NULL)
-		return ; // on ne retrouve pas le client
-	char buffer[1024];
-	int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-	if (bytes_received <= 0)
-	{
-		if (bytes_received == 0) // le client a fermé la connexion
-			cout << "Client " << client_fd << " déconnecté" << endl;
-		else if (errno != EAGAIN && errno != EWOULDBLOCK)
-			cerr << "Error: recv() on client " << client_fd << endl;
-		remove_client(client_fd);
+	if (!client)
 		return ;
-	}
-	// j'ajoute les données reçues au buffer du client
-	buffer[bytes_received] = '\0';
-	client->append_to_read_buffer(buffer);
-	if (client->get_read_buffer().find("\r\n\r\n") != string::npos)
-	{
-		client->set_state(PROCESSING);
-		process_client_request(client_fd); // on gere la requete client
-	}
+
+	c_request request;
+	request.read_request(client_fd);
+
+	c_response response;
+	response.define_response_content(request, *this);
+	client->get_write_buffer() = response.get_response();
+	client->set_bytes_written(0);
+	client->set_state(SENDING);
+	cout << "Requête traitée pour le client " << client_fd << endl;
 }
 
 /*
@@ -204,31 +169,22 @@ void	c_server::handle_client_write(int client_fd)
 	c_client *client = find_client(client_fd);
 	if (client == NULL)
 		return ;
-	// JE RECUPERE le buffer a envoyer et combien d;citet ont deja ete ecrits
+
 	string write_buffer = client->get_write_buffer();
 	size_t bytes_written = client->get_bytes_written();
 
-	// on envoit les données restantes
 	size_t remaining = write_buffer.length() - bytes_written;
 	if (remaining == 0)
 	{
 		remove_client(client_fd);
 		return ;
 	}
-	// mise a jour de bytes written,
+
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
 	int bytes_sent = send(client_fd, data_to_send, remaining, 0);
-	// une fois qu'il n'y a plus rien a envoyé, on peut supprimer le client
 	if (bytes_sent <= 0)
-	{
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-		{
-			cerr << "Error: send() on client " << client_fd << endl;
-			remove_client(client_fd);
-		}
 		return ;
-	}
-	// je verifie le nb d'cotet deja envoye, et l'addition me donne la position dans le buffer
+
 	client->set_bytes_written(bytes_written + bytes_sent);
 	if (client->get_bytes_written() >= write_buffer.length())
 	{

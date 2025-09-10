@@ -27,26 +27,16 @@ int	c_request::read_request(int socket_fd)
 	{
 		fill(buffer, buffer + sizeof(buffer), '\0');
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
-        if (receivedBytes <= 0) 
+        if (receivedBytes == 0)
 		{
-			if (receivedBytes == 0) 
-			{
-				cout << "(Request) no data received, client closed connection" << endl;
-				this->_error = true;
-				return (400);
-			} 
-			else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-			{
-				cout << "Error: Timeout - no data received" << endl;
-				this->_error = true;
-				return (408);
-			} 
-			else 
-			{
-				cerr << "Error: message not received - " << errno << endl;
-				this->_error = true;
-				return (500);
-			}
+			cout << "Client closed connection" << endl;
+			this->_error = true;
+			return (400);
+		}
+		if (receivedBytes < 0) 
+		{
+			this->_error = true;
+			return (408);
 		}
 		buffer[receivedBytes] = '\0';
         request.append(buffer);
@@ -70,22 +60,13 @@ int	c_request::read_request(int socket_fd)
 			fill(buffer, buffer + sizeof(buffer), '\0');
 			receivedBytes = recv(socket_fd, buffer, sizeof(buffer) -1, 0);
 			
-    		if (receivedBytes == 0)
+    		if (receivedBytes <= 0)
 			{
 				// Connexion fermee avant d'avoir tout recu
 				cerr << "(Request) Error: Incomplete body" << endl;
 				this->_error = true;
-    		    return (400);
+    		    return (receivedBytes == 0) ? 400 : 408;
 			}
-			if (receivedBytes < 0)
-			{
-				// Reessayer en cas d'erreur reseau
-				if (errno == EAGAIN || errno == EWOULDBLOCK)
-					continue ;
-				this->_error = true;
-				return (500);
-			}
-
 			buffer[receivedBytes] = '\0';
 			total_bytes += receivedBytes;
 			if (total_bytes > max_body_size)
@@ -116,24 +97,8 @@ int	c_request::read_request(int socket_fd)
 				break;
         	if (receivedBytes <= 0) 
 			{
-				if (receivedBytes == 0) 
-				{
-					cout << "Client closed connection" << endl;
-					this->_error = true;
-					return (400);
-				} 
-				else if (errno == EAGAIN || errno == EWOULDBLOCK) 
-				{
-					cout << "Error: Timeout - no data received" << endl;
-					this->_error = true;
-					return (408);
-				} 
-				else 
-				{
-					cerr << "Error: message not received - " << errno << endl;
-					this->_error = true;
-					return (500);
-				}
+				this->_error = true;
+				return (receivedBytes == 0) ? 400 : 408;
 			}
 			buffer[receivedBytes] = '\0';
 			this->_chunk_accumulator.append(buffer, receivedBytes);
