@@ -107,7 +107,6 @@ int main(void)
 		bool	keep_alive = true;
 		while (keep_alive)
         {
-			// cout << __FILE__ << "/" << __LINE__ << endl;
 			my_request.read_request(connected_socket_fd);
 			if (my_request.get_error())
 			{

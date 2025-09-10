@@ -145,6 +145,8 @@ int c_request::parse_start_line(string& start_line)
 	{
 		this->_path = tmp.substr(0, question_pos);
 		this->_query = tmp.substr(question_pos + 1);
+		cout << "this->_path: " << this->_path << endl;
+		cout << "this->_query: " << this->_query << endl;
 	}	
 	else
 	{

@@ -68,6 +68,7 @@ size_t c_cgi::identify_script_type(const c_request &request)
         return (pos_script + 4);
     }
     this->_script_name = request.get_path().substr(0, pos_script + 3);
+    cout << "this->_script_name: " << this->_script_name << endl;
     return (pos_script + 3);
 }
 
@@ -183,7 +184,7 @@ int c_cgi::parse_headers(c_response &response, string& headers)
 	string key;
 	string value;
 
-	key = headers.substr(0, pos);
+	key = ft_trim(headers.substr(0, pos));
 	if (!is_valid_header_name(key))
 	{
 		cerr << "(Request) Error: invalid header_name: " << key << endl;
@@ -202,8 +203,7 @@ int c_cgi::parse_headers(c_response &response, string& headers)
 	}
 
 	response.set_header_value(key, value);
-    std::cerr << "Header enregistré : [" << key << "] = [" << value << "]" << std::endl;
-    cout << "******************allo:" << response.get_header_value("Content-Type") << endl;
+
 	return (0);
 }
 
@@ -214,7 +214,6 @@ void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
 	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
 		return ;
 	string headers = content_cgi.substr(0, end_of_headers);
-    cout << "headers: " << headers << endl;
 
 	istringstream stream(headers);
 	string	line;
@@ -223,7 +222,6 @@ void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
 		if (line[line.size() - 1] == '\r')
 			line.erase(line.size() - 1);
 		parse_headers(response, line);
-        cout << "get header dans getline: " << line << endl;
 	}
 
 	response.set_body(content_cgi.substr(end_of_headers + 4));
@@ -232,14 +230,15 @@ void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
     if (response.get_header_value("Content-Length").empty() && !body.empty())
         response.set_header_value("Content-Length", int_to_string(body.size()));
 
-    cout << "get header dans cgi: " << response.get_header_value("Content-Type") << endl;
 }
 
 string make_absolute(const string &path)
 {
     char resolved[1000];
+
     if (realpath(path.c_str(), resolved))
         return (string(resolved));
+        
     return (path);
 }
 
@@ -249,7 +248,6 @@ string  c_cgi::launch_cgi(const string &body)
     int server_to_cgi[2];
     int cgi_to_server[2];
 
-    cout << __FILE__ << "/" << __LINE__ << endl;
     if (pipe(server_to_cgi) < 0 || pipe(cgi_to_server) < 0)
     {
         cout << "(CGI): Error de pipe";
@@ -263,7 +261,6 @@ string  c_cgi::launch_cgi(const string &body)
         return ("500 Internal server error");        
     }
 
-    
     /**** Processus enfant ****/
     if (pid == 0)
     {
@@ -297,7 +294,6 @@ string  c_cgi::launch_cgi(const string &body)
     }
     else
     {
-        cout << __FILE__ << "/" << __LINE__ << endl;
         /**** Processus parent ****/
         close(server_to_cgi[0]);
         close(cgi_to_server[1]);
@@ -323,7 +319,6 @@ string  c_cgi::launch_cgi(const string &body)
         int status;
         waitpid(pid, &status, WNOHANG);
         
-        cout << "status: " << status << endl;
         return content_cgi;
     }
 }

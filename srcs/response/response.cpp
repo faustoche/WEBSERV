@@ -81,6 +81,7 @@ void	c_response::define_response_content(const c_request &request)
 	c_location loc;
 	map<string, string> cgi_extension;
 	cgi_extension[".php"] = "/usr/bin/php-cgi";
+	cgi_extension[".py"] = "/usr/bin/python3";
 	loc.set_url_key("/cgi-bin");
 	loc.set_root("./www/cgi-bin");
 	loc.set_cgi_extension(cgi_extension);
@@ -153,12 +154,12 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
+
 	if (cgi.get_interpreter().empty())
 		return ;
 	string content_cgi = cgi.launch_cgi(request_body);
-	cout << "content-cgi: " << content_cgi << endl;
 	cgi.get_header_from_cgi(*this, content_cgi);
-	cout << "get header value de content-type: " << this->_headers_response["Content-Type"] << endl;
+
 	this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
 	this->_response += "Server: webserv/1.0\r\n";
 	if (!get_header_value("Content-Type").empty())
@@ -166,11 +167,13 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	else
 		this->_response += "Content-Type: text/plain\r\n";
 	this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
+
 	string connection;
 	connection = request.get_header_value("Connection");
 	if (connection.empty())
 		connection = "keep-alive";
 	this->_response += "Connection: " + connection + "\r\n";
+
 	this->_response += "\r\n";
 	this->_response += get_body() + "\r\n";
 }
