@@ -37,6 +37,7 @@ private:
 	struct sockaddr_in		_socket_address;
 	map<int, c_client>		_clients;
 	vector<struct pollfd>	_poll_fds;
+	map<int, uint16_t>			_multiple_ports; // on stocke socket_fd + port
 
 	// CONFIGURATION FILE (completer)
     string								_ip; // reflechir si pas de directive listen -> valeur par defaut ?
@@ -49,6 +50,13 @@ public:
 	const int &get_socket_fd() const { return (_socket_fd); }
 	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); }
 	
+
+// À TESTER POUR LES MULTIPLES PORTS
+	void		create_socket_for_each_port(const std::vector<int>& ports);
+	int			get_port_from_socket(int socket_fd);
+	bool		is_listening_socket(int fd);
+
+
 	void 		create_socket();
 	void 		bind_and_listen();
 	void 		set_non_blocking(int fd);
