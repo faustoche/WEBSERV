@@ -51,9 +51,20 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 		return ;
 	}
 
+	/* A SUPPRIMER */
+	c_location loc;
+	map<string, string> cgi_extension;
+	cgi_extension[".php"] = "/usr/bin/php-cgi";
+	cgi_extension[".py"] = "/usr/bin/python3";
+	loc.set_url_key("/cgi-bin");
+	loc.set_root("./www/cgi-bin");
+	loc.set_cgi_extension(cgi_extension);
+	map<string, c_location> test;
+	test["/cgi-bin"] = loc;
+
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
-	if (matching_location->get_cgi_extension().size() > 0)
+	if (matching_location != NULL && matching_location->get_cgi_extension().size() > 0)
 		this->_is_cgi = true;
 
 	if (!server.is_method_allowed(matching_location, method))
@@ -80,18 +91,6 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	_file_content = load_file_content(file_path);
 	if (this->_is_cgi)
 	{
-		/* A SUPPRIMER */
-		c_location loc;
-		map<string, string> cgi_extension;
-		cgi_extension[".php"] = "/usr/bin/php-cgi";
-		cgi_extension[".py"] = "/usr/bin/python3";
-		loc.set_url_key("/cgi-bin");
-		loc.set_root("./www/cgi-bin");
-		loc.set_cgi_extension(cgi_extension);
-		map<string, c_location> test;
-		test["/cgi-bin"] = loc;
-		/*********************/
-
 		c_cgi cgi(request, *this, test);
 		build_cgi_response(cgi, request);
 	}
@@ -161,6 +160,7 @@ string c_response::get_content_type(const string &file_path)
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
+
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 

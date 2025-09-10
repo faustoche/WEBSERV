@@ -13,7 +13,6 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
     _auto_index = false;
     _upload_path = "";
     _cgi_extension.clear();
-
 }
 
 c_location  const& c_location::operator=(c_location const& rhs)

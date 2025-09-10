@@ -238,7 +238,7 @@ string make_absolute(const string &path)
 
     if (realpath(path.c_str(), resolved))
         return (string(resolved));
-        
+
     return (path);
 }
 
