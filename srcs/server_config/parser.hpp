@@ -6,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <cctype>
 #include "lexer.hpp"
 #include "server.hpp"
 
@@ -123,13 +124,32 @@ void            c_parser::parse_error_page(C & servloc)
 {
     advance_token();
     expected_token_type(TOKEN_VALUE);
+
     vector<int> codes;
     string      path;
-    while (is_token_type(TOKEN_VALUE) && isdigit(_current->value))
+
+    while (is_token_type(TOKEN_VALUE) && _current->value.find_first_not_of("0123456789") == string::npos)
     {
-        codes.push_back(_current->value);
+        int nb = strtol(_current->value.c_str(), NULL, 10);
+        if (nb < 300 || nb > 599)
+            throw invalid_argument("Invalid argument for error code ==> " + _current->value);
+        codes.push_back(nb);
+        codes.push_back(nb);
         advance_token();
     }
+    if (codes.empty())
+        throw invalid_argument("Invalid argument for error code ==> " + _current->value);
+    
+    expected_token_type(TOKEN_VALUE);
+    if (_current->value[0] != '/' && _current->value[0] != '.')
+        throw invalid_argument("Invalid argument for error page ==> " + _current->value);
+    // verifier l'extension utilisee ??
+    path = _current->value;
+    servloc.add_error_page(codes, path);
+    
+    advance_token();
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
 }
 
 string      my_to_string(int int_str);

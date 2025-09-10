@@ -46,6 +46,13 @@ void    c_location::add_index_file(string const & file)
     _location_indexes.push_back(file);
 }
 
+void	c_location::add_error_page(vector<int> const & codes, string path)
+{
+
+	for (size_t i = 0; i < codes.size(); i++)
+		_location_err_pages.insert(make_pair(codes[i], path));
+}
+
 
 void	c_location::print_indexes() const
 {
@@ -65,33 +72,52 @@ void	c_location::print_methods() const
 	}
 }
 
+void	c_location::print_error_page() const
+{
+	map<int, string>::const_iterator it;
+    
+    if (_location_err_pages.empty())
+        cout << "EMPTY" << endl;
+    else
+    {
+	    for (it = _location_err_pages.begin(); it != _location_err_pages.end(); it++)
+	    {
+
+	    	cout << "		" << it->first << " " << it->second << " " << endl;
+	    }
+    }
+}
+
+
 void    c_location::print_location() const
 {
     cout 
-        << "            max body size: " << get_body_size() << " octets" << endl
-        << "            alias: " << get_alias() << endl
-        << "            authorised methods = ";
-        print_methods();
+            << "            max body size: " << get_body_size() << " octets" << endl
+            << "            alias: " << get_alias() << endl
+            << "            authorised methods = ";
+            print_methods();
     cout << endl
-        << "            index files = ";
-        print_indexes();
+            << "            index files = ";
+            print_indexes();
     cout << endl
-        << "            auto index: ";
-        if (get_auto_index())
-            cout << "ON";
-        else
-            cout << "OFF";
+            << "            auto index: ";
+            if (get_auto_index())
+                cout << "ON";
+            else
+                cout << "OFF";
     cout << endl
-        << "            upload path: " << get_upload_path() << endl
-        // << "Redirect = " << get_redirect() << endl
-        << "            CGI extension (.py): " << get_cgi()[".py"] << endl
-        << "            CGI extension (.sh): " << get_cgi()[".sh"] << endl
-        << "            is directory: ";
-        if (get_bool_is_directory())
-            cout << "yes";
-        else
-            cout << "no";
-    cout << endl;
+            << "            upload path: " << get_upload_path() << endl
+            // << "Redirect = " << get_redirect() << endl
+            << "            CGI extension (.py): " << get_cgi()[".py"] << endl
+            << "            CGI extension (.sh): " << get_cgi()[".sh"] << endl
+            << "            is directory: ";
+            if (get_bool_is_directory())
+                cout << "yes";
+            else
+                cout << "no";
+    cout << endl
+            << "            Error pages = " << endl;
+            print_error_page();
 }
 
 void    c_location::clear_cgi()
@@ -104,5 +130,11 @@ void    c_location::clear_indexes()
 {
     if (!_location_indexes.empty())
         _location_indexes.clear();
+}
+
+void    c_location::clear_err_pages()
+{
+    if (!_location_err_pages.empty())
+        _location_err_pages.clear();
 }
 

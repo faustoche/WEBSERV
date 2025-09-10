@@ -143,6 +143,8 @@ void                c_parser::location_url_directory(c_server & server)
     location.set_is_directory(true);
     location.set_index_files(server.get_indexes());
     location.set_body_size(server.get_body_size());
+    location.set_err_pages(server.get_err_pages());
+    // location.print_error_page();
     // si pas de directive alias ne pas set la valeur avec le root
     // location.set_err_page(server.get_err_pages()); // A FAIRE
 
@@ -157,12 +159,11 @@ void                c_parser::location_url_directory(c_server & server)
         else if (is_token_type(TOKEN_RBRACE))
             break ;
         else
-        {
-            cout << "type" << _current->type << endl;
             throw invalid_argument("invalid in location = " + _current->value);
-        }
     }
     server.add_location(location.get_url_key(), location);
+    // PB ----> ERR PGE PAS DANS MAP
+    // server.get_location()..print_error_pages();
 }
 
 /*---------------------   location : file as value   ---------------------------*/
@@ -197,6 +198,14 @@ void                c_parser::location_directives(c_location & location)
             throw invalid_argument("directive upload_path can be define just once");
         parse_upload_path(location);
     }
+    else if (is_token_value("error_page"))
+    {
+        cout << "ICI" << endl;
+        // location.print_error_page();
+        location.clear_err_pages();
+        // location.print_error_page();
+        parse_error_page(location);
+    }
     else if (is_token_value("methods"))
         location_methods(location);
     else if (is_token_value("alias"))
@@ -205,6 +214,7 @@ void                c_parser::location_directives(c_location & location)
         parse_body_size(location);
     else if (is_token_value("autoindex"))
         parse_auto_index(location);
+    
     
     else
         return;
@@ -460,6 +470,8 @@ void                c_parser::parse_server_directives(c_server & server)
         parse_server_name(server);
     else if (is_token_value("client_max_body_size"))
         parse_body_size(server);
+    else if (is_token_value("error_page"))
+        parse_error_page(server);
     else /* a enlever / reprendre */
         advance_token();
     // cout << "parse index directive = " << this->_current->value << endl;

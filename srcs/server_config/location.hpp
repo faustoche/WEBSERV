@@ -33,8 +33,9 @@ public:
 		void								set_redirect(pair<int, string> redirect) {this->_redirect = redirect; };
 		void								set_cgi(map<string, string> cgi) {this->_cgi_extension = cgi; };
 		void								set_upload_path(string const & path) {this->_upload_path = path; };
-		void								set_is_directory(bool const & dir) {this->_is_directory = dir;};	
-		void								set_err_pages(map<string, vector<int> > err_pages); // A FAIRE
+		void								set_is_directory(bool const & dir) {this->_is_directory = dir; };	
+		void								set_err_pages(map<int, string> err_pages) {this->_location_err_pages = err_pages; };
+		void								add_error_page(vector<int> const & codes, string path);
 
 		// Getters			
 		string const &						get_url_key() const {return _url_key; };
@@ -47,15 +48,17 @@ public:
 		map<string, string>					get_cgi() const {return _cgi_extension; };
 		string const &						get_upload_path() const {return _upload_path; };
 		bool								get_bool_is_directory() const {return _is_directory; };
-		map<string, vector<int> > const &	get_err_pages() const {return (_location_err_pages); };
+		map<int, string> const &			get_err_pages() const {return (_location_err_pages); };
 
 		// Print
 		void								print_location() const;
 		void								print_indexes() const;
 		void								print_methods() const;
+		void								print_error_page() const;
 
 		void								clear_cgi();
 		void								clear_indexes();
+		void								clear_err_pages();
 
 private:		// remplacer "root" par alias
 		string								_url_key; // cle de la map dans le server
@@ -68,7 +71,7 @@ private:		// remplacer "root" par alias
 		map<string, string>					_cgi_extension; // extension + chemin vers lexecutable CGI --> si l'URL demandee correspond a un fichier avec cette extension le serveur lance l'executable correspondant
 		string								_upload_path; // chemin de stockage pour les fichiers uploades recu via POST (attention si POST pas autorise dans la location l'uploiad doit etre refuse et renvoyer 405)
 		bool								_is_directory;
-		map<string, vector<int> >			_location_err_pages;
+		map<int, string>					_location_err_pages;
 };
 
 

@@ -67,7 +67,7 @@ void	c_server::add_location(string const & path, c_location const & loc)
 	_location_map[path] = loc;
 }
 
-void	c_server::add_error_page(vecotr<int> const & codes, string path)
+void	c_server::add_error_page(vector<int> const & codes, string path)
 {
 	for (size_t i = 0; i < codes.size(); i++)
 		_err_pages.insert(make_pair(codes[i], path));
@@ -98,23 +98,32 @@ void	c_server::print_names() const
 	}
 }
 
+void	c_server::print_error_page() const
+{
+	map<int, string>::const_iterator it;
+
+	for (it = _err_pages.begin(); it != _err_pages.end(); it++)
+	{
+		cout << "		" << it->first << " " << it->second << " " << endl;
+	}
+}
+
 
 void	c_server::print_config() const
 {
 	cout << PINK 
-			<< "	server name: " << flush;
+			<< "	Server name: " << flush;
 			print_names();
 			cout << endl;
 	cout	<< "	IP adress: " << get_ip_adress() << endl
-			<< "	port: " << get_port() << endl
-			<< "	max body size: " << get_body_size() << " " << endl
-			<< "	index files: " << flush;
+			<< "	Port: " << get_port() << endl
+			<< "	Max body size: " << get_body_size() << " " << endl
+			<< "	Index files: " << flush;
 			print_indexes();
-	cout << endl
-        	// << "	CGI extension (.py): " << get_cgi()[".py"] << endl
-        	// << "	CGI extension (.sh): " << get_cgi()[".sh"] << endl
-			
-	<< RESET ;
+	cout	<< endl;
+	cout	<< "	Error pages:" << endl;
+			print_error_page();
+	cout << RESET ;
 
 	map<string, c_location>::const_iterator it;
 
@@ -126,6 +135,7 @@ void	c_server::print_config() const
 			<< it->first
 			<< endl;
 		it->second.print_location();
+		// it->second.print_error_page();
 		cout << RESET;
 		i++;
 	}

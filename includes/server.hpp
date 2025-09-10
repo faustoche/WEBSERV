@@ -79,7 +79,7 @@ public:
 	void								set_ip(string const & ip);
 	void								set_body_size(size_t const & size){_body_size = size; };
 	void								set_root(string const & root); // A FAIRE
-	void								add_error_page(vecotr<int> const & codes, string path);
+	void								add_error_page(vector<int> const & codes, string path);
     void                				add_location(string const & path, c_location const & loc);
     // Getters
     vector<string> const &      		get_indexes() const { return (_indexes); };
@@ -96,6 +96,7 @@ public:
     void    				print_config() const;
 	void					print_indexes() const;
 	void					print_names() const;
+	void					print_error_page() const;
 };
 
 /************ FUNCTIONS ************/
