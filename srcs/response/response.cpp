@@ -135,7 +135,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 	}
 
 	size_t content_size = _file_content.size();
-	ostringstream oss; // converti le noimbre en chaine
+	ostringstream oss;
 	oss << content_size;
 
 	_response = version + " 200 OK\r\n";
@@ -276,7 +276,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 			// ignore le répertoire courant "."
 			if (name == ".") 
 				continue ;
-			// ajouter chaque élément comme un lien
 			content += "<li><a href=\"" + name + "\">" + name + "</a></li>";
 		}
 		closedir(dir);
@@ -317,7 +316,6 @@ c_location	*c_server::find_matching_location(const string &request_path)
 	// parcourir toutes les locations de la map
 	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
 	{
-		//je recupere la cle
 		const string &location_path = it->first;
 		// est-ce que le chemin de la requete comment par le chemin de la location?
 		if (request_path.find(location_path) == 0)
@@ -339,14 +337,13 @@ c_location	*c_server::find_matching_location(const string &request_path)
 					}
 				}
 			}
-			// sinon location exact
 			else
 			{
 				if (request_path == location_path)
 				{
 					best_match = &(it->second);
 					best_match_length = location_path.length();
-					break; // Correspondance exacte, on peut s'arrêter
+					break ;
 				}
 			}
 		}
@@ -359,11 +356,11 @@ c_location	*c_server::find_matching_location(const string &request_path)
 bool c_server::is_method_allowed(const c_location *location, const string &method)
 {
 	if (location == NULL)
-		return (true); // pas de restriction si pas de location!
+		return (true);
 
 	vector<string> allowed_methods = location->get_methods();
 	if (allowed_methods.empty())
-		return (true); //pas de restrictions si le vector est vide
+		return (true);
 	
 	for (size_t i = 0; i < allowed_methods.size(); i++)
 	{
