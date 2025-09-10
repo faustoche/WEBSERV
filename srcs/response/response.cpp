@@ -2,12 +2,20 @@
 
 /************ FILE CONTENT MANAGEMENT ************/
 
+/* Check to see what kind of response must be sent 
+* First, we clear everything and define variables
+* Second, we check that the method, versions and host are corrects
+* Third, we verify that the method is allowed according to the locations
+* We also check if the locations gave us redirections or not
+* We construct the correct path according to locations again
+*/
+
 void	c_response::define_response_content(const c_request &request, c_server &server)
 {
 	_response.clear();
 	_file_content.clear();
 	
-	/***** RÉCUPÉRATIONS *****/
+
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
@@ -31,38 +39,35 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 		return ;
 	}
 
-	/***** CHERCHE LA LOCATION LA PLUS ADAPTÉE AU CHEMIN DEMANDÉE *****/
-	// 1. Vérifier si on trouve une location qui matche -> fonction find_location()
-	// on va trouver la location qui correspond a la requete
+	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
 	
-	// 2. Est-ce que la méthode est autorisée pour cette location spécifique?
 	if (!server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
-		return ;
+		return ;	
 	}
 
-	// 3. Est-ce qu'on a redéfini une redirection? Si oui -> gérer cette redirection
+	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
-		pair<int, string> redirect = matching_location->get_redirect();
-		if (redirect.first != 0 && !redirect.second.empty())
+		pair<int, string> redirect = matching_location->get_redirect(); // pair avec code de retirection et URL de destination
+		if (redirect.first != 0 && !redirect.second.empty()) // first = redirection (301, 302), second = URL
 		{
 			build_redirect_response(redirect.first, redirect.second, version, request);
 			return ;
 		}
 	}
 
-	/***** CONSTRUCTION DU CHEMIN DU FICHIER - À CHANGER POUR AJOUTER LA LOCATIONS *****/
+	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 	
-	string file_path = server.resolve_file_path(matching_location, target, "www");
+	string file_path = server.convert_url_to_file_path(matching_location, target, "www");
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	_file_content = load_file_content(file_path);
 	if (_file_content.empty())
 	{
-		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
+		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
 			build_directory_listing_response(file_path, version, request);
 			return ;
@@ -72,6 +77,8 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	else
 		build_success_response(file_path, version, request);
 }
+
+/* Proceed to load the file content. Nothing else to say. */
 
 string c_response::load_file_content(const string &file_path)
 {
@@ -86,6 +93,7 @@ string c_response::load_file_content(const string &file_path)
 	return (content);
 }
 
+/* Check extension to see what type of content where are dealing with to use it in our response. */
 
 string c_response::get_content_type(const string &file_path)
 {
@@ -114,7 +122,9 @@ string c_response::get_content_type(const string &file_path)
 		return ("text/plain"); 
 }
 
-/************ RESPONSES ************/
+/************ BUILDING RESPONSES ************/
+
+/* Build the successfull request response */
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
@@ -125,7 +135,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 	}
 
 	size_t content_size = _file_content.size();
-	ostringstream oss;
+	ostringstream oss; // converti le noimbre en chaine
 	oss << content_size;
 
 	_response = version + " 200 OK\r\n";
@@ -144,13 +154,12 @@ void c_response::build_success_response(const string &file_path, const string ve
 	_response += _file_content;
 }
 
-/* Vérifier les messages d'erreur s'ils sont cohérents avec un autre site */
+/* Build basic error response for some cases. */
 
 void c_response::build_error_response(int error_code, const string version, const c_request &request)
 {
 	string status;
 	string error_content;
-	(void)request;
 
 	switch (error_code)
 	{
@@ -197,6 +206,8 @@ void c_response::build_error_response(int error_code, const string version, cons
 	_file_content.clear();
 }
 
+/* Build the response in case of redirection's error with the locations. */
+
 void	c_response::build_redirect_response(int code, const string &location, const string &version, const c_request &request)
 {
 	string status;
@@ -220,14 +231,15 @@ void	c_response::build_redirect_response(int code, const string &location, const
 			break ;
 	}
 
+	// contenu en html histoire d'avoir un message 
 	string content = "<html><body><h1>" + int_to_string(code) + " - " + status + "</h1>"
 					"<p>The document has moved <a href=\"" + location + "\">here</a>.</p>"
-                    "</body></html>";
+					"</body></html>";
 	
 	ostringstream oss;
 	oss << content.length();
 	_response = version + " " + int_to_string(code) + " " + status + "\r\n";
-	_response += "Location: " + location + "\r\n";
+	_response += "Location: " + location + "\r\n"; // indique ou se trouve la nouvelle ressource
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -244,15 +256,38 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += content;
 }
 
-void	c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
+/* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
+
+void c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
 {
-	//generation du listing html simple dur epapetoire
+	// genere du début de la page HTML
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
 	
+	// ouvrir le répertoire
+	DIR *dir = opendir(dir_path.c_str());
+	if (dir != NULL) 
+	{
+		struct dirent *entry;
+		// lire chaque fichier/dossier
+		while ((entry = readdir(dir)) != NULL) 
+		{
+			string name = entry->d_name;
+			// ignore le répertoire courant "."
+			if (name == ".") 
+				continue ;
+			// ajouter chaque élément comme un lien
+			content += "<li><a href=\"" + name + "\">" + name + "</a></li>";
+		}
+		closedir(dir);
+	}
+	else 
+		content += "<li>Cannot read directory</li>";
+	content += "</ul><hr></body></html>";
 	ostringstream oss;
 	oss << content.length();
-	_response = version + "200 OK\r\n";
+
+	_response = version + " 200 OK\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -267,12 +302,12 @@ void	c_response::build_directory_listing_response(const string &dir_path, const 
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
-
 	_file_content = content;
 }
 
+/************ HANDLING LOCATIONS ************/
 
-// trouver la location
+/* Finding the locations the matches the most with what the request is asking for */
 
 c_location	*c_server::find_matching_location(const string &request_path)
 {
@@ -289,9 +324,12 @@ c_location	*c_server::find_matching_location(const string &request_path)
 		{
 			// check loction type repertoire qui terminent par /
 			// est-ce que le caracetere suivant est / ou bien on est a la fin ?
-			if (location_path[location_path.length() - 1] == '/')
+			if (location_path.length() > 0 && location_path[location_path.length() - 1] == '/')
 			{
-				if (request_path.length() == location_path.length() || request_path[location_path.length()] == '/')
+				if (request_path.length() == location_path.length() || 
+					(request_path.length() > location_path.length() && 
+					 request_path[location_path.length()] == '/') ||
+					request_path.length() > location_path.length())
 				{
 					// on choisi la correspondance la plus long 
 					if (location_path.length() > best_match_length)
@@ -305,12 +343,18 @@ c_location	*c_server::find_matching_location(const string &request_path)
 			else
 			{
 				if (request_path == location_path)
-					return (&(it->second));
+				{
+					best_match = &(it->second);
+					best_match_length = location_path.length();
+					break; // Correspondance exacte, on peut s'arrêter
+				}
 			}
 		}
 	}
 	return (best_match);
 }
+
+/* Check if the method is allowed by the locations. */
 
 bool c_server::is_method_allowed(const c_location *location, const string &method)
 {
@@ -329,11 +373,13 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 	return (false);
 }
 
-string c_server::resolve_file_path(const c_location *location, const string &request_path, const string &default_root)
+/* Convert the url given into a real file path to access all of the informations */
+
+string c_server::convert_url_to_file_path(const c_location *location, const string &request_path, const string &default_root)
 {
 	if (location == NULL)
 	{
-		// si pas de location, alors on fait le request path par default
+		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
 			return (default_root + "/" + _index);
 		return (default_root + request_path);
@@ -343,35 +389,37 @@ string c_server::resolve_file_path(const c_location *location, const string &req
 
 	// calculer le chemin relatif en enlevant la partie location du chemin de requete
 	string relative_path;
-	if (request_path.find(location_key) == 0)
+	if (request_path.find(location_key) == 0) // on verifie si l'url commence par le pattern de la location
 	{
 		relative_path = request_path.substr(location_key.length());
-		// on tej les //
+		// on tej les // qui sont en plus pour evciter les doublons
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
 	}
-	// est-ce que c'est un repertoire? aucun fichier specifique n'est demande?
+	
+	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
 	if (location->get_bool_is_directory() && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
-		// chercher un fichier index
+		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
-		if (index_files.empty())
+		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + "/" + relative_path + _index);
 		else
 		{
-			// essayer chaque fichier index dans l'rodre 
+			// Processus: On teste tous les autres fichiers dans l'ordre
+				// 1. essaye index.html 
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + "/" + relative_path + index_files[i];
-				ifstream test_file(index_path.c_str());
-				if (test_file.good())
+				string index_path = location_root + "/" + relative_path + index_files[i]; // on itere dans les index
+				ifstream file_checker(index_path.c_str());
+				if (file_checker.is_open()) // est-ce que le fichier existe? est-ce que j'ai reussi a l'ouvrir
 				{
-					test_file.close();
-					return (index_path);
+					file_checker.close();
+					return (index_path); // ca fonctione donc je le return
 				}
-				test_file.close();
+				file_checker.close();
 			}
-			// aucun fichier inde xtrouve alors on retourne le premier de la liste
+			// aucun fichier inde xtrouve alors on retourne le premier de la liste car il renverra une erreur 404
 			return (location_root + "/" + relative_path + index_files[0]);
 		}
 	}
