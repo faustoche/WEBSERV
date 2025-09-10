@@ -106,7 +106,6 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 			build_error_response(404, version, request);
 		}
 	}
-	/***** CHARGER LE CONTENU DU FICHIER *****/
 
 }
 

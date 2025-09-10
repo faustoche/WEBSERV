@@ -123,7 +123,6 @@ void  c_cgi::vectorize_env()
 
 void    c_cgi::set_environment(const c_request &request)
 {
-    /* BIEN SE CALER POUR COMPRENDRE LES VAR SCRIPT_NAME / PATH_INFO ET TRANSLATED_PATH */
     this->_socket_fd = request.get_socket_fd();
     this->_map_env_vars["REQUEST_METHOD"] = request.get_method();
     this->_map_env_vars["SCRIPT_NAME"] = this->_script_name;
@@ -242,7 +241,6 @@ string make_absolute(const string &path)
     return (path);
 }
 
-/* interpreter = loc->_cgi_extension["extension"]*/
 string  c_cgi::launch_cgi(const string &body)
 {
     int server_to_cgi[2];
@@ -317,7 +315,7 @@ string  c_cgi::launch_cgi(const string &body)
         
         // Attendre la fin du process enfant
         int status;
-        waitpid(pid, &status, WNOHANG);
+        waitpid(pid, &status, 0);
         
         return content_cgi;
     }
