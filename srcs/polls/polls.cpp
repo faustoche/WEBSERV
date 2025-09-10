@@ -66,6 +66,7 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 1000);
 	if (num_events < 0)
 	{
@@ -75,14 +76,17 @@ void c_server::handle_poll_events()
 	if (num_events == 0)
 		return ;
 
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	for (size_t i = 0; i < _poll_fds.size(); i++)
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		struct pollfd &pfd = _poll_fds[i];
 		if (pfd.revents == 0)
 			continue ;
 		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
 		if (i == 0)
 		{
+			cout << __FILE__ << "/" << __LINE__ << endl;
 			if (pfd.revents & POLLIN)
 				handle_new_connection();
 			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -102,6 +106,7 @@ void c_server::handle_poll_events()
 				remove_client(client_fd);
 		}
 	}
+	cout << __FILE__ << "/" << __LINE__ << endl;
 }
 
 /*
@@ -118,6 +123,7 @@ void	c_server::handle_new_connection()
 {
 	while (true)
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		socklen_t addrlen = sizeof(_socket_address);
 		int client_fd = accept(_socket_fd, (struct sockaddr*)&_socket_address, &addrlen);
 		if (client_fd < 0)

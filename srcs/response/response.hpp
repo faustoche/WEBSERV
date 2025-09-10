@@ -30,6 +30,7 @@ private:
 	map<string, string> _headers_response;
 	string				_body;
 	int					_status;
+	bool				_is_cgi;
 
 public:
 	void define_response_content(const c_request &request);
@@ -53,4 +54,6 @@ private:
 	void	build_directory_listing_response(const string &dir_path, const string &version, const c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
+	bool    get_is_cgi() {return _is_cgi; }
+
 };

@@ -53,7 +53,9 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
-	
+	if (matching_location->get_cgi_extension().size() > 0)
+		this->_is_cgi = true;
+
 	if (!server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -63,7 +65,7 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
-		pair<int, string> redirect = matching_location->get_redirect(); // pair avec code de retirection et URL de destination
+		pair<int, string> redirect = matching_location->get_redirect(); // pair avec code de redirection et URL de destination
 		if (redirect.first != 0 && !redirect.second.empty()) // first = redirection (301, 302), second = URL
 		{
 			build_redirect_response(redirect.first, redirect.second, version, request);
@@ -76,50 +78,37 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	_file_content = load_file_content(file_path);
-	if (_file_content.empty())
+	if (this->_is_cgi)
 	{
-		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		/* A SUPPRIMER */
+		c_location loc;
+		map<string, string> cgi_extension;
+		cgi_extension[".php"] = "/usr/bin/php-cgi";
+		cgi_extension[".py"] = "/usr/bin/python3";
+		loc.set_url_key("/cgi-bin");
+		loc.set_root("./www/cgi-bin");
+		loc.set_cgi_extension(cgi_extension);
+		map<string, c_location> test;
+		test["/cgi-bin"] = loc;
+		/*********************/
+
+		c_cgi cgi(request, *this, test);
+		build_cgi_response(cgi, request);
+	}
+	else
+	{
+		if (_file_content.empty())
 		{
-			build_directory_listing_response(file_path, version, request);
-			return ;
+			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+			{
+				build_directory_listing_response(file_path, version, request);
+				return ;
+			}
+			build_error_response(404, version, request);
 		}
-		build_error_response(404, version, request);
 	}
 	/***** CHARGER LE CONTENU DU FICHIER *****/
-	_file_content = load_file_content(file_path);
 
-	/***** IDENTIFICATION D'UN CGI *****/
-	// // Grace au location on identifie qu'il s'agit d'un cgi - A FAIRE
-	// bool is_cgi = true;
-
-	// /* A SUPPRIMER */
-	// c_location loc;
-	// map<string, string> cgi_extension;
-	// cgi_extension[".php"] = "/usr/bin/php-cgi";
-	// cgi_extension[".py"] = "/usr/bin/python3";
-	// loc.set_url_key("/cgi-bin");
-	// loc.set_root("./www/cgi-bin");
-	// loc.set_cgi_extension(cgi_extension);
-	// map<string, c_location> test;
-	// test["/cgi-bin"] = loc;
-	// /*********************/
-
-	// c_cgi cgi(request, *this, test);
-	// if (is_cgi)
-	// {
-	// 	build_cgi_response(cgi, request);
-	// }
-	// else
-	// {
-	// 	if (_file_content.empty())
-	// 	{
-	// 		build_error_response(404, version, request);
-	// 	}
-	// 	else
-	// 	{
-	// 		build_success_response(file_path, version, request);
-	// 	}
-	// }
 }
 
 /* Proceed to load the file content. Nothing else to say. */
