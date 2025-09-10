@@ -1,9 +1,17 @@
 #include "server.hpp"
 #include "clients.hpp"
 
+/*
+* Vide la liste des pollfds
+* Ajoute le socket serveur au début de pollfds pour surveiller les nouvelles connexions (événements pollin)
+* Poarcours tous les clients actifs : ignorer ceux en disconnected, crée un pollfd pour chaque cloent, configure l'evenemtn attendu selon l'etat
+* Ajoute les pollfd clients dans le vecteur
+*/
+
+
 void c_server::setup_pollfd()
 {
-	_poll_fds.clear(); // on vide le vecteur pour commencer à 0
+	_poll_fds.clear();
 
 	/**** INITIALISATION DES DONNÉES *****/
 	/**** LE SERVEUR DE BASE DOIT ÊTRE EN PREMIER DANS NOTRE CONTAINER *****/
@@ -46,11 +54,15 @@ void c_server::setup_pollfd()
 	}
 }
 
-// je check chaque evenement pour voir l'avancer du poll
-// si pas d'erreur et que notre fds est dispo alors on gere l'entree des nouvelles connexions
-// sinon, on agit sur les sockets clients et donc on lit et on ecrit
-	// ensuite on gere la partie deconnexion
-
+/*
+* Appelle poll() avec un timeout de 1s et recupere le nombre d'evements prets
+* SI erreur alors j'ffiche un message et je quitte
+* Si aucun evenement, on quitte
+* Pourcours tous les pollfd: ignore ceux sans evenements, 
+	* si c'est le serveur: si polling alkors handle nouvelle connexions sinon logs d'erreur
+	* si c'est un client: pollin = handle client read ou sinon pollout = handle client write
+	* sinon erreur alors je remove client
+*/
 
 void c_server::handle_poll_events()
 {
@@ -101,6 +113,16 @@ void c_server::handle_poll_events()
 	}
 }
 
+/*
+* Boucle pour accepter toutes les connexions en attente (accept())
+* Si plus de clients (EAGAIN | EWOULDBLOCK) -> on quitte la boucle
+* Si autre erreur -> affichage des logs et quitte
+* Pour chaque client accepté:
+	* Passe le socket en mode non bloquant
+	* Ajoute le client à la map
+	* Log d'arrivée d'un nouveau client
+*/
+
 void	c_server::handle_new_connection()
 {
 	// boulce pour accepter toutes les connexions en attente
@@ -125,6 +147,20 @@ void	c_server::handle_new_connection()
 		cout << "Nouvelle connexion acceptée : " << client_fd << endl;
 	}
 }
+
+/*
+* Récupère le client correspondant
+* Lit les données avec recv()
+* Si <= 0
+	* 0 -> client a fermé la connexion
+	* Erreur non eagain/ewouldblock -> logs d'erreurs
+	* dans tous les cas -> remove clients
+* Sinon:
+	* ajoute les données lues au buffer client
+	* si le buffer contient une requête complète (\r\n\r\n)
+		* change l'état du client en pr4ocessing
+		* appelle process client request
+*/
 
 void	c_server::handle_client_read(int client_fd)
 {
@@ -151,6 +187,17 @@ void	c_server::handle_client_read(int client_fd)
 		process_client_request(client_fd); // on gere la requete client
 	}
 }
+
+/*
+* Recupère le client correspondant
+* Vérifie le buffer de réponse et combien d'octet ont déjà été envoyés
+* Si tout est déjà envoyé -> supprime le client
+* Sinon:
+	* envoie toutes les données restantes avec send()
+	* si erreur non eagain/ewouyldblock -> log et supprime le client
+	* sinin -> net a jour bytes_written
+	* si tout le buffer est envoyé -> log et supprime le client
+*/
 
 void	c_server::handle_client_write(int client_fd)
 {
@@ -190,20 +237,28 @@ void	c_server::handle_client_write(int client_fd)
 	}
 }
 
+/*
+* Récupère le client correspondant
+* Récupère la requête brute du buffer du client
+* Crée un objet crequest et le parse
+* Crée un objet cresponse et construit une réponse (define response content)
+* Stocke la réponse dans le buffer d'écriture du client
+* Réinitialise bytes_written et met l'état du client à sending
+* Log que la requête est traitée
+*/
+
 void c_server::process_client_request(int client_fd)
 {
 	c_client *client = find_client(client_fd);
 	if (client == NULL)
 		return ;
-	// creation d'un obket request a partir du buffer du client
+
 	string raw_request = client->get_read_buffer();
 	c_request request;
 	request.parse_request(raw_request);
-	// je cree une reponse base sur la requete
 	c_response response;
 	response.define_response_content(request, *this);
 
-	// on prépare la réponse à envoyer
 	client->get_write_buffer() = response.get_response();
 	client->set_bytes_written(0);
 	client->set_state(SENDING);
