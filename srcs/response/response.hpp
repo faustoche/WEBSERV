@@ -9,6 +9,7 @@
 #include <iterator>
 #include "server.hpp"
 #include "request.hpp"
+#include <sys/stat.h>
 
 /************ DEFINE ************/
 

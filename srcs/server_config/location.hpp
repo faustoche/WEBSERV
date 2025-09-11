@@ -31,7 +31,7 @@ public:
 		void				set_redirect(pair<int, string> redirect) {this->_redirect = redirect; };
 		void				set_cgi(map<string, string> cgi) {this->_cgi_extension = cgi; };
 		void				set_upload_path(string const & path) {this->_upload_path = path; };
-		void				set_is_directory(bool const & dir) {this->_is_directory = dir;};
+		void				set_is_directory(bool const & dir) { this->_is_directory = dir;};
 		void				set_cgi_extension(const map<string, string>& cgi_ext) { _cgi_extension = cgi_ext; }; // a supprimer
 
 		// Getters

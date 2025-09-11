@@ -67,7 +67,7 @@ public:
 
 	c_location	*find_matching_location(const string &request_path);
 	bool		is_method_allowed(const c_location *location, const string &method);
-	string		convert_url_to_file_path(const c_location *location, const string &request_path, const string &default_root);
+	string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
 
 	// CONFIGURATION FILE
     // Setters

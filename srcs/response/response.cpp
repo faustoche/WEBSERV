@@ -33,6 +33,31 @@ const string& c_response::get_header_value(const string& key) const
 * We construct the correct path according to locations again
 */
 
+
+bool	is_directory(const string& path)
+{
+	struct stat path_stat;
+
+	if (stat(path.c_str(), &path_stat) != 0)
+	{
+		// Erreur chemin n'existe pas ou n'est pas accessible
+		return (false);
+	}
+	return (S_ISDIR(path_stat.st_mode));
+}
+
+bool	is_regular_file(const string& path)
+{
+	struct stat path_stat;
+
+	if (stat(path.c_str(), &path_stat) != 0)
+	{
+		// Erreur chemin n'existe pas ou n'est pas accessible
+		return (false);
+	}
+	return (S_ISREG(path_stat.st_mode));
+}
+
 void	c_response::define_response_content(c_request &request, c_server &server)
 {
 	_response.clear();
@@ -69,6 +94,10 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	loc.set_url_key("/cgi-bin");
 	loc.set_root("./www/cgi-bin");
 	loc.set_cgi_extension(cgi_extension);
+	loc.set_auto_index(true);
+	vector<string> index_file;
+	index_file.push_back("index.py");
+	loc.set_index_files(index_file);
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
@@ -115,25 +144,28 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	string file_path = server.convert_url_to_file_path(matching_location, target, "www");
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
-	_file_content = load_file_content(file_path);
+	if (is_regular_file(file_path))
+		_file_content = load_file_content(file_path);
+	if (_file_content.empty())
+	{
+		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		{
+			build_directory_listing_response(file_path, version, request);
+			return ;
+		}
+		build_error_response(404, version, request);
+	}
 	if (this->_is_cgi)
 	{
-		c_cgi cgi(request, *this, loc);
+		c_cgi cgi;
+		cgi.set_script_filename(file_path);
+		cgi.init_cgi(request, *matching_location);
+		cgi.resolve_cgi_paths(*matching_location, cgi.get_script_filename());
 		build_cgi_response(cgi, request);
+		return ;
 	}
 	else
-	{
-		if (_file_content.empty())
-		{
-			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
-			{
-				build_directory_listing_response(file_path, version, request);
-				return ;
-			}
-			build_error_response(404, version, request);
-		}
-	}
-
+		build_success_response(file_path, version, request);
 }
 
 /* Proceed to load the file content. Nothing else to say. */
@@ -145,9 +177,9 @@ string c_response::load_file_content(const string &file_path)
 	if (!file.is_open()) {
 		return ("");
 	}
-
 	string	content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
 	file.close();
+
 	return (content);
 }
 
@@ -459,10 +491,11 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 
 /* Convert the url given into a real file path to access all of the informations */
 
-string c_server::convert_url_to_file_path(const c_location *location, const string &request_path, const string &default_root)
+string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
 	if (location == NULL)
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
 			return (default_root + "/" + _index);
@@ -480,10 +513,11 @@ string c_server::convert_url_to_file_path(const c_location *location, const stri
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
 	}
-	
+	cout << __FILE__ << "/" << __LINE__ << " relative_path: " << relative_path << endl; 
 	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
-	if (location->get_bool_is_directory() && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	if (is_directory(location_root + "/" + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
+		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
@@ -507,5 +541,6 @@ string c_server::convert_url_to_file_path(const c_location *location, const stri
 			return (location_root + "/" + relative_path + index_files[0]);
 		}
 	}
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	return (location_root + "/" + relative_path);
 }

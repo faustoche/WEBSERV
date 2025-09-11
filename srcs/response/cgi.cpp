@@ -1,26 +1,17 @@
 #include "cgi.hpp"
 
-c_cgi::c_cgi() : _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
-{
-    this->_map_env_vars.clear();
-    this->_vec_env_vars.clear();
-}
-
-c_cgi::c_cgi(c_request &request, c_response &response, c_location &loc)
+c_cgi::c_cgi()
 : _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
-    (void)response;
-
-    this->_status_code = request.get_status_code();
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 
-    if (init_cgi(request, loc))
-    {
-        cerr << "Error while initializing cgi" << __FILE__ << "/" << __LINE__ << endl;
-        request.set_status_code(404);
-        return ;
-    }
+    // if (init_cgi(request, loc))
+    // {
+    //     cerr << "Error while initializing cgi" << __FILE__ << "/" << __LINE__ << endl;
+    //     request.set_status_code(404);
+    //     return ;
+    // }
 }
 
 c_cgi::~c_cgi()
@@ -46,8 +37,10 @@ map<string, c_location>::const_iterator   find_location(const string &path, map<
 
 string  find_extension(const string& real_path)
 {
+    cout << __FILE__ << "/" << __LINE__ << endl;
     size_t dot_position = real_path.find_last_of('.');
 
+    cout << __FILE__ << "/" << __LINE__  << " real_path: " << real_path << endl;
     if (dot_position != string::npos)
     {
         string extension = real_path.substr(dot_position);
@@ -56,35 +49,40 @@ string  find_extension(const string& real_path)
     return (NULL);
 }
 
-size_t c_cgi::identify_script_type(const c_request &request)
+size_t c_cgi::identify_script_type(const string& path)
 {
     size_t pos_script = string::npos;
     string  script_type;
 
-    pos_script = request.get_path().find(".py");
+    pos_script = path.find(".py");
     if (pos_script == string::npos)
     {
-        pos_script= request.get_path().find(".php");
+        pos_script= path.find(".php");
         if (pos_script == string::npos)
         {
             cerr << "Error: unknown script type" << endl;
             return (string::npos);
         }
-         this->_script_name = request.get_path().substr(0, pos_script + 4);
+         this->_script_name = path.substr(0, pos_script + 4);
         return (pos_script + 4);
     }
-    this->_script_name = request.get_path().substr(0, pos_script + 3);
+    this->_script_name = path.substr(0, pos_script + 3);
     return (pos_script + 3);
 }
 
-int    c_cgi::resolve_cgi_paths(const c_request &request, const c_location &loc)
+int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_filename)
 {
-    size_t ext_pos = identify_script_type(request);
+    size_t ext_pos;
+
+    cout << __FILE__ << "/" << __LINE__  << " script_filename: " << script_filename << endl;
+    ext_pos = identify_script_type(script_filename);
+
+
     if (ext_pos == string::npos)
         return(1);
-    if (this->_script_name.size() < request.get_path().size())
+    if (this->_script_name.size() < script_filename.size())
     {
-        this->_path_info = request.get_path().substr(ext_pos);
+        this->_path_info = script_filename.substr(ext_pos);
         this->_translated_path = loc.get_root() + this->_path_info;
     }
 
@@ -98,22 +96,11 @@ int    c_cgi::resolve_cgi_paths(const c_request &request, const c_location &loc)
 
 int    c_cgi::init_cgi(const c_request &request, const c_location &loc)
 {
-    /* Recherche de la location correspondante au path de la requete */
-    // string  path = request.get_path();
-
-    // map<string, c_location>::const_iterator it = find_location(path, map_location);
-    // if (it == map_location.end()) 
-    // {
-    //     std::cerr << "Error: no location matched path " << path << std::endl;
-    //     return;
-    // }
+    this->_status_code = request.get_status_code();
     this->_loc = &loc;
-
-    if (resolve_cgi_paths(request, loc))
-        return (1);
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
-    string extension = find_extension(this->_script_name);
+    string extension = find_extension(this->_script_filename);
     this->_interpreter = loc.get_cgi_extension().at(extension);
 
     /* Construction de l'environnement pour l'execution du script */
