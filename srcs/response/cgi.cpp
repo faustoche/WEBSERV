@@ -5,13 +5,6 @@ c_cgi::c_cgi()
 {
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
-
-    // if (init_cgi(request, loc))
-    // {
-    //     cerr << "Error while initializing cgi" << __FILE__ << "/" << __LINE__ << endl;
-    //     request.set_status_code(404);
-    //     return ;
-    // }
 }
 
 c_cgi::~c_cgi()
@@ -37,10 +30,8 @@ map<string, c_location>::const_iterator   find_location(const string &path, map<
 
 string  find_extension(const string& real_path)
 {
-    cout << __FILE__ << "/" << __LINE__ << endl;
     size_t dot_position = real_path.find_last_of('.');
 
-    cout << __FILE__ << "/" << __LINE__  << " real_path: " << real_path << endl;
     if (dot_position != string::npos)
     {
         string extension = real_path.substr(dot_position);
@@ -72,11 +63,7 @@ size_t c_cgi::identify_script_type(const string& path)
 
 int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_filename)
 {
-    size_t ext_pos;
-
-    cout << __FILE__ << "/" << __LINE__  << " script_filename: " << script_filename << endl;
-    ext_pos = identify_script_type(script_filename);
-
+    size_t ext_pos = identify_script_type(script_filename);
 
     if (ext_pos == string::npos)
         return(1);

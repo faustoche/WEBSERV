@@ -40,9 +40,6 @@ c_location::~c_location()
 
 }
 
-/*----------------- MEMBERS METHODS  --------------*/
-
-
 /*--------------------- utils  --------------------*/
 
 void    c_location::print_location() const

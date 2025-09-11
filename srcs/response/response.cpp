@@ -495,7 +495,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 {
 	if (location == NULL)
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
 			return (default_root + "/" + _index);
@@ -513,7 +512,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
 	}
-	cout << __FILE__ << "/" << __LINE__ << " relative_path: " << relative_path << endl; 
 	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
 	if (is_directory(location_root + "/" + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
@@ -541,6 +539,5 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			return (location_root + "/" + relative_path + index_files[0]);
 		}
 	}
-	cout << __FILE__ << "/" << __LINE__ << endl;
 	return (location_root + "/" + relative_path);
 }
