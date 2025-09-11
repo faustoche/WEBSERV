@@ -187,7 +187,6 @@ void	c_server::handle_client_write(int client_fd)
 		return ;
 
 	client->set_bytes_written(bytes_written + bytes_sent);
-	cout << "****coucou****" << endl;
 	if (client->get_bytes_written() >= write_buffer.length())
 	{
 		cout << "Réponse envoyé au client " << client_fd << endl;

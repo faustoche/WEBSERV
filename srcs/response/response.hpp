@@ -33,17 +33,21 @@ private:
 	bool				_is_cgi;
 
 public:
+
 	void define_response_content(const c_request &request);
 	void define_response_content(c_request &request, c_server &server);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }
 
 	/****** AC *****/
+	c_response();
+	~c_response();
 	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
 	const string 	&get_header_value(const string& key) const;
 	void			set_body(const string &body) { this->_body = body; };
 	void			set_status(const int &status) { this->_status = status; };
 	const string	&get_body() { return this->_body; };
+	bool			get_is_cgi() { return this->_is_cgi; };
 	void			clear_response();
 
 private:
@@ -54,6 +58,5 @@ private:
 	void	build_directory_listing_response(const string &dir_path, const string &version, const c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
-	bool    get_is_cgi() {return _is_cgi; }
 
 };

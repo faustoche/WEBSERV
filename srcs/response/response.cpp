@@ -1,5 +1,16 @@
 #include "response.hpp"
 
+/************ CONSTRUCTORS & DESTRUCTORS ************/
+
+c_response::c_response()
+{
+	this->_is_cgi = false;
+}
+
+c_response::~c_response()
+{}
+
+
 /************ GETTERS ************/
 
 const string& c_response::get_header_value(const string& key) const
@@ -27,7 +38,6 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	_response.clear();
 	_file_content.clear();
 	
-	this->_is_cgi = false;
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
@@ -64,28 +74,26 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
+
 	if (matching_location != NULL && matching_location->get_cgi_extension().size() > 0)
-	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		this->_is_cgi = true;
-	}
 
 	/* A SUPPRIMER */
-	if (target.find("cgi"))
+	if (target.find("cgi") != string::npos)
 	{
-		
 		this->_is_cgi = true;
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		request.print_full_request();
 		matching_location = &loc;
 	}
+	/***************/
 
 	if (matching_location == NULL)
 	{
-		cout << "no location found !" << endl;
+		cout << "Error: no location found for target: " << target  << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
+
 	/***************/
 
 	if (!server.is_method_allowed(matching_location, method))
