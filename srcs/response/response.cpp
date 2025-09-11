@@ -69,8 +69,6 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	loc.set_url_key("/cgi-bin");
 	loc.set_root("./www/cgi-bin");
 	loc.set_cgi_extension(cgi_extension);
-	// map<string, c_location> test;
-	// test["/cgi-bin"] = loc;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
