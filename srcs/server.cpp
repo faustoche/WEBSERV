@@ -1,5 +1,12 @@
 #include "server.hpp"
 
+/*------------------  CONSTRUCTORS AND DESTRUCTORS  -------------------*/
+c_server::c_server()
+{}
+
+c_server::~c_server()
+{
+}
 
 /*---------------------   CONFIGURATION FILE   ----------------------*/
 
@@ -31,6 +38,18 @@ void	c_server::add_location(string const & path, c_location const & loc)
 
 /*-------------------------   setters   -----------------------------*/
 
+void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
+{
+	if (!cgi)
+		return ;
+
+	// Verifie si la cle existe
+	map<int, c_cgi*>::iterator it = _active_cgi.find(key_fd);
+	if (it != _active_cgi.end())
+		it->second = cgi;
+	else
+		_active_cgi.insert(make_pair(key_fd, cgi));
+}
 
 
 

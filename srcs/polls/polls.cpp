@@ -50,8 +50,27 @@ void c_server::setup_pollfd()
 			default:
 				continue ;
 		}
+
+
 		_poll_fds.push_back(client_pollfd); // on push dans poll fds
 	}
+
+	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); ++it) {
+    int fd = it->first;
+    c_cgi *cgi = it->second;
+
+    struct pollfd cgi_pollfd;
+    cgi_pollfd.fd = fd;
+    cgi_pollfd.revents = 0;
+
+    if (fd == cgi->get_pipe_in())
+        cgi_pollfd.events = POLLOUT; // on écrit vers le CGI
+    else if (fd == cgi->get_pipe_out())
+        cgi_pollfd.events = POLLIN;  // on lit la sortie du CGI
+
+    _poll_fds.push_back(cgi_pollfd);
+}
+
 }
 
 /*
@@ -75,11 +94,27 @@ void c_server::handle_poll_events()
 	if (num_events == 0)
 		return ;
 
+	// DEBUG
+	std::cout << "Clés actives CGI : ";
+	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); ++it)
+	    std::cout << it->first << " ";
+	std::cout << std::endl;
+
+	std::cout << "==== Liste poll_fds ====" << std::endl;
+	for (size_t i = 0; i < _poll_fds.size(); i++) {
+	    std::cout << "fd=" << _poll_fds[i].fd 
+	              << " events=" << _poll_fds[i].events << std::endl;
+	}
+
+
 	for (size_t i = 0; i < _poll_fds.size(); i++)
 	{
 		struct pollfd &pfd = _poll_fds[i];
 		if (pfd.revents == 0)
 			continue ;
+		std::cout << "poll fd =" << pfd.fd << std::endl;
+
+		
 		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
 		if (i == 0)
 		{
@@ -93,13 +128,75 @@ void c_server::handle_poll_events()
 		}
 		else
 		{
-			int client_fd = pfd.fd;
+			int	fd = pfd.fd;
+			
+			/* Si le fd fait partie d'un process cgi */
+			cout << fd << " client traite";
+			if (_active_cgi.count(fd))
+			{
+				cout << " est un active_cgi !" << endl;
+				c_cgi* cgi = _active_cgi[fd];
+
+				// Ecriture vers CGI
+				if ((pfd.revents & POLLOUT) && (fd = cgi->get_pipe_in()))
+				{
+					cout << "Ecriture vers cgi" << endl;
+					ssize_t bytes = write(cgi->get_pipe_in(), 
+										cgi->get_write_buffer().c_str() + cgi->get_bytes_written(),
+										cgi->get_write_buffer().size() - cgi->get_bytes_written());
+					if (bytes > 0)
+						cgi->add_bytes_written(bytes);
+					
+					if (cgi->get_bytes_written() >= cgi->get_write_buffer().size())
+					{
+						close(cgi->get_pipe_in());
+						// remove_client(cgi->get_pipe_in());
+					}
+					
+				}
+				// Lecture vers CGI
+				if ((pfd.revents & POLLIN) && (fd = cgi->get_pipe_out()))
+				{
+					cout << "lecture vers CGI" << endl;
+					// lire un morceau de sortie CGI
+					char buffer[BUFFER_SIZE];
+    				std::string content_cgi;
+    				ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer));
+					if (bytes_read > 0)
+					{
+						cout << "Buffer: " << buffer << endl;
+						cgi->append_read_buffer(buffer, bytes_read);
+					}
+					else if (bytes_read == 0)
+					{
+						cout << "on close la lecture du CGI" << endl;
+						close(cgi->get_pipe_out());
+						remove_client(cgi->get_pipe_out());
+					}
+					// Transmettre au client
+					c_client *client = find_client(cgi->get_client_fd());
+					if (client)
+					{
+						cout << "client trouve pour le cgi" << endl;
+						client->get_write_buffer() = cgi->get_read_buffer();
+						client->set_bytes_written(0);
+						client->set_state(SENDING);
+					}
+					delete _active_cgi[fd];
+					_active_cgi.erase(fd);
+				}
+				continue;
+			}
+			c_client *client = find_client(fd);
+			if (!client)
+				continue;
+			cout << " est un client" << endl;
 			if (pfd.revents & POLLIN)
-				handle_client_read(client_fd);
+				handle_client_read(fd);
 			else if (pfd.revents & POLLOUT)
-				handle_client_write(client_fd);
+				handle_client_write(fd);
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
-				remove_client(client_fd);
+				remove_client(fd);
 		}
 	}
 }
@@ -142,11 +239,11 @@ void c_server::handle_client_read(int client_fd)
 	if (!client)
 		return ;
 
-	c_request request;
+	c_request request(*this);
 	request.read_request(client_fd);
 
-	c_response response;
-	response.define_response_content(request, *this);
+	c_response response(*this, client_fd);
+	response.define_response_content(request);
 	client->get_write_buffer() = response.get_response();
 	client->set_bytes_written(0);
 	// SENDING OU PROCESSING ?
@@ -204,20 +301,20 @@ void	c_server::handle_client_write(int client_fd)
 * Log que la requête est traitée
 */
 
-void c_server::process_client_request(int client_fd)
-{
-	c_client *client = find_client(client_fd);
-	if (client == NULL)
-		return ;
+// void c_server::process_client_request(int client_fd)
+// {
+// 	c_client *client = find_client(client_fd);
+// 	if (client == NULL)
+// 		return ;
 
-	string raw_request = client->get_read_buffer();
-	c_request request;
-	request.parse_request(raw_request);
-	c_response response;
-	response.define_response_content(request, *this);
+// 	string raw_request = client->get_read_buffer();
+// 	c_request request;
+// 	request.parse_request(raw_request);
+// 	c_response response;
+// 	response.define_response_content(request, *this);
 
-	client->get_write_buffer() = response.get_response();
-	client->set_bytes_written(0);
-	client->set_state(SENDING);
-	cout << "Requête traitée" << endl;
-}
+// 	client->get_write_buffer() = response.get_response();
+// 	client->set_bytes_written(0);
+// 	client->set_state(SENDING);
+// 	cout << "Requête traitée" << endl;
+// }

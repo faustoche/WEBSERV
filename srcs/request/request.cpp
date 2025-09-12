@@ -2,16 +2,16 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_request::c_request()
-{
-	this->init_request();
-}
+// c_request::c_request() : _server(NULL)
+// {
+// 	this->init_request();
+// }
 
-c_request::c_request(char* ip_str)
+c_request::c_request(c_server& server) : _server(server)
 {
 	this->init_request();
 	// (void)ip_str;
-	this->_ip_client = static_cast<string>(ip_str);
+	// this->_ip_client = static_cast<string>(ip_str);
 }
 
 c_request::~c_request()

@@ -28,20 +28,22 @@ private:
 	string _file_content;
 
 	/***** AC *****/
+	c_server&			_server;
 	map<string, string> _headers_response;
 	string				_body;
+	int					_client_fd;
 	int					_status;
 	bool				_is_cgi;
 
 public:
 
 	void define_response_content(const c_request &request);
-	void define_response_content(c_request &request, c_server &server);
+	// void define_response_content(c_request &request, c_server &server, int client_fd);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }
 
 	/****** AC *****/
-	c_response();
+	c_response(c_server& server, int client_fd);
 	~c_response();
 	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
 	const string 	&get_header_value(const string& key) const;
@@ -49,6 +51,7 @@ public:
 	void			set_status(const int &status) { this->_status = status; };
 	const string	&get_body() { return this->_body; };
 	bool			get_is_cgi() { return this->_is_cgi; };
+
 	void			clear_response();
 
 private:

@@ -38,6 +38,7 @@ private:
 	int						_socket_fd;
 	struct sockaddr_in		_socket_address;
 	map<int, c_client>		_clients;
+	map<int, c_cgi*>		_active_cgi;
 	vector<struct pollfd>	_poll_fds;
 
 	// CONFIGURATION FILE (completer)
@@ -48,13 +49,19 @@ private:
     map<string, c_location>   			_location_map; // la cle = le chemin (/images), la valeur = config de cette location
 	
 public:
+	c_server();
+	~c_server();
+
 	const int &get_socket_fd() const { return (_socket_fd); };
 	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
 	const map<string, c_location>	&get_location_map() const { return _location_map; };
-	
+	int	get_size_pollfd() const { return _poll_fds.size(); };
+
 	void 		create_socket();
 	void 		bind_and_listen();
 	void 		set_non_blocking(int fd);
+	void 		set_active_cgi(int key_fd, c_cgi* cgi);
+	void 		add_fd(int fd, short events);
 	void		add_client(int client_fd);
 	void		remove_client(int client_fd);
 	c_client	*find_client(int client_fd);
@@ -63,7 +70,7 @@ public:
 	void		handle_new_connection();
 	void		handle_client_read(int client_fd);
 	void		handle_client_write(int client_fd);
-	void		process_client_request(int client_fd);
+	// void		process_client_request(int client_fd);
 
 	c_location	*find_matching_location(const string &request_path);
 	bool		is_method_allowed(const c_location *location, const string &method);
