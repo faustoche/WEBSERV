@@ -28,8 +28,6 @@ using	namespace std;
 
 class c_location;
 
-// FAIRE CONSTRUCTEUR ET OPERATEUR= // ! //
-
 class c_server
 {
 private:
@@ -38,7 +36,7 @@ private:
 	//map<int, c_client>		_clients;
 	vector<struct pollfd>	_poll_fds;
 
-	// CONFIGURATION FILE (completer)
+	// CONFIGURATION FILE
     string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
     uint16_t                        _port; // dans RFC entier non signe de 16 bits + pas de negatif
     string                          _root; // root propre au serveur a definir en dur
@@ -48,7 +46,6 @@ private:
 	size_t							_body_size; // en octets
 	map<string, c_location>   		_location_map;
 	map<int, string>				_err_pages;
-	// map<string, string>				_cgi_extension; // revoir la particularite des cgi ac directive dans le serveur 
 
 	
 public:
@@ -78,7 +75,7 @@ public:
 	void								set_port(uint16_t const & port);
 	void								set_ip(string const & ip);
 	void								set_body_size(size_t const & size){_body_size = size; };
-	void								set_root(string const & root); // A FAIRE
+	void								set_root(string const & root); // A FAIRE ?
 	void								add_error_page(vector<int> const & codes, string path);
     void                				add_location(string const & path, c_location const & loc);
     // Getters
@@ -90,7 +87,6 @@ public:
 	size_t								get_body_size() const {return (_body_size); };
 	map<int, string> const &			get_err_pages() const {return (_err_pages); };
 	map<string, c_location> const &		get_location() const {return (_location_map); };
-	// map<string, string>					get_cgi() const {return _cgi_extension; }; // pas de cgi dans le bloc server
 
     // Debug
     void    				print_config() const;
