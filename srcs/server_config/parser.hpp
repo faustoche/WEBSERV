@@ -56,13 +56,15 @@ private :
             void                location_url_directory(c_server & server);
             void                location_url_file(c_server & server);
             void                location_directives(c_location & location);
-            void                location_alias(c_location & location);
+            void                parse_alias(c_location & location);
             // locations directives
-            void                location_cgi(c_location & location); //modifier noms
+            void                parse_cgi(c_location & location); //modifier noms
             void                location_indexes(c_location & location);
-            void                location_methods(c_location & location);
+            void                parse_methods(c_location & location);
             void                parse_auto_index(c_location & location);
             void                parse_upload_path(c_location & location);
+            void                parse_redirect(c_location & location);
+            void                loc_parse_error_page(c_location & location);
             
             // utils
             void                expected_token_type(int expected_type) const;
@@ -74,9 +76,10 @@ private :
             // void    expected_token_value(int expected_type) const;
 
             // error handling
-            bool                has_error() const;
-            string const &      get_error() const;
-            void                clear_error();
+            void    throw_error(string const & first, string const & second, string const & value);
+            // bool                has_error() const;
+            // string const &      get_error() const;
+            // void                clear_error();
             
             template<typename C>
             void                parse_body_size(C & servloc);
@@ -133,7 +136,6 @@ void            c_parser::parse_error_page(C & servloc)
         int nb = strtol(_current->value.c_str(), NULL, 10);
         if (nb < 300 || nb > 599)
             throw invalid_argument("Invalid argument for error code ==> " + _current->value);
-        codes.push_back(nb);
         codes.push_back(nb);
         advance_token();
     }

@@ -30,6 +30,7 @@ c_server const &	c_server::operator=(c_server const & rhs)
 		_indexes = rhs._indexes;
 		_body_size = rhs._body_size;
 		_err_pages = rhs._err_pages;
+		_location_map = rhs._location_map;
 	}
 
 	return *this;
@@ -62,7 +63,7 @@ void	c_server::add_location(string const & path, c_location const & loc)
 {
 	if (path.empty())
 		throw invalid_argument("Path for location is empty");
-	// if (is_valid(loc)) //verifier si location est valide
+	// if (is_valid(loc)) //verifier si location est valide ?
 	// 	throw invalid_argument("Invalid location");
 	_location_map[path] = loc;
 }
@@ -70,7 +71,7 @@ void	c_server::add_location(string const & path, c_location const & loc)
 void	c_server::add_error_page(vector<int> const & codes, string path)
 {
 	for (size_t i = 0; i < codes.size(); i++)
-		_err_pages.insert(make_pair(codes[i], path));
+		_err_pages[codes[i]] = path;
 }
 
 /*-------------------------   setters   -----------------------------*/

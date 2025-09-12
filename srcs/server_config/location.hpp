@@ -13,7 +13,6 @@ using namespace std;
 
 /*-----------  CLASS -----------*/
 
-// REVOIR CONSTRUCTEUR ET OPERATEUR= // ! //
 
 class c_location
 {
@@ -99,7 +98,7 @@ url demandee /images/photos.png -> chemin reel = ./www/media/photo.png
 On utilise ALIAS -> remplace completement la partie du chemin correspondant a la location
 pour construire le chemin reel sur le disque :
 	real_path = _location_root + (requested_url - _url_key)
-location_root --> remplacer le nom par location_alias
+location_root --> remplacer le nom par parse_alias
 
 
 EXEMPLE (chemin ou fichier):
@@ -120,8 +119,48 @@ Si aucun fichier index n'existe & que auto index est active -> generer un listin
 Sinon retourner une erreur 403 ou 404
 
 CAS D'UN FICHIER apres "location"
-le serveur n'a pas besoin dun fichier index
+le serveur n'a pas besoin dun fichier index ni de lister un dossier (donc pas de auto_index et de location_indexes)
 il verifie directement si le fichier existe, si autorise pour methode HTTP et s'il faut executer un CGI
+
+Schéma de résolution d’une requête HTTP
+
+Config :
+
+server {
+    root /var/www/html;
+
+    location /images/ {
+        autoindex on;
+        index gallery.html index.html;
+    }
+
+    location /images/logo.png {
+        allow_methods GET;
+    }
+}
+	
+Requête GET /images/logo.png :
+→ ton parser trouve d’abord location /images/logo.png (file) car c’est un match exact.
+→ _is_directory = false.
+
+Requête GET /images/banner.png :
+→ pas de location /images/banner.png
+→ mais location /images/ existe → _is_directory = true.
+
+Requête GET /contact.html :
+→ pas de location pour /contact.html
+→ le serveur utilise son root par défaut.
+
+Requete GET /images/logo.png HTTP/1.1
+Ton serveur fait grosso modo :
+Chercher un location exact (fichier)
+Est-ce que /images/logo.png correspond à une clé exacte de location ?
+Si oui, tu prends ce bloc (_is_directory = false).
+Sinon, chercher le location le plus long qui correspond au préfixe
+Est-ce qu’un bloc location /images/ existe ?
+Si oui, tu prends celui-là (_is_directory = true).
+Si aucun location trouvé
+Tu retombes sur la config par défaut du server
 
 
 /!!!!/

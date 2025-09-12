@@ -31,6 +31,8 @@ c_location &    c_location::operator=(c_location const & rhs)
         _redirect = rhs._redirect;
         _cgi_extension = rhs._cgi_extension;
         _is_directory = rhs._is_directory;
+        _location_err_pages = rhs._location_err_pages;
+
     }
     return *this;
 }
@@ -50,7 +52,8 @@ void	c_location::add_error_page(vector<int> const & codes, string path)
 {
 
 	for (size_t i = 0; i < codes.size(); i++)
-		_location_err_pages.insert(make_pair(codes[i], path));
+        _location_err_pages[codes[i]] = path;
+		// _location_err_pages.insert(make_pair(codes[i], path));
 }
 
 
@@ -74,13 +77,12 @@ void	c_location::print_methods() const
 
 void	c_location::print_error_page() const
 {
-	map<int, string>::const_iterator it;
     
     if (_location_err_pages.empty())
-        cout << "EMPTY" << endl;
+        cout << "No error pages defined" << endl;
     else
     {
-	    for (it = _location_err_pages.begin(); it != _location_err_pages.end(); it++)
+	    for (map<int, string>::const_iterator it = _location_err_pages.begin(); it != _location_err_pages.end(); ++it)
 	    {
 
 	    	cout << "		" << it->first << " " << it->second << " " << endl;
