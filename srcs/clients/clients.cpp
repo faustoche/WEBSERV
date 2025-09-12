@@ -21,10 +21,21 @@ c_client::~c_client() {}
 
 /************ CLIENT CREATION ************/
 
+void    c_server::add_fd(int fd, short events)
+{
+    struct pollfd tmp_poll_fd;
+    tmp_poll_fd.fd = fd;
+    tmp_poll_fd.events = events;
+    tmp_poll_fd.revents = 0;
+
+    _poll_fds.push_back(tmp_poll_fd);
+}
+
 void c_server::add_client(int client_fd)
 {
     _clients[client_fd] = c_client(client_fd);
     set_non_blocking(client_fd);
+    add_fd(client_fd, POLLIN);
 }
 
 void c_server::remove_client(int client_fd)

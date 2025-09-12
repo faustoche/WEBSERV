@@ -106,7 +106,7 @@ void    c_request::check_port()
 
 /************ UTILS ************/
 
-void	c_request::print_full_request()
+void	c_request::print_full_request() const
 {
 	if (this->_request_fully_parsed)
 	{
@@ -121,7 +121,7 @@ void	c_request::print_full_request()
 
 		cout << "************ HEADERS *************" << endl;
 		
-		for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
+		for (map<string, string>::const_iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 			cout << it->first << " : " << it->second << endl;
 		cout << endl;
 		

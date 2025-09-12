@@ -10,7 +10,9 @@ class   c_location;
 class c_cgi
 {
     public:
-        c_cgi();
+        c_cgi(c_server& server, int client_fd);
+        c_cgi const& operator=(const c_cgi& rhs);
+        c_cgi (const c_cgi& other);
         ~c_cgi();
 
 
@@ -22,12 +24,31 @@ class c_cgi
         const string&   get_script_filename() const { return this->_script_filename; };
         void            get_header_from_cgi(c_response &response, const string& content_cgi);
         const string&   get_interpreter() const { return _interpreter; };
+        const int&      get_client_fd() const { return _client_fd; };
+        const int&      get_pipe_in() const { return _pipe_in; };
+        const int&      get_pipe_out() const { return _pipe_out; };
+        const pid_t&    get_pid() const { return _pid; };
+        const string&   get_write_buffer() const { return _write_buffer; };
+        const string&   get_read_buffer() const { return _read_buffer; };
+        const size_t&   get_bytes_written() const { return _bytes_written; };
+
+        void            add_bytes_written(ssize_t bytes) { _bytes_written += bytes; };
+        void            append_read_buffer(const char* buffer, ssize_t bytes);
         int             parse_headers(c_response &response, string& headers);
         bool            is_valid_header_value(string& key, const string& value);
         void            vectorize_env();
         size_t          identify_script_type(const string& path);
 
     private:
+        c_server&           _server;
+        int                 _client_fd;
+        int                 _pipe_in;
+        int                 _pipe_out;
+        pid_t               _pid;
+        string              _write_buffer; //body a envoyer
+        string              _read_buffer; // reponse CGI accumulee
+        size_t              _bytes_written;
+
         map<string, string> _map_env_vars;
         vector<string>      _vec_env_vars;
         int                 _socket_fd; // pas necessaire une fois connecte a la classe reponse

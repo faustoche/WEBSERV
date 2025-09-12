@@ -39,6 +39,8 @@ class c_server
 		struct sockaddr_in		_socket_address;
 		map<int, c_client>		_clients;
 		vector<struct pollfd>	_poll_fds;
+		map<int, c_cgi*>		_active_cgi;
+		vector<struct pollfd>	_poll_fds;
 
 		// CONFIGURATION FILE
 	    string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
@@ -51,7 +53,19 @@ class c_server
 		map<string, c_location>   		_location_map;
 		map<int, string>				_err_pages;
 
+
+
 	public:
+		c_server();
+		~c_server();
+
+
+		int	get_size_pollfd() const { return _poll_fds.size(); };
+	
+		void 		set_active_cgi(int key_fd, c_cgi* cgi);
+		void 		add_fd(int fd, short events);
+		void		remove_client(int client_fd);
+		c_client	*find_client(int client_fd);
 		const int &get_socket_fd() const { return (_socket_fd); };
 		const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
 		const map<string, c_location>	&get_location_map() const { return _location_map; };

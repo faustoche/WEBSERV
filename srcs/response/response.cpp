@@ -2,7 +2,7 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_response::c_response()
+c_response::c_response(c_server& server, int client_fd) : _server(server), _client_fd(client_fd)
 {
 	this->_is_cgi = false;
 }
@@ -58,11 +58,10 @@ bool	is_regular_file(const string& path)
 	return (S_ISREG(path_stat.st_mode));
 }
 
-void	c_response::define_response_content(c_request &request, c_server &server)
+void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
 	_file_content.clear();
-	
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
@@ -100,7 +99,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	// loc.set_index_files(index_file);
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
-	c_location *matching_location = server.find_matching_location(target);
+	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
@@ -123,7 +122,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 
 	/***************/
 
-	if (!server.is_method_allowed(matching_location, method))
+	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
 		return ;	
@@ -141,11 +140,13 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	string file_path = server.convert_url_to_file_path(matching_location, target, "www");
+	string file_path = _server.convert_url_to_file_path(matching_location, target, "www");
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 		_file_content = load_file_content(file_path);
+
+	/* SI AUCUN FICHIER, GENERER UNE PAGE QUI LISTE LES FICHIERS DU DOSSIER */
 	if (_file_content.empty())
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
@@ -158,11 +159,17 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 	if (this->_is_cgi)
 	{
-		c_cgi cgi;
-		cgi.set_script_filename(file_path);
-		cgi.init_cgi(request, *matching_location);
-		cgi.resolve_cgi_paths(*matching_location, cgi.get_script_filename());
-		build_cgi_response(cgi, request);
+		cout << "Process cgi identified" << endl;
+		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
+		cgi->set_script_filename(file_path);
+		cgi->init_cgi(request, *matching_location);
+		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
+		build_cgi_response(*cgi, request);
+		cout 
+			<< "Taille de pollfd dans define_response_content: "
+			<< this->_server.get_size_pollfd() << endl;
+		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
+		std::cout << "Insertion active_cgi[" << cgi->get_pipe_out() << "]" << std::endl;
 		return ;
 	}
 	else
@@ -226,6 +233,9 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	if (cgi.get_interpreter().empty())
 		return ;
 	string content_cgi = cgi.launch_cgi(request_body);
+	cout 
+		<< "Taille de pollfd dans build_cgi_response: " 
+		<< this->_server.get_size_pollfd() << endl;
 	cgi.get_header_from_cgi(*this, content_cgi);
 
 	this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";

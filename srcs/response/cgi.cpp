@@ -1,14 +1,68 @@
 #include "cgi.hpp"
 
-c_cgi::c_cgi()
-: _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
+c_cgi::c_cgi(c_server& server, int client_fd) : 
+_server(server), _client_fd(client_fd), _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 }
 
+c_cgi::c_cgi(const c_cgi& other): _server(other._server)
+{
+    this->_client_fd = other._client_fd;
+    this->_pipe_in = other._pipe_in;
+    this->_pipe_out = other._pipe_out;
+    this->_pid = other._pid;
+    this->_write_buffer = other._write_buffer;
+    this->_read_buffer = other._read_buffer;
+    this->_bytes_written = other._bytes_written;
+    this->_map_env_vars = other._map_env_vars;
+    this->_vec_env_vars = other._vec_env_vars;
+    this->_socket_fd = other._socket_fd;
+    this->_status_code = other._status_code;
+    this->_loc = other._loc;
+    this->_script_name = other._script_name;
+    this->_path_info = other._path_info;
+    this->_translated_path = other._translated_path;
+    this->_interpreter = other._interpreter;
+}
+
+
+c_cgi const& c_cgi::operator=(const c_cgi& rhs)
+{
+    if (this != &rhs)
+    {
+        this->_server = rhs._server;
+        this->_client_fd = rhs._client_fd;
+        this->_pipe_in = rhs._pipe_in;
+        this->_pipe_out = rhs._pipe_out;
+        this->_pid = rhs._pid;
+        this->_write_buffer = rhs._write_buffer;
+        this->_read_buffer = rhs._read_buffer;
+        this->_bytes_written = rhs._bytes_written;
+        this->_map_env_vars = rhs._map_env_vars;
+        this->_vec_env_vars = rhs._vec_env_vars;
+        this->_socket_fd = rhs._socket_fd;
+        this->_status_code = rhs._status_code;
+        this->_loc = rhs._loc;
+        this->_script_name = rhs._script_name;
+        this->_path_info = rhs._path_info;
+        this->_translated_path = rhs._translated_path;
+        this->_interpreter = rhs._interpreter;
+    }
+    return (*this);
+}
+
 c_cgi::~c_cgi()
 {
+}
+
+void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
+{
+    if (!buffer || bytes == 0)
+        return ;
+
+    this->_read_buffer.append(buffer, bytes);
 }
 
 map<string, c_location>::const_iterator   find_location(const string &path, map<string, c_location>& map_location)
@@ -244,15 +298,21 @@ string  c_cgi::launch_cgi(const string &body)
         return ("500 Internal server error");
     }
 
-    pid_t   pid = fork();
-    if (pid < 0)
+    this->_pipe_in = server_to_cgi[1];
+    this->_pipe_out = cgi_to_server[0];
+    this->_write_buffer = body;
+    this->_read_buffer.clear();
+    this->_bytes_written = 0;
+
+    this->_pid = fork();
+    if (this->_pid < 0)
     {
         cout << "(CGI): Error de fork";
         return ("500 Internal server error");        
     }
 
     /**** Processus enfant ****/
-    if (pid == 0)
+    if (this->_pid == 0)
     {
         /* Redirection stdin depuis le pipe d'entree: permet au parent server le body au cgi */
         // fcntl(server_to_cgi[0], F_SETFL, O_NONBLOCK);
@@ -282,34 +342,38 @@ string  c_cgi::launch_cgi(const string &body)
         cout << "Status: 500 Internal Server Error" << endl;
         exit(1);
     }
-    else
-    {
-        /**** Processus parent ****/
-        close(server_to_cgi[0]);
-        close(cgi_to_server[1]);
 
-        /* Envoyer le body au CGI */
-        if (!body.empty())
-            write(server_to_cgi[1], body.c_str(), body.size());
-        close(server_to_cgi[1]); // signale EOF au script
+    /**** Processus parent ****/
+    close(server_to_cgi[0]);
+    close(cgi_to_server[1]);
 
-       
-        /* Lire la sortie du CGI */
-        char buffer[BUFFER_SIZE];
-        std::string content_cgi;
-        ssize_t bytes_read;
-        while ((bytes_read = read(cgi_to_server[0], buffer, sizeof(buffer) - 1)) > 0)
-        {
-            buffer[bytes_read] = '\0';
-            content_cgi += buffer;
-        }
-        close(cgi_to_server[0]);
-        
-        // Attendre la fin du process enfant
-        int status;
-        waitpid(pid, &status, 0);
-        
-        return content_cgi;
-    }
+    fcntl(this->_pipe_in, F_SETFL, O_NONBLOCK);
+    fcntl(this->_pipe_out, F_SETFL, O_NONBLOCK);
+
+    _server.add_fd(cgi_to_server[0], POLLIN);
+    _server.add_fd(server_to_cgi[1], POLLOUT);
+
+    return ("");
+    // /* Envoyer le body au CGI */
+    // if (!body.empty())
+    //     write(server_to_cgi[1], body.c_str(), body.size());
+    // close(server_to_cgi[1]); // signale EOF au script
+    
+    // /* Lire la sortie du CGI */
+    // char buffer[BUFFER_SIZE];
+    // std::string content_cgi;
+    // ssize_t bytes_read;
+    // while ((bytes_read = read(cgi_to_server[0], buffer, sizeof(buffer) - 1)) > 0)
+    // {
+    //     buffer[bytes_read] = '\0';
+    //     content_cgi += buffer;
+    // }
+    // close(cgi_to_server[0]);
+    
+    // // Attendre la fin du process enfant
+    // int status;
+    // waitpid(this->_pid, &status, WNOHANG);
+    
+    // return content_cgi;
 }
 

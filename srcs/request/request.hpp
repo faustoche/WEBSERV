@@ -24,13 +24,16 @@ using namespace std;
 
 #define MAX_BODY_SIZE 1048576
 
+class	c_server;
+
 /************ CLASS ************/
 
 class c_request
 {
     public:
-        c_request();
-        c_request(char* ip_str);
+        // c_request();
+        c_request(c_server& server);
+        // c_request(char* ip_str);
 
         ~c_request();
     
@@ -50,7 +53,7 @@ class c_request
         
 
         // string  ft_trim(const string& str);
-        void    print_full_request();
+        void    print_full_request() const;
         void    init_request();
 
         const string    &get_method() const { return _method; }
@@ -72,6 +75,7 @@ class c_request
 		const map<string, string> &get_headers() const { return _headers; }
 
     private:
+        c_server&           _server;
         int                 _socket_fd;
         string              _ip_client;
         string              _method;
