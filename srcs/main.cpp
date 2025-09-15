@@ -88,8 +88,7 @@ int main(void)
 	while (true)
 	{
 		server.setup_pollfd();
-		server.handle_poll_events();
-		
+		server.handle_poll_events();	
 	}
 	close(server.get_socket_fd());
 	return (0);

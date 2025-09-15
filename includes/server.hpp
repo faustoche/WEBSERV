@@ -61,7 +61,7 @@ class c_server
 
 
 		int	get_size_pollfd() const { return _poll_fds.size(); };
-	
+
 		void 		set_active_cgi(int key_fd, c_cgi* cgi);
 		void 		add_fd(int fd, short events);
 		void		remove_client(int client_fd);
@@ -87,6 +87,10 @@ class c_server
 		bool		is_method_allowed(const c_location *location, const string &method);
 		string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
 
+	c_location	*find_matching_location(const string &request_path);
+	c_cgi		*find_cgi_by_client(int client_fd);
+	bool		is_method_allowed(const c_location *location, const string &method);
+	string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
 
 		// CONFIGURATION FILE
 		c_server();

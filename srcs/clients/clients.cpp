@@ -29,6 +29,7 @@ void    c_server::add_fd(int fd, short events)
     tmp_poll_fd.revents = 0;
 
     _poll_fds.push_back(tmp_poll_fd);
+    // _clients[fd] = c_client(fd);
 }
 
 void c_server::add_client(int client_fd)
@@ -49,5 +50,15 @@ c_client *c_server::find_client(int client_fd)
     map<int, c_client>::iterator it = _clients.find(client_fd);
     if (it != _clients.end())
         return &(it->second);
+    return (NULL);
+}
+
+c_cgi   *c_server::find_cgi_by_client(int client_fd)
+{
+    for (map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); it++)
+    {
+        if (it->second->get_client_fd() == client_fd)
+            return (it->second);
+    }
     return (NULL);
 }

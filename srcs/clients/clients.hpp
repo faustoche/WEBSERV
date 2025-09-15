@@ -14,6 +14,7 @@ enum client_state {
 	READING,
 	PROCESSING,
 	SENDING,
+	IDLE,
 	DISCONNECTED
 };
 
@@ -43,6 +44,7 @@ public:
 	string &get_write_buffer() { return (_write_buffer); }
 	const size_t &get_bytes_written() const { return (_bytes_written); }
 	const client_state &get_state() const { return (_state); }
+	
 	
 	/******* SETTERS ******* */
 	void append_to_read_buffer(const string &data) { _read_buffer += data; }

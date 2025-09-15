@@ -165,11 +165,11 @@ void	c_response::define_response_content(const c_request &request)
 		cgi->init_cgi(request, *matching_location);
 		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
 		build_cgi_response(*cgi, request);
-		cout 
-			<< "Taille de pollfd dans define_response_content: "
-			<< this->_server.get_size_pollfd() << endl;
+		// cout 
+		// 	<< "Taille de pollfd dans define_response_content: "
+		// 	<< this->_server.get_size_pollfd() << endl;
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
-		std::cout << "Insertion active_cgi[" << cgi->get_pipe_out() << "]" << std::endl;
+		// std::cout << "Insertion active_cgi[" << cgi->get_pipe_out() << "]" << std::endl;
 		return ;
 	}
 	else
@@ -233,27 +233,24 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	if (cgi.get_interpreter().empty())
 		return ;
 	string content_cgi = cgi.launch_cgi(request_body);
-	cout 
-		<< "Taille de pollfd dans build_cgi_response: " 
-		<< this->_server.get_size_pollfd() << endl;
-	cgi.get_header_from_cgi(*this, content_cgi);
+	// cgi.get_header_from_cgi(*this, content_cgi);
+	// cgi.set_headers_parsed(true);
+	// this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
+	// this->_response += "Server: webserv/1.0\r\n";
+	// if (!get_header_value("Content-Type").empty())
+	// 	this->_response += "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
+	// else
+	// 	this->_response += "Content-Type: text/plain\r\n";
+	// this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
 
-	this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
-	this->_response += "Server: webserv/1.0\r\n";
-	if (!get_header_value("Content-Type").empty())
-		this->_response += "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
-	else
-		this->_response += "Content-Type: text/plain\r\n";
-	this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
+	// string connection;
+	// connection = request.get_header_value("Connection");
+	// if (connection.empty())
+	// 	connection = "keep-alive";
+	// this->_response += "Connection: " + connection + "\r\n";
 
-	string connection;
-	connection = request.get_header_value("Connection");
-	if (connection.empty())
-		connection = "keep-alive";
-	this->_response += "Connection: " + connection + "\r\n";
-
-	this->_response += "\r\n";
-	this->_response += get_body() + "\r\n";
+	// this->_response += "\r\n";
+	// this->_response += get_body() + "\r\n";
 }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)

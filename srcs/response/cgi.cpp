@@ -3,6 +3,7 @@
 c_cgi::c_cgi(c_server& server, int client_fd) : 
 _server(server), _client_fd(client_fd), _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
+    this->_finished = false;
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 }
@@ -16,6 +17,7 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_write_buffer = other._write_buffer;
     this->_read_buffer = other._read_buffer;
     this->_bytes_written = other._bytes_written;
+    this->_finished = other._finished;
     this->_map_env_vars = other._map_env_vars;
     this->_vec_env_vars = other._vec_env_vars;
     this->_socket_fd = other._socket_fd;
@@ -40,6 +42,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_write_buffer = rhs._write_buffer;
         this->_read_buffer = rhs._read_buffer;
         this->_bytes_written = rhs._bytes_written;
+        this->_finished = rhs._finished;
         this->_map_env_vars = rhs._map_env_vars;
         this->_vec_env_vars = rhs._vec_env_vars;
         this->_socket_fd = rhs._socket_fd;
@@ -63,6 +66,14 @@ void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
         return ;
 
     this->_read_buffer.append(buffer, bytes);
+}
+
+void    c_cgi::consume_read_buffer(size_t n) 
+{
+    if (n >= _read_buffer.size())
+        _read_buffer.clear();
+    else
+        _read_buffer.erase(0, n);
 }
 
 map<string, c_location>::const_iterator   find_location(const string &path, map<string, c_location>& map_location)
@@ -188,94 +199,94 @@ void    c_cgi::set_environment(const c_request &request)
     this->vectorize_env();
 }
 
-bool    c_cgi::is_valid_header_value(string& key, const string& value)
-{
-	for (size_t i = 0; i < value.length(); i++)
-	{
-		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
-		{
-			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
-			return (false);
-		}
-	}
+// bool    c_cgi::is_valid_header_value(string& key, const string& value)
+// {
+// 	for (size_t i = 0; i < value.length(); i++)
+// 	{
+// 		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
+// 		{
+// 			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
+// 			return (false);
+// 		}
+// 	}
 
-	if (key == "Content-Length")
-	{
-		for (size_t i = 0; i < value.length(); i++)
-		{
-			if (!isdigit(value[i]))
-			{
-				cerr << "(Request) Error: Invalid content length: " << value << endl;
-				return (false);
-			}
-		}
-	}
+// 	if (key == "Content-Length")
+// 	{
+// 		for (size_t i = 0; i < value.length(); i++)
+// 		{
+// 			if (!isdigit(value[i]))
+// 			{
+// 				cerr << "(Request) Error: Invalid content length: " << value << endl;
+// 				return (false);
+// 			}
+// 		}
+// 	}
 
-	if (value.size() > 4096)
-	{
-		cerr << "(Request) Error: Header field too large: " << value << endl;
-		return (false);
-	}
-	return (true);
-}
+// 	if (value.size() > 4096)
+// 	{
+// 		cerr << "(Request) Error: Header field too large: " << value << endl;
+// 		return (false);
+// 	}
+// 	return (true);
+// }
 
-int c_cgi::parse_headers(c_response &response, string& headers)
-{
-	size_t pos = headers.find(':', 0);
-	string key;
-	string value;
+// int c_cgi::parse_headers(c_response &response, string& headers)
+// {
+// 	size_t pos = headers.find(':', 0);
+// 	string key;
+// 	string value;
 
-	key = ft_trim(headers.substr(0, pos));
-	if (!is_valid_header_name(key))
-	{
-		cerr << "(Request) Error: invalid header_name: " << key << endl;
-		response.set_status(500);
-        return (1);
-	}
+// 	key = ft_trim(headers.substr(0, pos));
+// 	if (!is_valid_header_name(key))
+// 	{
+// 		cerr << "(Request) Error: invalid header_name: " << key << endl;
+// 		// response.set_status(500);
+//         return (1);
+// 	}
 
-	pos++;
-	if (headers[pos] != 32)
-    {
-		response.set_status(500);
-        return (1);
-    }
+// 	pos++;
+// 	if (headers[pos] != 32)
+//     {
+// 		// response.set_status(500);
+//         return (1);
+//     }
 
-	value = ft_trim(headers.substr(pos + 1));
-	if (!is_valid_header_value(key, value))
-	{
-		cerr << "(Request) Error: invalid header_value: " << key << endl;
-		response.set_status(500);
-	}
+// 	value = ft_trim(headers.substr(pos + 1));
+// 	if (!is_valid_header_value(key, value))
+// 	{
+// 		cerr << "(Request) Error: invalid header_value: " << key << endl;
+// 		// response.set_status(500);
+// 	}
 
-	response.set_header_value(key, value);
+// 	response.set_header_value(key, value);
 
-	return (0);
-}
+// 	return (0);
+// }
 
-void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
-{
-	size_t end_of_headers;
+// void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
+// {
+// 	size_t end_of_headers;
 
-	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
-		return ;
-	string headers = content_cgi.substr(0, end_of_headers);
+// 	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
+// 		return ;
+// 	string headers = content_cgi.substr(0, end_of_headers);
 
-	istringstream stream(headers);
-	string	line;
-	while (getline(stream, line, '\n'))
-	{
-		if (line[line.size() - 1] == '\r')
-			line.erase(line.size() - 1);
-		parse_headers(response, line);
-	}
+// 	istringstream stream(headers);
+// 	string	line;
+// 	while (getline(stream, line, '\n'))
+// 	{
+// 		if (line[line.size() - 1] == '\r')
+// 			line.erase(line.size() - 1);
+// 		parse_headers(response, line);
+// 	}
 
-	response.set_body(content_cgi.substr(end_of_headers + 4));
+// 	response.set_body(content_cgi.substr(end_of_headers + 4));
 
-    string body = response.get_body();
-    if (response.get_header_value("Content-Length").empty() && !body.empty())
-        response.set_header_value("Content-Length", int_to_string(body.size()));
+//     string body = response.get_body();
+//     if (response.get_header_value("Content-Length").empty() && !body.empty())
+//         response.set_header_value("Content-Length", int_to_string(body.size()));
 
-}
+// }
 
 string make_absolute(const string &path)
 {
@@ -339,6 +350,7 @@ string  c_cgi::launch_cgi(const string &body)
         argv[2] = NULL;
 
         execve(this->_interpreter.c_str(), argv, &envp[0]);
+
         cout << "Status: 500 Internal Server Error" << endl;
         exit(1);
     }
