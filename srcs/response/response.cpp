@@ -150,7 +150,6 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
-			
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
@@ -494,16 +493,14 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
-	
 	if (location == NULL)
 	{
-		string index = get_valid_index(this->get_indexes());
 		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
-			return (default_root + "/" + index);
+			return (default_root + "/" + _index);
 		return (default_root + request_path);
 	}
-	string location_root = location->get_alias();
+	string location_root = location->get_root();
 	string location_key = location->get_url_key();
 
 	// calculer le chemin relatif en enlevant la partie location du chemin de requete
@@ -522,9 +519,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
-		{
-			return (location_root + "/" + relative_path);
-		}
+			return (location_root + "/" + relative_path + _index);
 		else
 		{
 			// Processus: On teste tous les autres fichiers dans l'ordre
