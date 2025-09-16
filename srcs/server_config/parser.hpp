@@ -72,7 +72,6 @@ private :
             void                expected_token_type(int expected_type) const;
             bool                is_token_value(std::string key);
             bool                is_token_type(int type);
-            bool                is_executable_file(const std::string & path);
             size_t              convert_to_octet(string const & str, string const & suffix, size_t const i) const;
 
             // void    expected_token_value(int expected_type) const;

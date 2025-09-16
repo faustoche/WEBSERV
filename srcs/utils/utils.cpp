@@ -39,3 +39,26 @@ string  ft_trim(const string& str)
     
     return (str.substr(start, end - start));
 }
+
+bool                is_executable_file(const std::string & path)
+{
+    return access(path.c_str(), X_OK) == 0;
+}
+
+string        get_valid_index(vector<string> const & indexes)
+{
+    string valid_file;
+    vector<string>::const_iterator it = indexes.begin();
+    while (it != indexes.end())
+    {
+        if (is_executable_file(*it))
+        {
+            valid_file = *it;
+            break ;
+        }
+        it++;
+    }
+    if (valid_file.empty())
+        return "";
+    return valid_file;
+}

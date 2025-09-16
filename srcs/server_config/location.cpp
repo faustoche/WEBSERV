@@ -117,8 +117,8 @@ void    c_location::print_location() const
     cout << endl
             << "            upload path: " << get_upload_path() << endl
             // << "Redirect = " << get_redirect() << endl
-            << "            CGI extension (.py): " << get_cgi()[".py"] << endl
-            << "            CGI extension (.sh): " << get_cgi()[".sh"] << endl
+            << "            CGI extension (.py): " << get_cgi().at(".py")<< endl
+            << "            CGI extension (.sh): " << get_cgi().at(".sh") << endl
             << "            is directory: ";
             if (get_bool_is_directory())
                 cout << "yes";

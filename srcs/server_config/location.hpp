@@ -44,7 +44,7 @@ public:
 		size_t								get_body_size() const {return _location_body_size; };
 		bool								get_auto_index() const {return _auto_index; };
 		pair<int, string> const &			get_redirect() const {return _redirect; };
-		map<string, string> const&			get_cgi() const {return _cgi_extension; };
+		map<string, string>	const&			get_cgi() const {return _cgi_extension; };
 		string const &						get_upload_path() const {return _upload_path; };
 		bool								get_bool_is_directory() const {return _is_directory; };
 		map<int, string> const &			get_err_pages() const {return (_location_err_pages); };

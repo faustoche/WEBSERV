@@ -87,10 +87,8 @@ string      my_to_string(int int_str)
 
 }
 
-bool                c_parser::is_executable_file(const std::string & path)
-{
-    return access(path.c_str(), X_OK) == 0;
-}
+
+    
 
 // bool                c_parser::is_valid_port(string & port_str)
 // {
@@ -461,19 +459,7 @@ void                c_parser::parse_index_directive(c_server & server)
     }
     if (index_files.empty())
        throw invalid_argument("Index directive requires at least one value");
-    // POUR VERIFIER LA VALIDITE DU FICHIER
-    // vector<string>::iterator it = index_files.begin();
-    // while (it != index_files.end())
-    // {
-    //     if (is_executable_file(*it))
-    //     {
-    //         valid_file = *it;
-    //         break ;
-    //     }
-    //     it++;
-    // }
-    // if (valid_file.empty())
-    //     throw invalid_argument("Error in index directive: there is no valid file");
+
     server.set_indexes(index_files);
     expected_token_type(TOKEN_SEMICOLON);
     advance_token(); // skip semicolon
@@ -497,10 +483,6 @@ void                c_parser::parse_server_name(c_server & server)
     advance_token(); // skip semicolon
 }
 
-void                c_parser::parse_server_name(c_server & server)
-{
-    (void)server;
-}
 
 void                c_parser::parse_server_directives(c_server & server)
 {

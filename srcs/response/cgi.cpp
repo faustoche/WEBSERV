@@ -30,14 +30,15 @@ map<string, c_location>::const_iterator   find_location(const string &path, map<
 
 string  find_extension(const string& real_path)
 {
+    string empty_string = "";
     size_t dot_position = real_path.find_last_of('.');
 
-    if (dot_position != string::npos)
+    if (dot_position != string::npos && dot_position != 0)
     {
         string extension = real_path.substr(dot_position);
         return (extension);
     }
-    return (NULL);
+    return (empty_string);
 }
 
 size_t c_cgi::identify_script_type(const string& path)
@@ -70,10 +71,10 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
     if (this->_script_name.size() < script_filename.size())
     {
         this->_path_info = script_filename.substr(ext_pos);
-        this->_translated_path = loc.get_root() + this->_path_info;
+        this->_translated_path = loc.get_alias() + this->_path_info;
     }
 
-    string  root = loc.get_root();
+    string  root = loc.get_alias();
     string  url_key = loc.get_url_key();
     string  relative_path = this->_script_name.substr(url_key.size());
     this->_script_filename = root + relative_path;
@@ -88,7 +89,10 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc)
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
     string extension = find_extension(this->_script_filename);
-    this->_interpreter = loc.get_cgi_extension().at(extension);
+    if (extension.size() > 0)
+    {
+        this->_interpreter = loc.get_cgi().at(extension);
+    }
 
     /* Construction de l'environnement pour l'execution du script */
     set_environment(request);

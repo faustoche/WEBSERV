@@ -39,7 +39,7 @@ class c_server
 		struct sockaddr_in		_socket_address;
 		map<int, c_client>		_clients;
 		vector<struct pollfd>	_poll_fds;
-	
+
 		// CONFIGURATION FILE
 	    string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
 	    uint16_t                        _port; // dans RFC entier non signe de 16 bits + pas de negatif
@@ -50,12 +50,12 @@ class c_server
 		size_t							_body_size; // en octets
 		map<string, c_location>   		_location_map;
 		map<int, string>				_err_pages;
-	
+
 	public:
 		const int &get_socket_fd() const { return (_socket_fd); };
 		const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
 		const map<string, c_location>	&get_location_map() const { return _location_map; };
-		
+
 		void 		create_socket();
 		void 		bind_and_listen();
 		void 		set_non_blocking(int fd);
@@ -68,12 +68,12 @@ class c_server
 		void		handle_client_read(int client_fd);
 		void		handle_client_write(int client_fd);
 		void		process_client_request(int client_fd);
-	
+
 		c_location	*find_matching_location(const string &request_path);
 		bool		is_method_allowed(const c_location *location, const string &method);
 		string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
-	
-	
+
+
 		// CONFIGURATION FILE
 		c_server();
 		~c_server();
@@ -96,7 +96,7 @@ class c_server
 		size_t								get_body_size() const {return (_body_size); };
 		map<int, string> const &			get_err_pages() const {return (_err_pages); };
 		map<string, c_location> const &		get_location() const {return (_location_map); };
-	
+
 	    // Debug
 	    void    				print_config() const;
 		void					print_indexes() const;
@@ -106,6 +106,8 @@ class c_server
 
 /************ FUNCTIONS ************/
 
-string int_to_string(int n);
-bool   is_valid_header_name(const string& key_name);
-string ft_trim(const string& str);
+string 		int_to_string(int n);
+bool   		is_valid_header_name(const string& key_name);
+string 		ft_trim(const string& str);
+string		get_valid_index(vector<string> const & indexes);
+bool		is_executable_file(const std::string & path);
