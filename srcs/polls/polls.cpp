@@ -14,13 +14,24 @@ void c_server::setup_pollfd()
 	_poll_fds.clear();
 
 	/**** INITIALISATION DES DONNÉES *****/
-	/**** LE SERVEUR DE BASE DOIT ÊTRE EN PREMIER DANS NOTRE CONTAINER *****/
+	/**** 1 SEUL PORT *****/
 	struct pollfd server_pollfd;
 	server_pollfd.fd = _socket_fd;
 	server_pollfd.events = POLLIN; // evenements attendus et surveillés - POLLIN = données en attente de lecture
 	server_pollfd.revents = 0; // evenement detectes et produits. 0 pour commencer
 	_poll_fds.push_back(server_pollfd);
 
+	/**** MULTIPLES PORTS *****/
+	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
+	{
+		struct pollfd server_pollfd;
+		server_pollfd.fd = it->first; // ici socket_fd où on itere 
+		server_pollfd.events = POLLIN;
+		server_pollfd.revents = 0;
+		_poll_fds.push_back(server_pollfd);
+	}
+
+	/**** AJOUT DES CLIENTS *****/
 	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		/**** AJOUT DES CLIENTS ACTIFS *****/
@@ -66,7 +77,7 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
-	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 1000);
+	int num_events = poll(&_poll_fds[0], _poll_fds.size(), 1000);
 	if (num_events < 0)
 	{
 		cerr << "Error: Poll() failed\n"; 
@@ -80,7 +91,15 @@ void c_server::handle_poll_events()
 		struct pollfd &pfd = _poll_fds[i];
 		if (pfd.revents == 0)
 			continue ;
-		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
+
+		// ici, verifier si c'est un socket serveur ou pas 
+		// creer une nouvelle fonction  pour verifier si la socket est en ecoute
+			// nouvelle variable int port qui va prendre la donnee du socket concerne
+			// print nouvelle connecion sur le port xxxx
+			// handle new connections() -> on passe le socket fd a cette fonction
+
+
+		/**** GESTION DEPUIS LA SOCKET SERVEUR POUR 1 PORT *****/
 		if (i == 0)
 		{
 			if (pfd.revents & POLLIN)
@@ -127,6 +146,24 @@ void	c_server::handle_new_connection()
 		add_client(client_fd);
 		cout << "Nouvelle connexion acceptée : " << client_fd << endl;
 	}
+}
+
+void	c_server::handle_new_connection_multiple(int listening_socket)
+{
+	struct sockaddr_in client_address;
+	socklen_t client_len = sizeof(client_address);
+
+	int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
+	if (client_fd < 0)
+		return ;
+
+	int port = jerecupereleportdelasocket();
+	cout << "Nouveau client connecté sur le port " << port << endl;
+	set_non_blocking(client_fd);
+
+	c_client new_client;
+	new_client.set_state(READING);
+	_clients[client_fd] = new_client;
 }
 
 /*

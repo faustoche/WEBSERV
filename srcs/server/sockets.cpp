@@ -2,41 +2,53 @@
 
 void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 {
-	// je parcours la liste de port avec mon iterateur
-		// 1. creation de la socket
-		// je cree une variable socket fd = create socket
-		// si la socket est invalide
-			// j'affiche une erreur
-			// j'affiche errno
-			// je continue 
-		
-		// 2. configuration de l'option
-		// j'applique mon option pour reutiliser l'adresse
-		// si ca echoue
-			// j'affiche une erreur + code d'erreur
-			// je ferme le socket fd
-			// je continue
+	for (std::vector<int>::const_iterator it = ports.begin(); it != ports.end(); it++)
+	{
+		int port = *it;
+		int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+		if (socket_fd < 0)
+		{
+			cerr << "Error: Création de la socket pour le port " << port << " - " << errno << endl;
+			continue ;
+		}
+	}
+	int socket_option = 1;
+	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option)) < 0)
+	{
+		cerr << "Error: Création de l'option pour le port " << port << " - " << errno << endl;
+		close(socket_fd);
+		continue ;
+	}
+	sockaddr_in socket_address;
+	memset(&socket_address, 0, sizeof(socket_address));
+	socket_address.sin_family = AF_INET;
+	socket_address.sin_port = htons(port);
+	socket_address.sin_addr.s_addr = INADDR_ANY;
 
-		// 3. structure d'adresse
-		// creer l'object socket adress type sockaddr in
-		// tout initialise a 0
-		// finet / hton(port), inadress any
+	if (bind(socket_fd, (struct sockaddr*)&socket_address, sizeof(socket_address)) < 0)
+	{
+		cerr << "Error: bind pour le port " << port << " - " << errno << endl;
+		close (socket_fd);
+		continue ;
+	}
+	if (listen(socket_fd, SOMAXCONN) < 0)
+	{
+		cerr << "Erro: listen pour le port " << port << " - " << errno << endl;
+		close(socket_fd);
+		continue ;
+	}
+	set_non_blocking(socket_fd);
+	_multiple_ports[socket_fd] = port;
+}
 
-		// 4. associer le soket a l'adresse et au port
-		// resultat de la conf socket = bind
-			// si echec alors errur et code d'erreur
-			// fermer socker fd
-			// continue
-		
-		// 5. mettre la socket en ecoute
-		// resultat  = listen
-		// si echec alors erreur et code d'erreur
-		// fermer socker fd
-		// continue
+boolean is_listening_socket(int fd)
+{
+	return (_multiple_port.find(fd) != _multiple_ports.end());
+}
 
-		// 6. non bloquand
-		// set non blocking
-
-		// 7. enregistrer le tout
-	// fin de boucle
+int jerecupere le port de la socket(int socket_fd)
+{
+	//map iterator it = mul;tiple port -> on find soclet fd
+	// est-ce que it != end? alors _multiple port = it->second
+	// sinon -1
 }
