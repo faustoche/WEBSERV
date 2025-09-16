@@ -16,7 +16,7 @@ OBJS_DIR	= obj
 #                			 SRCS && OBJECTS FILES                         #
 # ************************************************************************ #
 
-WEBSERV		= $(addprefix $(SRCS_DIR)/, main.cpp\
+WEBSERV		= $(addprefix $(SRCS_DIR)/, parsing_main.cpp\
 										response/response.cpp \
 										response/cgi.cpp \
 										request/utils.cpp \
