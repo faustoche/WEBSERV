@@ -97,6 +97,19 @@ void	c_location::print_error_page() const
     }
 }
 
+void    c_location::print_cgi() const
+{
+    if (_cgi_extension.empty())
+        cout << "               No error pages defined" << endl;
+    else
+    {
+	    for (map<string, string>::const_iterator it = _cgi_extension.begin(); it != _cgi_extension.end(); ++it)
+	    {
+
+	    	cout << "		" << it->first << " " << it->second << " " << endl;
+	    }
+    }
+}
 
 void    c_location::print_location() const
 {
@@ -117,9 +130,9 @@ void    c_location::print_location() const
     cout << endl
             << "            upload path: " << get_upload_path() << endl
             // << "Redirect = " << get_redirect() << endl
-            << "            CGI extension (.py): " << get_cgi().at(".py")<< endl
-            << "            CGI extension (.sh): " << get_cgi().at(".sh") << endl
-            << "            is directory: ";
+            << "            CGI extensions:" << endl;
+            print_cgi();
+    cout    << "            is directory: ";
             if (get_bool_is_directory())
                 cout << "yes";
             else

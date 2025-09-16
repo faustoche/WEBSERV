@@ -54,6 +54,7 @@ public:
 		void								print_indexes() const;
 		void								print_methods() const;
 		void								print_error_page() const;
+		void								print_cgi() const;
 
 		void								clear_cgi();
 		void								clear_indexes();
