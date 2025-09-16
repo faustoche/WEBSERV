@@ -613,25 +613,32 @@ size_t            c_parser::convert_to_octet(string const & str, string const & 
     {
         if (!isdigit(number_part[j]))
             throw invalid_argument("Invalid argument for max_body_size (invalid character): " + str);
-        if (limit > (SIZE_MAX - (number_part[j] - '0')) / 10)
+        if (limit > (MY_SIZE_MAX - (number_part[j] - '0')) / 10)
             throw invalid_argument("Invalid argument for max_body_size (number too large): " + str);
         limit = limit * 10 + (number_part[j] - '0');
     }
     if (errno == ERANGE)
         throw invalid_argument("Invalid argument for max_body_size (unexpected conversion of the number): " + str);
-
+    
+    size_t multiplier = 1;
     if (!suffix.empty())
     {
+        
         if (suffix == "k" || suffix == "K")
-            limit = limit * 1024; // VERIFIER OVERFLOW
+            multiplier = 1024;
         else if (suffix == "m" || suffix == "M")
-            limit = limit * 1024 * 1024;
+            multiplier = 1024 * 1024;
         else if (suffix == "g" || suffix == "G")
-            limit = limit * 1024 * 1024 * 1024;
+            multiplier = 1024 * 1024 * 1024;
         else
-            throw invalid_argument("invalid argument for max_body_size (unexpected conversion of the number): " + str);
+            throw invalid_argument("invalid argument for max_body_size (unknown sufix): " + str);
+        if (limit > MY_SIZE_MAX / multiplier)
+            throw invalid_argument("invalid argument for max_body_size (result would overflow):" + str);
+        limit *= multiplier;
     }
-
+    if (limit > MAX_BODY_SIZE)
+        throw invalid_argument("max_body_size exeeds maximum allowed value");
+    
     return limit;
 }
 

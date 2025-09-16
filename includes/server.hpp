@@ -47,7 +47,6 @@ private:
 	map<string, c_location>   		_location_map;
 	map<int, string>				_err_pages;
 
-	
 public:
 	const int &get_socket_fd() const { return (_socket_fd); }
 	const struct sockaddr_in &get_socket_addr() const { return (_socket_address); }

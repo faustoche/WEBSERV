@@ -1,6 +1,6 @@
 #pragma once
 
-/*-----------  INCLUDES -----------*/
+/*-----------  INCLUDES ------------*/
 
 #include <fstream>
 #include <sstream>
@@ -12,8 +12,10 @@
 
 using namespace std;
 
+/*------------  DEFINE -------------*/
+#define MY_SIZE_MAX static_cast<size_t>(-1)
 
-/*-----------  CLASS -----------*/
+/*-------------  CLASS -------------*/
 
 /* utilise les tokens du lexer pour construire les objects c_server */
 class  c_parser : public c_lexer {

@@ -1,8 +1,5 @@
 # RESTE A FAIRE :
 
----> MAX_BODY SIZE
-constante definie pour la valeur max du max a reutiliser dans la fonction de parsing
-+ verifier la gestion de l'overflow
 ---> Definir les valeurs obligatoires a avoir dans le .conf pour lancer le serveur
 ---> Definir les valeurs par defaut 
 
