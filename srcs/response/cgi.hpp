@@ -31,11 +31,13 @@ class c_cgi
         const string&   get_write_buffer() const { return _write_buffer; };
         const string&   get_read_buffer() const { return _read_buffer; };
         const size_t&   get_bytes_written() const { return _bytes_written; };
+        const size_t&   get_content_length() const { return _content_length; };
         bool            is_finished() { return _finished; };
         bool            headers_parsed() { return _headers_parsed; };
         void            set_finished(bool state) { _finished = state; };
         void            set_headers_parsed(bool state) { _headers_parsed = state; };
         void            consume_read_buffer(size_t n);
+        void            set_content_length(size_t bytes) { _content_length = bytes; };
 
         void            add_bytes_written(ssize_t bytes) { _bytes_written += bytes; };
         void            append_read_buffer(const char* buffer, ssize_t bytes);
@@ -53,6 +55,7 @@ class c_cgi
         string              _write_buffer; //body a envoyer
         string              _read_buffer; // reponse CGI accumulee
         size_t              _bytes_written;
+        size_t              _content_length;
         bool                _finished;
         bool                _headers_parsed;
 

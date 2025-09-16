@@ -82,8 +82,9 @@ size_t	c_server::extract_content_length(string headers)
 	size_t pos = headers.find(key);
 
 	if (pos == string::npos)
+	{
 		return (0);
-
+	}
 	pos += key.length();
 
 	size_t	end = headers.find("\r\n", pos);
@@ -100,7 +101,6 @@ size_t	c_server::extract_content_length(string headers)
 
 	size_t content_length = strtol(value.c_str(), 0, 10);
 
-	cout << "content_length: " << content_length << " " << __FILE__ << "/" << __LINE__ << endl;
 	return (content_length);
 }
 
@@ -173,7 +173,6 @@ void c_server::handle_poll_events()
 					char buffer[100];
     				std::string content_cgi;
     				ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer));
-					size_t 	content_length = 0;
 					size_t	body_bytes_read = 0;
 					if (bytes_read > 0)
 					{
@@ -187,7 +186,7 @@ void c_server::handle_poll_events()
 					        {
 					            // Séparer headers et premier morceau de body
 					            string headers = cgi->get_read_buffer().substr(0, pos);
-								content_length = get_content_length(headers);
+								cgi->set_content_length(extract_content_length(headers));
 					            string initial_body = cgi->get_read_buffer().substr(pos + 4);
 							
 					            c_client *client = find_client(cgi->get_client_fd());
@@ -196,10 +195,11 @@ void c_server::handle_poll_events()
 					                // Construire la réponse HTTP avec headers
 					                client->get_write_buffer().append("HTTP/1.1 200 OK\r\n");
 					                client->get_write_buffer().append(headers);
-									if (content_length == 0)
+									if (cgi->get_content_length() == 0)
 										client->get_write_buffer().append("Connection:close");
 					                client->get_write_buffer().append("\r\n\r\n");
-									client->set_header_size(client->get_bytes_written());
+									client->set_header_size(client->get_write_buffer().size());
+									cout << "header_size: " << client->get_header_size() << endl;
 					                // Ajouter le premier body s'il existe
 					                if (!initial_body.empty())
 									{
@@ -229,8 +229,7 @@ void c_server::handle_poll_events()
 						
        						// on a copié tout le contenu actuel -> on le supprime
        						cgi->consume_read_buffer(cgi->get_read_buffer().size());
-							cout << "bytes_written: " << client->get_bytes_written() << " body_bytes_read: " << body_bytes_read << " content_length: " << content_length << endl;
-							if (body_bytes_read == content_length && content_length > 0)
+							if (client->get_bytes_written() - client->get_header_size() >= cgi->get_content_length() && cgi->get_content_length() > 0)
 							{
 								cout << "on close la lecture du CGI" << endl;
 								close(cgi->get_pipe_out());
@@ -242,16 +241,6 @@ void c_server::handle_poll_events()
 					    }
 					}
 
-					else if (bytes_read == 0)
-					{
-						cout << "on close la lecture du CGI" << endl;
-						close(cgi->get_pipe_out());
-						remove_client(cgi->get_pipe_out());
-						cgi->set_finished(true);
-						delete _active_cgi[fd];
-						_active_cgi.erase(fd);
-					}
-
 				}
 				continue;
 			}
@@ -259,12 +248,10 @@ void c_server::handle_poll_events()
 			
 			if (!client)
 			{
-				cout << __FILE__ << "/" << __LINE__ << endl;
 				continue;
 			}
 			if (pfd.revents & POLLIN)
 			{
-				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
 			}
 			else if (pfd.revents & POLLOUT)
