@@ -1,12 +1,6 @@
 #include "server.hpp"
 
 /*------------------  CONSTRUCTORS AND DESTRUCTORS  -------------------*/
-c_server::c_server()
-{}
-
-c_server::~c_server()
-{
-}
 
 c_server::c_server()
 { // REVOIR ENSEMBLE LES VALEURS PAR DEFAUT

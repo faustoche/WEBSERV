@@ -40,7 +40,6 @@ class c_server
 		map<int, c_client>		_clients;
 		vector<struct pollfd>	_poll_fds;
 		map<int, c_cgi*>		_active_cgi;
-		vector<struct pollfd>	_poll_fds;
 
 		// CONFIGURATION FILE
 	    string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
@@ -56,16 +55,10 @@ class c_server
 
 
 	public:
-		c_server();
-		~c_server();
-
-
 		int	get_size_pollfd() const { return _poll_fds.size(); };
 
 		void 		set_active_cgi(int key_fd, c_cgi* cgi);
 		void 		add_fd(int fd, short events);
-		void		remove_client(int client_fd);
-		c_client	*find_client(int client_fd);
 		const int &get_socket_fd() const { return (_socket_fd); };
 		const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
 		const map<string, c_location>	&get_location_map() const { return _location_map; };
@@ -86,11 +79,9 @@ class c_server
 		c_location	*find_matching_location(const string &request_path);
 		bool		is_method_allowed(const c_location *location, const string &method);
 		string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
+		c_cgi		*find_cgi_by_client(int client_fd);
+		size_t		extract_content_length(string headers);
 
-	c_location	*find_matching_location(const string &request_path);
-	c_cgi		*find_cgi_by_client(int client_fd);
-	bool		is_method_allowed(const c_location *location, const string &method);
-	string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
 
 		// CONFIGURATION FILE
 		c_server();

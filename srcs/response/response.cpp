@@ -165,11 +165,7 @@ void	c_response::define_response_content(const c_request &request)
 		cgi->init_cgi(request, *matching_location);
 		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
 		build_cgi_response(*cgi, request);
-		// cout 
-		// 	<< "Taille de pollfd dans define_response_content: "
-		// 	<< this->_server.get_size_pollfd() << endl;
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
-		// std::cout << "Insertion active_cgi[" << cgi->get_pipe_out() << "]" << std::endl;
 		return ;
 	}
 	else

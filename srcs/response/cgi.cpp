@@ -326,12 +326,10 @@ string  c_cgi::launch_cgi(const string &body)
     if (this->_pid == 0)
     {
         /* Redirection stdin depuis le pipe d'entree: permet au parent server le body au cgi */
-        // fcntl(server_to_cgi[0], F_SETFL, O_NONBLOCK);
         dup2(server_to_cgi[0], STDIN_FILENO);
         close(server_to_cgi[1]);
 
         /* Redirection stdout vers le pipe de sortie: permet au cgi de renvoyer la reponse au server */
-        // fcntl(cgi_to_server[1], F_SETFL, O_NONBLOCK);
         dup2(cgi_to_server[1], STDOUT_FILENO);
         close(cgi_to_server[0]);
      
@@ -366,26 +364,5 @@ string  c_cgi::launch_cgi(const string &body)
     _server.add_fd(server_to_cgi[1], POLLOUT);
 
     return ("");
-    // /* Envoyer le body au CGI */
-    // if (!body.empty())
-    //     write(server_to_cgi[1], body.c_str(), body.size());
-    // close(server_to_cgi[1]); // signale EOF au script
-    
-    // /* Lire la sortie du CGI */
-    // char buffer[BUFFER_SIZE];
-    // std::string content_cgi;
-    // ssize_t bytes_read;
-    // while ((bytes_read = read(cgi_to_server[0], buffer, sizeof(buffer) - 1)) > 0)
-    // {
-    //     buffer[bytes_read] = '\0';
-    //     content_cgi += buffer;
-    // }
-    // close(cgi_to_server[0]);
-    
-    // // Attendre la fin du process enfant
-    // int status;
-    // waitpid(this->_pid, &status, WNOHANG);
-    
-    // return content_cgi;
 }
 

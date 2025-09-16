@@ -50,6 +50,7 @@ void c_server::setup_pollfd()
 			case IDLE:
 				client_pollfd.events = POLLIN;
 			default:
+				client_pollfd.events = 0;
 				continue ;
 		}
 
@@ -73,6 +74,34 @@ void c_server::setup_pollfd()
     _poll_fds.push_back(cgi_pollfd);
 }
 
+}
+
+size_t	c_server::extract_content_length(string headers)
+{
+	string key = "Content-Length:";
+	size_t pos = headers.find(key);
+
+	if (pos == string::npos)
+		return (0);
+
+	pos += key.length();
+
+	size_t	end = headers.find("\r\n", pos);
+	if (end == string::npos)
+		end = headers.length();
+
+	string value = headers.substr(pos, end - pos);
+	value = ft_trim(value);
+	for (size_t i = 0; i < value.size(); i++)
+	{
+		if (!isdigit(value[i]))
+			return (0);
+	}
+
+	size_t content_length = strtol(value.c_str(), 0, 10);
+
+	cout << "content_length: " << content_length << " " << __FILE__ << "/" << __LINE__ << endl;
+	return (content_length);
 }
 
 /*
@@ -144,6 +173,8 @@ void c_server::handle_poll_events()
 					char buffer[100];
     				std::string content_cgi;
     				ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer));
+					size_t 	content_length = 0;
+					size_t	body_bytes_read = 0;
 					if (bytes_read > 0)
 					{
 					    cgi->append_read_buffer(buffer, bytes_read);
@@ -156,6 +187,7 @@ void c_server::handle_poll_events()
 					        {
 					            // Séparer headers et premier morceau de body
 					            string headers = cgi->get_read_buffer().substr(0, pos);
+								content_length = get_content_length(headers);
 					            string initial_body = cgi->get_read_buffer().substr(pos + 4);
 							
 					            c_client *client = find_client(cgi->get_client_fd());
@@ -164,12 +196,16 @@ void c_server::handle_poll_events()
 					                // Construire la réponse HTTP avec headers
 					                client->get_write_buffer().append("HTTP/1.1 200 OK\r\n");
 					                client->get_write_buffer().append(headers);
+									if (content_length == 0)
+										client->get_write_buffer().append("Connection:close");
 					                client->get_write_buffer().append("\r\n\r\n");
-								
+									client->set_header_size(client->get_bytes_written());
 					                // Ajouter le premier body s'il existe
 					                if (!initial_body.empty())
+									{
+										body_bytes_read += initial_body.length();
 					                    client->get_write_buffer().append(initial_body);
-								
+									}
 					                client->set_state(SENDING);
 					            }
 							
@@ -186,12 +222,23 @@ void c_server::handle_poll_events()
 					        c_client *client = find_client(cgi->get_client_fd());
 					        if (client)
 					        {
+								body_bytes_read += cgi->get_read_buffer().length();
 					            client->get_write_buffer().append(cgi->get_read_buffer());
 					            client->set_state(SENDING);
 					        }
 						
        						// on a copié tout le contenu actuel -> on le supprime
-       						 cgi->consume_read_buffer(cgi->get_read_buffer().size());
+       						cgi->consume_read_buffer(cgi->get_read_buffer().size());
+							cout << "bytes_written: " << client->get_bytes_written() << " body_bytes_read: " << body_bytes_read << " content_length: " << content_length << endl;
+							if (body_bytes_read == content_length && content_length > 0)
+							{
+								cout << "on close la lecture du CGI" << endl;
+								close(cgi->get_pipe_out());
+								remove_client(cgi->get_pipe_out());
+								cgi->set_finished(true);
+								delete _active_cgi[fd];
+								_active_cgi.erase(fd);
+							}
 					    }
 					}
 
@@ -209,12 +256,22 @@ void c_server::handle_poll_events()
 				continue;
 			}
 			c_client *client = find_client(fd);
+			
 			if (!client)
+			{
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				continue;
+			}
 			if (pfd.revents & POLLIN)
+			{
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
+			}
 			else if (pfd.revents & POLLOUT)
+			{
+				// cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_write(fd);
+			}
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 				remove_client(fd);
 		}
@@ -288,16 +345,14 @@ void	c_server::handle_client_write(int client_fd)
 	if (client == NULL)
 		return ;
 
-	string response_headers = "HTTP/1.1 200 OK\r\nServer: webserv/1.0\r\n";
-	string write_buffer = response_headers + client->get_write_buffer();
+	const string	&write_buffer = client->get_write_buffer();
 	size_t bytes_written = client->get_bytes_written();
 
 	size_t remaining = write_buffer.length() - bytes_written;
-	// if (remaining == 0)
-	// {
-	// 	// remove_client(client_fd);
-	// 	return ;
-	// }
+	if (remaining == 0)
+	{
+		return ;
+	}
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
 	int bytes_sent = send(client_fd, data_to_send, remaining, 0);
@@ -307,6 +362,7 @@ void	c_server::handle_client_write(int client_fd)
 	client->set_bytes_written(bytes_written + bytes_sent);
     if (client->get_bytes_written() >= write_buffer.length())
     {
+		cout << "Réponse envoyée au client " << client_fd << endl;
         // Vérifier si ce client est lié à un CGI terminé
         c_cgi *cgi = find_cgi_by_client(client_fd);
 		if (cgi)
@@ -320,18 +376,13 @@ void	c_server::handle_client_write(int client_fd)
 			else if (cgi && !cgi->is_finished())
         	{
         	    cout << "CGI lié au client " << client_fd << " n'est pas termine" << endl;
+				return ;
         	}
 		}
-		else
-		{
-			cout << "Réponse envoyée au client " << client_fd << endl;
-        	// Ici, deux choix :
-        	// - soit tu fermes la connexion (HTTP/1.0 ou sans keep-alive)
-        	// - soit tu remets le client en attente pour une nouvelle requête
-        	// remove_client(client_fd);
-			client->set_state(IDLE);
 
-		}
+			// keep-alive
+			cout << "Le client devient IDLE" << endl;
+			client->set_state(IDLE);
     }
 }
 
