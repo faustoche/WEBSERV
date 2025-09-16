@@ -36,14 +36,14 @@ private :
             vector<s_token>::iterator   _current;
             string                      _error_msg;
 
-            
+
             // loop for creation of all the servers
             vector<c_server>    parse_config();
 
             // blocks
             c_server            parse_server_block();
             void                parse_location_block(c_server & server);
-            
+
             // directives
             void                parse_server_directives(c_server & server);
             void                parse_index_directive(c_server & server);
@@ -65,7 +65,7 @@ private :
             void                parse_upload_path(c_location & location);
             void                parse_redirect(c_location & location);
             void                loc_parse_error_page(c_location & location);
-            
+
             // utils
             void                expected_token_type(int expected_type) const;
             bool                is_token_value(std::string key);
@@ -80,7 +80,7 @@ private :
             // bool                has_error() const;
             // string const &      get_error() const;
             // void                clear_error();
-            
+
             template<typename C>
             void                parse_body_size(C & servloc);
             template<typename C>
@@ -97,14 +97,19 @@ void            c_parser::parse_body_size(C & servloc)
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();
 
+    if (str.empty())
+        throw invalid_argument("empty value for max_body_size");
+
     if (str.find_first_not_of("0123456789kKmMgG") != string::npos)
         throw invalid_argument("invalid argument for max_body_size => " + str);
-    
+
     string suffix;
     size_t  i = 0;
     size_t  j = 0;
-    while (isdigit(str[i]) && str[i])
+    while (isdigit(str[i]) && i < str.length())
         i++;
+    if (i == 0)
+        throw invalid_argument("max_body_size must start with a number => " + str);
     if (i < str.length())
     {
         suffix = str.substr(i);
@@ -114,7 +119,7 @@ void            c_parser::parse_body_size(C & servloc)
                 throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
             if (suffix.find_first_not_of("kKmMgG") != string::npos)
                 throw invalid_argument("invalid argument for max_body_size (only k, K, m, M, g or G accepted after the number) => " + str);
-        
+
         }
     }
 
@@ -141,14 +146,14 @@ void            c_parser::parse_error_page(C & servloc)
     }
     if (codes.empty())
         throw invalid_argument("Invalid argument for error code ==> " + _current->value);
-    
+
     expected_token_type(TOKEN_VALUE);
     if (_current->value[0] != '/' && _current->value[0] != '.')
         throw invalid_argument("Invalid argument for error page ==> " + _current->value);
     // verifier l'extension utilisee ??
     path = _current->value;
     servloc.add_error_page(codes, path);
-    
+
     advance_token();
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();

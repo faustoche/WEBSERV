@@ -199,7 +199,7 @@ void                c_parser::location_directives(c_location & location)
     }
     else if (is_token_value("index"))
     {
-        location.clear_indexes();   
+        location.clear_indexes();
         location_indexes(location);
     }
     else if (is_token_value("upload_path"))
@@ -235,7 +235,7 @@ void                c_parser::parse_methods(c_location & location)
     while (is_token_type(TOKEN_VALUE))
     {
         if (get_value() == "GET" || get_value() == "POST" || get_value() == "DELETE")
-        {    
+        {
             tmp_methods.push_back(get_value());
             advance_token();
         }
@@ -264,7 +264,7 @@ void                c_parser::parse_cgi(c_location & location)
     advance_token(); // skip second value (path)
     expected_token_type(TOKEN_SEMICOLON);
     advance_token(); //skip semicolon
-    
+
     if (extension != ".py" && extension != ".sh" && extension != ".php") // verifier toutes les extensions autorisees
         throw invalid_argument("Invalid extension for the CGI (.py, .sh or .php): " + extension);
     if (path[0] != '/')
@@ -281,12 +281,12 @@ void                c_parser::location_indexes(c_location & location)
 {
     advance_token(); // skip directive
     expected_token_type(TOKEN_VALUE);
-    
+
     while (is_token_type(TOKEN_VALUE))
     {
         if (location.get_bool_is_directory())
         {
-            location.add_index_file(_current->value);            
+            location.add_index_file(_current->value);
             advance_token();
         }
     }
@@ -321,19 +321,19 @@ void        c_parser::parse_upload_path(c_location & location)
     advance_token();
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();
-    
+
     if (path[0] != '/' && path[0] != '.')
         throw invalid_argument("Invalid path for upload_path directive: " + path);
     if (path[path.length() - 1] != '/')
        throw invalid_argument("Invalid path for upload_path directive: " + path);
-    location.set_upload_path(path); 
+    location.set_upload_path(path);
 }
 
 void        c_parser::parse_auto_index(c_location & location)
 {
     advance_token(); // skip directive
     expected_token_type(TOKEN_VALUE);
-    
+
     if (_current->value != "ON" && _current->value != "on"
         && _current->value != "OFF" && _current->value != "off")
         throw invalid_argument("Invalid value for auto_index directive: " + _current->value);
@@ -341,7 +341,7 @@ void        c_parser::parse_auto_index(c_location & location)
         location.set_auto_index(true);
     else if (_current->value != "OFF" || _current->value != "off")
         location.set_auto_index(false);
-    
+
     advance_token(); // skip value
     expected_token_type(TOKEN_SEMICOLON);
     advance_token();
@@ -364,16 +364,16 @@ void        c_parser::parse_redirect(c_location & location)
         i++;
     if (i != code.length())
         throw invalid_argument("Invalid code for redirect directive: " + code);
-    
+
     int nb_code = strtol(code.c_str(), NULL, 10);
     if (nb_code != 301 && nb_code != 302 && nb_code != 307 && nb_code != 308)
         throw invalid_argument("Invalid code for redirect directive (it must be 301, 302, 307 or 308): " + code);
-    
-    if (redirect.compare(0, 6, "https://") != 0 
+
+    if (redirect.compare(0, 6, "https://") != 0
         && redirect.compare(0, 7, "http://") != 0
         && redirect[0] != '/')
         throw invalid_argument("Invalid url for redirect directive (accepted format : 'https://', 'http://' or '/'): " + redirect);
-    
+
     pair<int, string> redir;
     redir.first = nb_code;
     redir.second = redirect;
@@ -420,8 +420,8 @@ void                c_parser::parse_listen_directive(c_server & server)
     if (get_value().find_first_not_of("0123456789") == string::npos)
     {
         port = strtol(get_value().c_str(), NULL, 10);
-        str_ip = "0.0.0.0"; 
-        // si pas de precision -> ecouter sur toutes les interfaces disponibles 
+        str_ip = "0.0.0.0";
+        // si pas de precision -> ecouter sur toutes les interfaces disponibles
         // (toutes les adresses IP locales en meme temps)
         // 127.0.0.1 --> ecoute uniquement sur localhost (acces seulement depuis notre machine)
     }
@@ -602,18 +602,24 @@ vector<c_server>    c_parser::parse()
 size_t            c_parser::convert_to_octet(string const & str, string const & suffix, size_t const i) const
 {
     size_t limit = 0;
-    string result;
+    string number_part;
 
     if (suffix.empty()) // pas de suffix donc chiffre deja en octet
-        limit = strtol(str.c_str(), NULL, 10); 
+        number_part = str;
     else
+        number_part = str.substr(0, i);
+    errno = 0;
+    for (size_t j = 0; j < number_part.length(); ++j)
     {
-        result = str.substr(0, i);
-        limit = strtol(str.c_str(), NULL, 10);
+        if (!isdigit(number_part[j]))
+            throw invalid_argument("Invalid argument for max_body_size (invalid character): " + str);
+        if (limit > (SIZE_MAX - (number_part[j] - '0')) / 10)
+            throw invalid_argument("Invalid argument for max_body_size (number too large): " + str);
+        limit = limit * 10 + (number_part[j] - '0');
     }
     if (errno == ERANGE)
         throw invalid_argument("Invalid argument for max_body_size (unexpected conversion of the number): " + str);
-    
+
     if (!suffix.empty())
     {
         if (suffix == "k" || suffix == "K")
