@@ -25,7 +25,7 @@ int main(int argc, char **argv)
     }
     catch (exception & e)
     {
-        cerr << e.what() << endl; // a revoir 
+        cerr << RED << e.what() << RESET << endl; // a revoir 
     }
     return 0;
 }
