@@ -72,35 +72,60 @@ void c_server::set_non_blocking(int fd)
 		return ;
 	}
 }
-int main(int argc, char **argv)
+
+
+void	run_multiserver(vector<c_server> servers)
+{
+	while (true)
+	{
+		for (size_t i = 0; i < servers.size(); ++i)
+		{
+			servers[i].setup_pollfd();
+			servers[i].handle_poll_events();
+		}
+	}
+}
+
+int main(int argc, char **argv) //main du parsing
 {
     try
     {
-        if (argc == 2)
-        {
-            c_webserv_config webserv(argv[1]);
+        if (argc != 2)
+			throw invalid_argument("The program must have one argument (the configuration file)");
 
-            if (!webserv.load_configuration())
-                throw invalid_argument("Invalid server configuration");
-            // vector<c_server> & servers = webserv.get_servers();
-            webserv.print_configurations();
-            // vector<s_token> my_tok = myparser.get_list_of_token();
-            // vector<s_token>::iterator it;
-            // for (it = my_tok.begin(); it != my_tok.end(); it++)
-            // {
-            //     cout << "Value = " << (*it).value;
-            //     cout << " ; Type = " << (*it).type << endl;
-            // }
-        }
+		c_webserv_config webserv(argv[1]);
+
+		vector<c_server> servers = webserv.get_servers();
+		if (servers.empty())
+			throw invalid_argument("Error: No servers configurations");
+
+		servers.resize(1);
+		
+		webserv.print_configurations();
+
+		// initialisation des serveurs
+		for (size_t i = 0; i < servers.size(); ++i)
+		{
+			servers[i].create_socket();
+			servers[i].bind_and_listen();
+			servers[i].set_non_blocking(servers[i].get_socket_fd());
+			cout << "Server " << i << " initialized on port " << servers[i].get_port() << endl;
+		}
+		run_multiserver(servers);
+		for (size_t i = 0; i < servers.size(); ++i)
+			close(servers[i].get_socket_fd());
     }
     catch (exception & e)
     {
         cerr << RED << e.what() << RESET << endl; // a revoir 
+		return 1;
     }
     return 0;
 }
 
-// int main(void)
+
+
+// int main(int argc, char **argv)
 // {
 // 	c_server server;
 	
@@ -118,48 +143,7 @@ int main(int argc, char **argv)
 // 		//cout << "Waiting for connections..." << endl;
 // 		server.setup_pollfd();
 // 		server.handle_poll_events();
-// 		// socklen_t addrlen = sizeof(socket_address);
-// 		// connected_socket_fd = accept(socket_fd, (struct sockaddr *) &socket_address, &addrlen);
-		
-// 		// if (connected_socket_fd < 0)
-// 		// {
-// 			// 	cerr << "Error: Accepting mode - " << errno << endl;
-// 			// 	return (-1);
-// 			// }
-// 			// cout << "New client connected !\n" << endl;
-			
-// 		// c_request my_request;
-// 		// bool	keep_alive = true;
-// 		// while (keep_alive)
-//         // {
-// 		// 	int status_code;
-// 		// 	status_code = my_request.read_request(connected_socket_fd);
-// 		// 	if (status_code == 400 || status_code == 408 || status_code == 413)
-// 		// 	{
-// 		// 		my_request.set_status_code(status_code);
-// 		// 		close(connected_socket_fd);
-// 		// 		keep_alive = false;
-// 		// 	}
-// 		// 	drain_socket(connected_socket_fd);
-
-// 		// 	my_request.print_full_request();
-
-// 		// 	if (!keep_alive)
-// 		// 		break;
-
-// 		// 	response_handler.define_response_content(my_request);
-
-// 		// 	const string &response = response_handler.get_response();
-// 		// 	if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
-// 		// 	{
-// 		// 		cerr << "Error: Message not sent - " << errno << endl;
-// 		// 		keep_alive = false;
-// 		// 		break;
-// 		// 	}
-// 		// 	if (!keep_alive)
-// 		// 		break;
-// 		// }
-// 		// close(connected_socket_fd);		
+	
 // 	}
 // 	close(server.get_socket_fd());
 // 	return (0);

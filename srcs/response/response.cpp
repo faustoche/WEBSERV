@@ -87,14 +87,14 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 
 	/* A SUPPRIMER */
-	c_location loc;
-	map<string, string> cgi_extension;
-	cgi_extension[".php"] = "/usr/bin/php-cgi";
-	cgi_extension[".py"] = "/usr/bin/python3";
-	loc.set_url_key("/cgi-bin");
-	loc.set_alias("./www/cgi-bin");
-	loc.set_cgi(cgi_extension);
-	loc.set_auto_index(true);
+	// c_location loc;
+	// map<string, string> cgi_extension;
+	// cgi_extension[".php"] = "/usr/bin/php-cgi";
+	// cgi_extension[".py"] = "/usr/bin/python3";
+	// loc.set_url_key("/cgi-bin");
+	// loc.set_alias("./www/cgi-bin");
+	// loc.set_cgi(cgi_extension);
+	// loc.set_auto_index(true);
 	// vector<string> index_file;
 	// index_file.push_back("index.py");
 	// loc.set_index_files(index_file);
@@ -110,7 +110,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	{
 		this->_is_cgi = true;
 		request.print_full_request();
-		matching_location = &loc;
+		// matching_location = &loc;
 	}
 	/***************/
 

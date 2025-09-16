@@ -15,6 +15,8 @@
 #include <poll.h>
 #include <dirent.h>
 #include <arpa/inet.h>
+#include <signal.h>
+#include <sstream>
 #include "response.hpp"
 #include "clients.hpp"
 #include "request.hpp"
