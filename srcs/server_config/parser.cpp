@@ -186,12 +186,12 @@ void                c_parser::location_url_file(c_server & server)
 /*------------------------   location : directives   ---------------------------*/
 void                c_parser::location_directives(c_location & location)
 {
-    int     flag_cgi = 0;
+   // int     flag_cgi = 0;
     int     flag_upload = 0;
 
     if (is_token_value("cgi"))
     {
-        flag_cgi++;
+        //flag_cgi++;
         location.clear_cgi();
         parse_cgi(location);
     }

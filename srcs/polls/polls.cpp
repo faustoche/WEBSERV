@@ -92,22 +92,18 @@ void c_server::handle_poll_events()
 		if (pfd.revents == 0)
 			continue ;
 
-		// ici, verifier si c'est un socket serveur ou pas 
-		// creer une nouvelle fonction  pour verifier si la socket est en ecoute
-			// nouvelle variable int port qui va prendre la donnee du socket concerne
-			// print nouvelle connecion sur le port xxxx
-			// handle new connections() -> on passe le socket fd a cette fonction
-
-
-		/**** GESTION DEPUIS LA SOCKET SERVEUR POUR 1 PORT *****/
-		if (i == 0)
+		if (is_listening_socket(pfd.fd))
 		{
-			if (pfd.revents & POLLIN)
-				handle_new_connection();
-			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+			if (pfd.revents && POLLIN)
 			{
-				cerr << "Error: Socket server\n";
-				// gestion d'erreur du serveur, fermeture etc
+				int port = get_port_from_socket(pfd.fd);
+				cout << "Nouvelle connection sur le port " << port << endl;
+				//handle_new_connection(pfd.fd);
+				handle_new_connection_multiple(pfd.fd);
+			}
+			if (pfd.revents & (POLL_ERR | POLLHUP | POLLNVAL))
+			{
+				cerr << "Error: socet server on port " << get_port_from_socket(pfd.fd) << endl;
 			}
 		}
 		else
@@ -157,7 +153,7 @@ void	c_server::handle_new_connection_multiple(int listening_socket)
 	if (client_fd < 0)
 		return ;
 
-	int port = jerecupereleportdelasocket();
+	int port = get_port_from_socket(listening_socket);
 	cout << "Nouveau client connecté sur le port " << port << endl;
 	set_non_blocking(client_fd);
 
