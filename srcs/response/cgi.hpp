@@ -35,6 +35,7 @@ class c_cgi
         bool            is_finished() { return _finished; };
         bool            headers_parsed() { return _headers_parsed; };
         void            set_finished(bool state) { _finished = state; };
+        void            set_exit_status(int status) { _status_code = status; };
         void            set_headers_parsed(bool state) { _headers_parsed = state; };
         void            consume_read_buffer(size_t n);
         void            set_content_length(size_t bytes) { _content_length = bytes; };
@@ -44,6 +45,7 @@ class c_cgi
         int             parse_headers(c_response &response, string& headers);
         bool            is_valid_header_value(string& key, const string& value);
         void            vectorize_env();
+        void            close_cgi();
         size_t          identify_script_type(const string& path);
 
     private:

@@ -4,6 +4,7 @@ c_cgi::c_cgi(c_server& server, int client_fd) :
 _server(server), _client_fd(client_fd), _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
 {
     this->_finished = false;
+    this->_content_length = 0;
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 }
@@ -197,6 +198,16 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["HTTP_REFERER"] = request.get_header_value("Referer");
 
     this->vectorize_env();
+}
+
+void    c_cgi::close_cgi()
+{
+    cout << "CGI TERMINE, on close la lecture du CGI" << endl;
+	close(get_pipe_out());
+    close(get_pipe_in());
+	_server.remove_client(get_pipe_out());
+    _server.remove_client(get_pipe_in());
+	set_finished(true);
 }
 
 // bool    c_cgi::is_valid_header_value(string& key, const string& value)

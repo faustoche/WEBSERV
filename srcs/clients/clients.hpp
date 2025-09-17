@@ -30,7 +30,7 @@ private:
 	string			_read_buffer;
 	string			_write_buffer;
 	size_t			_bytes_written;
-	size_t			_header_size;
+	size_t			_response_body_size;
 
 public:
 	c_client();
@@ -44,7 +44,7 @@ public:
 	const string &get_write_buffer() const { return (_write_buffer); }
 	string &get_write_buffer() { return (_write_buffer); }
 	const size_t &get_bytes_written() const { return (_bytes_written); }
-	const size_t &get_header_size() const { return _header_size; };
+	const size_t &get_response_body_size() const { return _response_body_size; };
 	const client_state &get_state() const { return (_state); }
 	
 	
@@ -52,5 +52,5 @@ public:
 	void append_to_read_buffer(const string &data) { _read_buffer += data; }
 	void set_state(client_state new_state) { (_state = new_state); }
 	void set_bytes_written(size_t bytes) { (_bytes_written = bytes); }
-	void set_header_size(size_t bytes) { _header_size = bytes; };
+	void append_response_body_size(size_t bytes) { _response_body_size += bytes; };
 };
