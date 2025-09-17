@@ -93,7 +93,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	cgi_extension[".py"] = "/usr/bin/python3";
 	loc.set_url_key("/cgi-bin");
 	loc.set_alias("./www/cgi-bin");
-	loc.set_cgi(cgi_extension);
+	// loc.set_cgi(cgi_extension);
 	loc.set_auto_index(true);
 	// vector<string> index_file;
 	// index_file.push_back("index.py");
@@ -504,7 +504,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 	}
 	string location_root = location->get_alias();
 	string location_key = location->get_url_key();
-
 	// calculer le chemin relatif en enlevant la partie location du chemin de requete
 	string relative_path;
 	if (request_path.find(location_key) == 0) // on verifie si l'url commence par le pattern de la location

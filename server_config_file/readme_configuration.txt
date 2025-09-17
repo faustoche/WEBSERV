@@ -2,8 +2,8 @@
 
 ---> Definir les valeurs obligatoires a avoir dans le .conf pour lancer le serveur
 ---> Definir les valeurs par defaut 
-
-
+---> definir une liste des codes d'erreur quon utilise (changer le parsing en fonction)
+---> envoyer une erreur '/' si en double => location //images/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Le bloc server donne la configuration par defaut pour un host::port
@@ -108,7 +108,8 @@ Directives valides aux deux niveaux
     voir ensemble quel suffixe on accepte 
 
     # AUTOINDEX
-    active/desactive le listing du contenu d'un repertoire (le serveur genere une page HTML listant le contenu du dossier)
+    active/desactive le listing du contenu d'un repertoire (si actif et que le client demande un repertoire et qu'aucun fichier dindex nexiste le serveur genere une page HTML listant le contenu du dossier)
+    si pas active et qu.aucun fichier index n'existe le client obtient une erreur 403 Forbidden (ou 404)
     syntaxe :
     autoindex on;
     autoindex of;
