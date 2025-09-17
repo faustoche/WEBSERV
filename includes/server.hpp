@@ -57,6 +57,11 @@ private:
 		const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
 		const map<string, c_location>	&get_location_map() const { return _location_map; };
 
+			// À TESTER POUR LES MULTIPLES PORTS
+		void		create_socket_for_each_port(const std::vector<int>& ports);
+		int			get_port_from_socket(int socket_fd);
+		bool		is_listening_socket(int fd);
+
 		void 		create_socket();
 		void 		bind_and_listen();
 		void 		set_non_blocking(int fd);
