@@ -186,6 +186,7 @@ void c_server::handle_client_read(int client_fd)
 	response.define_response_content(request, *this);
 	client->get_write_buffer() = response.get_response();
 	client->set_bytes_written(0);
+	// SENDING OU PROCESSING ?
 	client->set_state(SENDING);
 	cout << "Requête traitée pour le client " << client_fd << endl;
 }

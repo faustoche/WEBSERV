@@ -1,5 +1,28 @@
 #include "response.hpp"
 
+/************ CONSTRUCTORS & DESTRUCTORS ************/
+
+c_response::c_response()
+{
+	this->_is_cgi = false;
+}
+
+c_response::~c_response()
+{}
+
+
+/************ GETTERS ************/
+
+const string& c_response::get_header_value(const string& key) const
+{
+	static const string empty_string = "";
+
+	map<string, string>::const_iterator it = this->_headers_response.find(key);
+	if (it != this->_headers_response.end())
+		return (it->second);
+	return (empty_string);
+}
+
 /************ FILE CONTENT MANAGEMENT ************/
 
 /* Check to see what kind of response must be sent 
@@ -10,12 +33,36 @@
 * We construct the correct path according to locations again
 */
 
-void	c_response::define_response_content(const c_request &request, c_server &server)
+
+bool	is_directory(const string& path)
+{
+	struct stat path_stat;
+
+	if (stat(path.c_str(), &path_stat) != 0)
+	{
+		// Erreur chemin n'existe pas ou n'est pas accessible
+		return (false);
+	}
+	return (S_ISDIR(path_stat.st_mode));
+}
+
+bool	is_regular_file(const string& path)
+{
+	struct stat path_stat;
+
+	if (stat(path.c_str(), &path_stat) != 0)
+	{
+		// Erreur chemin n'existe pas ou n'est pas accessible
+		return (false);
+	}
+	return (S_ISREG(path_stat.st_mode));
+}
+
+void	c_response::define_response_content(c_request &request, c_server &server)
 {
 	_response.clear();
 	_file_content.clear();
 	
-
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
@@ -39,9 +86,43 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 		return ;
 	}
 
+	/* A SUPPRIMER */
+	c_location loc;
+	map<string, string> cgi_extension;
+	cgi_extension[".php"] = "/usr/bin/php-cgi";
+	cgi_extension[".py"] = "/usr/bin/python3";
+	loc.set_url_key("/cgi-bin");
+	loc.set_alias("./www/cgi-bin");
+	loc.set_cgi(cgi_extension);
+	loc.set_auto_index(true);
+	// vector<string> index_file;
+	// index_file.push_back("index.py");
+	// loc.set_index_files(index_file);
+
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
-	
+
+	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
+		this->_is_cgi = true;
+
+	/* A SUPPRIMER */
+	if (target.find("cgi") != string::npos)
+	{
+		this->_is_cgi = true;
+		request.print_full_request();
+		matching_location = &loc;
+	}
+	/***************/
+
+	if (matching_location == NULL)
+	{
+		cout << "Error: no location found for target: " << target  << endl;
+		build_error_response(404, version, request);
+		return ;
+	}
+
+	/***************/
+
 	if (!server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -51,7 +132,7 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
-		pair<int, string> redirect = matching_location->get_redirect(); // pair avec code de retirection et URL de destination
+		pair<int, string> redirect = matching_location->get_redirect(); // pair avec code de redirection et URL de destination
 		if (redirect.first != 0 && !redirect.second.empty()) // first = redirection (301, 302), second = URL
 		{
 			build_redirect_response(redirect.first, redirect.second, version, request);
@@ -60,19 +141,29 @@ void	c_response::define_response_content(const c_request &request, c_server &ser
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	
 	string file_path = server.convert_url_to_file_path(matching_location, target, "www");
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
-	_file_content = load_file_content(file_path);
+	if (is_regular_file(file_path))
+		_file_content = load_file_content(file_path);
 	if (_file_content.empty())
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
+			
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
 		build_error_response(404, version, request);
+	}
+	if (this->_is_cgi)
+	{
+		c_cgi cgi;
+		cgi.set_script_filename(file_path);
+		cgi.init_cgi(request, *matching_location);
+		cgi.resolve_cgi_paths(*matching_location, cgi.get_script_filename());
+		build_cgi_response(cgi, request);
+		return ;
 	}
 	else
 		build_success_response(file_path, version, request);
@@ -87,9 +178,9 @@ string c_response::load_file_content(const string &file_path)
 	if (!file.is_open()) {
 		return ("");
 	}
-
 	string	content((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
 	file.close();
+
 	return (content);
 }
 
@@ -125,6 +216,35 @@ string c_response::get_content_type(const string &file_path)
 /************ BUILDING RESPONSES ************/
 
 /* Build the successfull request response */
+
+void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
+{
+
+	this->_status = request.get_status_code();
+	const string request_body = request.get_body();
+
+	if (cgi.get_interpreter().empty())
+		return ;
+	string content_cgi = cgi.launch_cgi(request_body);
+	cgi.get_header_from_cgi(*this, content_cgi);
+
+	this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
+	this->_response += "Server: webserv/1.0\r\n";
+	if (!get_header_value("Content-Type").empty())
+		this->_response += "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
+	else
+		this->_response += "Content-Type: text/plain\r\n";
+	this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
+
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
+		connection = "keep-alive";
+	this->_response += "Connection: " + connection + "\r\n";
+
+	this->_response += "\r\n";
+	this->_response += get_body() + "\r\n";
+}
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
@@ -372,16 +492,18 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 
 /* Convert the url given into a real file path to access all of the informations */
 
-string c_server::convert_url_to_file_path(const c_location *location, const string &request_path, const string &default_root)
+string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
+	
 	if (location == NULL)
 	{
+		string index = get_valid_index(this->get_indexes());
 		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
-			return (default_root + "/" + _index);
+			return (default_root + "/" + index);
 		return (default_root + request_path);
 	}
-	string location_root = location->get_root();
+	string location_root = location->get_alias();
 	string location_key = location->get_url_key();
 
 	// calculer le chemin relatif en enlevant la partie location du chemin de requete
@@ -393,14 +515,16 @@ string c_server::convert_url_to_file_path(const c_location *location, const stri
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
 	}
-	
 	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
-	if (location->get_bool_is_directory() && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	if (is_directory(location_root + "/" + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
+		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
-			return (location_root + "/" + relative_path + _index);
+		{
+			return (location_root + "/" + relative_path);
+		}
 		else
 		{
 			// Processus: On teste tous les autres fichiers dans l'ordre
