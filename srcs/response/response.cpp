@@ -69,22 +69,29 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
+	cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
+
 	/***** VÉRIFICATIONS *****/
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		build_error_response(405, version, request);
 		return ;
 	}
 	if (version != "HTTP/1.1")
 	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		build_error_response(505, version, request);
 		return ;
 	}
 	if (headers.find("Host") == headers.end())
 	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
+
+	cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 
 	/* A SUPPRIMER */
 	c_location loc;
@@ -93,14 +100,21 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	cgi_extension[".py"] = "/usr/bin/python3";
 	loc.set_url_key("/cgi-bin");
 	loc.set_alias("./www/cgi-bin");
-	// loc.set_cgi(cgi_extension);
+	loc.set_cgi(".py", "/usr/bin/python3");
+	loc.set_cgi(".php", "/usr/bin/php-cgi");
 	loc.set_auto_index(true);
+
+	loc.print_location();
 	// vector<string> index_file;
 	// index_file.push_back("index.py");
 	// loc.set_index_files(index_file);
 
+	cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
+
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = server.find_matching_location(target);
+
+	// matching_location->print_location();
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
@@ -110,7 +124,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	{
 		this->_is_cgi = true;
 		request.print_full_request();
-		// matching_location = &loc;
+		matching_location = &loc;
 	}
 	/***************/
 
