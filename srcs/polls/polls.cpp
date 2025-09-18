@@ -120,11 +120,13 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 
 void	c_server::transfer_by_bytes(c_cgi *cgi, int fd, const string& buffer)
 {
+	(void)fd;
 	cout << "Transfer by bytes de buffer: " << buffer << endl;
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client)
 	{
 	    client->get_write_buffer().append(buffer);
+		cout << "client->get_write_buffer: " << client->get_write_buffer() << endl;
 	    client->set_state(SENDING);
 		client->append_response_body_size(buffer.size());
 		cgi->consume_read_buffer(buffer.size());
@@ -134,11 +136,10 @@ void	c_server::transfer_by_bytes(c_cgi *cgi, int fd, const string& buffer)
 			<< " Content-length attendue: " << cgi->get_content_length() 
 			<< endl;
 			
-		if (client->get_response_body_size() >= cgi->get_content_length() && cgi->get_content_length() > 0)
+		if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
 		{
-			cgi->close_cgi();			
-			delete _active_cgi[fd];
-			_active_cgi.erase(fd);
+			// cgi->close_cgi();
+			cgi->set_finished(true);
 		}
 	}
 
@@ -167,7 +168,8 @@ void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 {
 	char buffer[10];
     std::string content_cgi;
-    ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer));
+    ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer) - 1);
+	buffer[sizeof(buffer) - 1] = '\0';
 	c_client *client = find_client(cgi->get_client_fd());
 	if (bytes_read > 0)
 	{
@@ -189,7 +191,7 @@ void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 	                client->get_write_buffer().append(headers + "\r\n");
 					if (cgi->get_content_length() == 0)
 						client->get_write_buffer().append("Transfer-Encoding: chunked\r\n");
-					client->get_write_buffer().append("\r\n\r\n");
+					client->get_write_buffer().append("\r\n");
 					cgi->set_headers_parsed(true);
 					client->set_state(SENDING);
 
@@ -216,25 +218,46 @@ void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 
 			else
 				transfer_by_bytes(cgi, fd, buffer);
-			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
 	}
-	// else if (bytes_read == 0)
-	// {
-	// 	cout << "bytes_read == 0 " << endl;
-	// 	if (client && cgi->get_content_length() == 0)
-    // 	{
-    // 	    client->get_write_buffer().append("0\r\n\r\n");
-    // 	    client->set_state(IDLE);
-    // 	}
-	// }
 }	
 
 void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 {
 	char buffer[BUFFER_SIZE];
-	ssize_t bytes;
 
+	ssize_t bytes_read = read(fd, buffer, sizeof(buffer) - 1);
+	buffer[sizeof(buffer) - 1] = '\0';
+	c_client *client = find_client(cgi->get_client_fd());
+	if (client)
+	{
+		if (bytes_read > 0)
+		{
+			cout << "**bytes_read**" << endl;
+
+			cout << "content_length dans final_read: " << cgi->get_content_length() << endl;
+			if (cgi->get_content_length() == 0)
+			{
+				transfer_with_chunks(cgi, buffer);
+				client->get_write_buffer().append("0\r\n\r\n");
+    			client->set_state(IDLE);
+			}
+			else
+				transfer_by_bytes(cgi, fd, buffer);
+			cgi->consume_read_buffer(cgi->get_read_buffer().size());
+		}
+		if (bytes_read == 0)
+		{
+			cout << "pas de bytes_read" << endl;
+			if (cgi->get_content_length() == 0)
+			{
+				cout << "ajout des bytes de fin" << endl;
+				client->get_write_buffer().append("0\r\n\r\n");
+				cgi->set_finished(true);
+    			client->set_state(IDLE);
+			}
+		}
+	}
 
 }
 
@@ -262,8 +285,8 @@ void c_server::check_terminated_cgi_processes()
             int exit_code = WEXITSTATUS(status);
             cout << "CGI exited with code: " << exit_code << "\n";
             terminated_cgi->set_exit_status(exit_code);
-			
-			cleanup_cgi(terminated_cgi);
+			terminated_cgi->set_finished(true);
+			// cleanup_cgi(terminated_cgi);
         }
     }
 }
@@ -273,11 +296,13 @@ void c_server::cleanup_cgi(c_cgi* cgi)
     if (!cgi) return;
 
     // 1. Fermer les pipes si encore ouverts
-    if (cgi->get_pipe_in() > 0) {
+    if (cgi->get_pipe_in() > 0) 
+	{
         close(cgi->get_pipe_in());
         remove_client(cgi->get_pipe_in()); // supprime du vecteur pollfds
     }
-    if (cgi->get_pipe_out() > 0) {
+    if (cgi->get_pipe_out() > 0) 
+	{
         close(cgi->get_pipe_out());
         remove_client(cgi->get_pipe_out());
     }
@@ -295,12 +320,15 @@ void c_server::cleanup_cgi(c_cgi* cgi)
     _active_cgi.erase(cgi->get_pipe_out());
 	_active_cgi.erase(cgi->get_pipe_in());
 
-	c_client *client = find_client(cgi->get_client_fd());
-	client->set_state(IDLE);
+	// c_client *client = find_client(cgi->get_client_fd());
+	// client->set_state(IDLE);
 	// remove_client_from_pollout(client->get_fd());
 	// cout << "etat du client: " << client->get_state() << endl;
     // 4. Libérer la mémoire de l’objet
+	
+	
     delete cgi;
+
 
     std::cout << "CGI [" << cgi->get_pipe_out() << "] cleaned up successfully" << std::endl;
 }
@@ -365,6 +393,7 @@ void c_server::handle_poll_events()
 				// Gestion POLLHUP pour les pipes CGI
 				if (pfd.revents & POLLHUP)
 				{
+					// cout << __FILE__ << "/" << __LINE__ << endl;
 					if (fd == cgi->get_pipe_out())
 					{
 						// Le CGI a ferme stdout - lire les dernieres donnees
@@ -379,8 +408,11 @@ void c_server::handle_poll_events()
 					// Si les 2 sont fermes, nettoyer le cgi
 					if (cgi->is_finished())
 					{
+						cout << "cgi identifie comme fini" << endl;
+						// c_client *client = find_client(cgi->get_client_fd());
 						cleanup_cgi(cgi);
 						remove_client(fd);
+						// client->set_state(IDLE);						
 					}
 				}
 
@@ -397,9 +429,15 @@ void c_server::handle_poll_events()
 			if (!client)
 				continue;
 			if (pfd.revents & POLLIN)
+			{
+				// cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
+			}
 			else if (pfd.revents & POLLOUT)
+			{
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_write(fd);
+			}
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				c_cgi* cgi = find_cgi_by_client(client->get_fd());
@@ -492,9 +530,17 @@ void	c_server::handle_client_write(int client_fd)
 	}
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
-	int bytes_sent = send(client_fd, data_to_send, remaining, 0);
+	cout << "data_to_send: " << data_to_send << endl;
+	size_t bytes_sent = send(client_fd, data_to_send, remaining, 0);
+	if (bytes_sent < remaining) 
+	{
+    	cout << "WARNING: Partial send! Need to continue..." << endl;
+    }
 	if (bytes_sent <= 0)
+	{
+		cout << "WARNING: pb de sent" << endl;
 		return ;
+	}
 
 	client->set_bytes_written(bytes_written + bytes_sent);
     if (client->get_bytes_written() >= write_buffer.length())
@@ -516,9 +562,9 @@ void	c_server::handle_client_write(int client_fd)
 				return ;
         	}
 		}
-			// keep-alive
-			cout << "Le client devient IDLE" << endl;
-			client->set_state(IDLE);
+		// keep-alive
+		cout << "Le client devient IDLE" << endl;
+		client->set_state(IDLE);
     }
 }
 

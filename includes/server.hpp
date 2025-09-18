@@ -90,6 +90,7 @@ class c_server
 		int			find_client_fd_by_cgi(c_cgi* cgi);
 		size_t		extract_content_length(string headers);
 		void		check_terminated_cgi_processes();
+		void 		handle_cgi_final_read(int fd, c_cgi* cgi);
 
 
 		// CONFIGURATION FILE

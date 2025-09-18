@@ -89,7 +89,6 @@ void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 }
 
 
-
 /*-------------------------   debug   -----------------------------*/
 
 void	c_server::print_indexes() const
