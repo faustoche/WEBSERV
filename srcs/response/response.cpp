@@ -66,6 +66,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
+	// string target = "/cgi-bin/";
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
@@ -80,13 +81,11 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 	if (version != "HTTP/1.1")
 	{
-		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		build_error_response(505, version, request);
 		return ;
 	}
 	if (headers.find("Host") == headers.end())
 	{
-		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -122,6 +121,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	/* A SUPPRIMER */
 	if (target.find("cgi") != string::npos)
 	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		this->_is_cgi = true;
 		request.print_full_request();
 		matching_location = &loc;
@@ -159,11 +159,16 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
+	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		_file_content = load_file_content(file_path);
+	}
 	if (_file_content.empty())
 	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
+			cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
@@ -171,6 +176,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 	if (this->_is_cgi)
 	{
+		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		c_cgi cgi;
 		cgi.set_script_filename(file_path);
 		cgi.init_cgi(request, *matching_location);
@@ -179,7 +185,9 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 		return ;
 	}
 	else
+	{
 		build_success_response(file_path, version, request);
+	}
 }
 
 /* Proceed to load the file content. Nothing else to say. */
