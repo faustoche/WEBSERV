@@ -3,7 +3,6 @@ import os
 import sys
 
 sys.stdout.write("Content-Type: text/html; charset=UTF-8\r\n");
-sys.stdout.write("\r\n");
 
 print("<!DOCTYPE html>")
 print("<html lang='fr'>")

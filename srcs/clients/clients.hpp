@@ -31,7 +31,6 @@ private:
 	string			_write_buffer;
 	size_t			_bytes_written;
 	size_t			_response_body_size;
-	bool			_has_active_cgi;
 
 public:
 	c_client();
@@ -54,4 +53,7 @@ public:
 	void set_state(client_state new_state) { (_state = new_state); }
 	void set_bytes_written(size_t bytes) { (_bytes_written = bytes); }
 	void append_response_body_size(size_t bytes) { _response_body_size += bytes; };
+	void clear_write_buffer() { _write_buffer.clear(); };
+	void clear_read_buffer() { _read_buffer.clear(); };
+	void clear_response_body_size() { _response_body_size = 0; };
 };

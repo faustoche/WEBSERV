@@ -81,6 +81,8 @@ class c_server
 		void 		transfer_with_chunks(c_cgi *cgi, const string& buffer);
 		void		process_client_request(int client_fd);
 		void		cleanup_cgi(c_cgi* cgi);
+		void 		clear_read_buffer();
+		void 		clear_write_buffer();
 
 		c_location	*find_matching_location(const string &request_path);
 		bool		is_method_allowed(const c_location *location, const string &method);

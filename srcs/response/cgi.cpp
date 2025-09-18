@@ -200,105 +200,6 @@ void    c_cgi::set_environment(const c_request &request)
     this->vectorize_env();
 }
 
-void    c_cgi::close_cgi()
-{
-    cout << "CGI TERMINE, on close la lecture du CGI" << endl;
-	close(get_pipe_out());
-    close(get_pipe_in());
-	_server.remove_client(get_pipe_out());
-    _server.remove_client(get_pipe_in());
-	set_finished(true);
-}
-
-// bool    c_cgi::is_valid_header_value(string& key, const string& value)
-// {
-// 	for (size_t i = 0; i < value.length(); i++)
-// 	{
-// 		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
-// 		{
-// 			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
-// 			return (false);
-// 		}
-// 	}
-
-// 	if (key == "Content-Length")
-// 	{
-// 		for (size_t i = 0; i < value.length(); i++)
-// 		{
-// 			if (!isdigit(value[i]))
-// 			{
-// 				cerr << "(Request) Error: Invalid content length: " << value << endl;
-// 				return (false);
-// 			}
-// 		}
-// 	}
-
-// 	if (value.size() > 4096)
-// 	{
-// 		cerr << "(Request) Error: Header field too large: " << value << endl;
-// 		return (false);
-// 	}
-// 	return (true);
-// }
-
-// int c_cgi::parse_headers(c_response &response, string& headers)
-// {
-// 	size_t pos = headers.find(':', 0);
-// 	string key;
-// 	string value;
-
-// 	key = ft_trim(headers.substr(0, pos));
-// 	if (!is_valid_header_name(key))
-// 	{
-// 		cerr << "(Request) Error: invalid header_name: " << key << endl;
-// 		// response.set_status(500);
-//         return (1);
-// 	}
-
-// 	pos++;
-// 	if (headers[pos] != 32)
-//     {
-// 		// response.set_status(500);
-//         return (1);
-//     }
-
-// 	value = ft_trim(headers.substr(pos + 1));
-// 	if (!is_valid_header_value(key, value))
-// 	{
-// 		cerr << "(Request) Error: invalid header_value: " << key << endl;
-// 		// response.set_status(500);
-// 	}
-
-// 	response.set_header_value(key, value);
-
-// 	return (0);
-// }
-
-// void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
-// {
-// 	size_t end_of_headers;
-
-// 	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
-// 		return ;
-// 	string headers = content_cgi.substr(0, end_of_headers);
-
-// 	istringstream stream(headers);
-// 	string	line;
-// 	while (getline(stream, line, '\n'))
-// 	{
-// 		if (line[line.size() - 1] == '\r')
-// 			line.erase(line.size() - 1);
-// 		parse_headers(response, line);
-// 	}
-
-// 	response.set_body(content_cgi.substr(end_of_headers + 4));
-
-//     string body = response.get_body();
-//     if (response.get_header_value("Content-Length").empty() && !body.empty())
-//         response.set_header_value("Content-Length", int_to_string(body.size()));
-
-// }
-
 string make_absolute(const string &path)
 {
     char resolved[1000];
@@ -365,6 +266,8 @@ string  c_cgi::launch_cgi(const string &body)
     }
 
     /**** Processus parent ****/
+
+    cout << "pid parent" << endl;
     close(server_to_cgi[0]);
     close(cgi_to_server[1]);
 

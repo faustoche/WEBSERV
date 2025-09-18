@@ -2,6 +2,7 @@
 <?php
 // Définir le type de contenu (ne pas ajouter \r\n\r\n ici)
 header("Content-Type: text/html; charset=UTF-8");
+
 // Exemple de variables PHP utiles
 $server = $_SERVER['SERVER_SOFTWARE'] ?? 'Serveur inconnu';
 $time   = date("Y-m-d H:i:s");
