@@ -142,9 +142,10 @@ void c_server::handle_client_read(int client_fd)
 	if (!client)
 		return ;
 
+	cout << "client_fd: " << client_fd << endl;
 	c_request request;
 	request.read_request(client_fd);
-
+	request.print_full_request();
 	c_response response;
 	response.define_response_content(request, *this);
 	client->get_write_buffer() = response.get_response();
