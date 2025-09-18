@@ -16,6 +16,7 @@ c_client::c_client(int client_fd) : _fd(client_fd), _state(READING)
     memset(_buffer, 0, sizeof(_buffer));
     gettimeofday(&_timestamp, 0);
     _response_body_size = 0;
+    _has_active_cgi = false;
 }
 
 c_client::~c_client() {}

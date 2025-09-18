@@ -172,7 +172,6 @@ void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 	if (bytes_read > 0)
 	{
 	    cgi->append_read_buffer(buffer, bytes_read);
-		
 			
 	    // Vérifier si on a déjà extrait les headers
 	    if (!cgi->headers_parsed())
@@ -220,18 +219,24 @@ void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
 	}
-	else if (bytes_read == 0)
-	{
-		cout << "bytes_read == 0 " << endl;
-		if (client && cgi->get_content_length() == 0)
-    	{
-    	    client->get_write_buffer().append("0\r\n\r\n");
-    	    client->set_state(IDLE);
-    	}
-	}
-
-
+	// else if (bytes_read == 0)
+	// {
+	// 	cout << "bytes_read == 0 " << endl;
+	// 	if (client && cgi->get_content_length() == 0)
+    // 	{
+    // 	    client->get_write_buffer().append("0\r\n\r\n");
+    // 	    client->set_state(IDLE);
+    // 	}
+	// }
 }	
+
+void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
+{
+	char buffer[BUFFER_SIZE];
+	ssize_t bytes;
+
+
+}
 
 void c_server::check_terminated_cgi_processes()
 {
@@ -259,12 +264,12 @@ void c_server::check_terminated_cgi_processes()
             terminated_cgi->set_exit_status(exit_code);
 			
 			cleanup_cgi(terminated_cgi);
-			
         }
     }
 }
 
-void c_server::cleanup_cgi(c_cgi* cgi) {
+void c_server::cleanup_cgi(c_cgi* cgi) 
+{
     if (!cgi) return;
 
     // 1. Fermer les pipes si encore ouverts
@@ -292,13 +297,12 @@ void c_server::cleanup_cgi(c_cgi* cgi) {
 
 	c_client *client = find_client(cgi->get_client_fd());
 	client->set_state(IDLE);
-	remove_client_from_pollout(client->get_fd());
-	cout << "etat du client: " << client->get_state() << endl;
+	// remove_client_from_pollout(client->get_fd());
+	// cout << "etat du client: " << client->get_state() << endl;
     // 4. Libérer la mémoire de l’objet
     delete cgi;
 
     std::cout << "CGI [" << cgi->get_pipe_out() << "] cleaned up successfully" << std::endl;
-
 }
 
 				
@@ -357,6 +361,35 @@ void c_server::handle_poll_events()
 				// Lecture vers CGI
 				if ((pfd.revents & POLLIN) && (fd == cgi->get_pipe_out()))
 					handle_cgi_read(fd, cgi);
+
+				// Gestion POLLHUP pour les pipes CGI
+				if (pfd.revents & POLLHUP)
+				{
+					if (fd == cgi->get_pipe_out())
+					{
+						// Le CGI a ferme stdout - lire les dernieres donnees
+						handle_cgi_final_read(fd, cgi);
+						cgi->mark_stdout_closed();
+					}
+					else if (fd == cgi->get_pipe_in())
+					{
+						// le CGI a ferme stdin
+						cgi->mark_stdin_closed();
+					}
+					// Si les 2 sont fermes, nettoyer le cgi
+					if (cgi->is_finished())
+					{
+						cleanup_cgi(cgi);
+						remove_client(fd);
+					}
+				}
+
+				// Gestion des erreurs
+				if (pfd.revents & (POLLERR | POLLNVAL))
+				{
+					cleanup_cgi(cgi);
+					remove_client(fd);
+				}
 				continue;
 			}
 			c_client *client = find_client(fd);
@@ -368,7 +401,16 @@ void c_server::handle_poll_events()
 			else if (pfd.revents & POLLOUT)
 				handle_client_write(fd);
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				c_cgi* cgi = find_cgi_by_client(client->get_fd());
+				if (cgi)
+				{
+					kill(cgi->get_pid(), SIGTERM);
+					cleanup_cgi(cgi);
+				}
 				remove_client(fd);
+			}
+				
 		}
 	}
 }

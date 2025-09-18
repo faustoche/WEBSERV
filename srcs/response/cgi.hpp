@@ -39,6 +39,8 @@ class c_cgi
         void            set_headers_parsed(bool state) { _headers_parsed = state; };
         void            consume_read_buffer(size_t n);
         void            set_content_length(size_t bytes) { _content_length = bytes; };
+        void            mark_stdin_closed() { _stdin_closed = true; };
+        void            mark_stdout_closed() { _stdout_closed = true; };
 
         void            add_bytes_written(ssize_t bytes) { _bytes_written += bytes; };
         void            append_read_buffer(const char* buffer, ssize_t bytes);
@@ -58,6 +60,8 @@ class c_cgi
         string              _read_buffer; // reponse CGI accumulee
         size_t              _bytes_written;
         size_t              _content_length;
+        bool                _stdout_closed;
+        bool                _stdin_closed;
         bool                _finished;
         bool                _headers_parsed;
 

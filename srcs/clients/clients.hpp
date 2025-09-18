@@ -31,6 +31,7 @@ private:
 	string			_write_buffer;
 	size_t			_bytes_written;
 	size_t			_response_body_size;
+	bool			_has_active_cgi;
 
 public:
 	c_client();
