@@ -35,21 +35,21 @@ void	c_request::read_request(int socket_fd)
 	{
 		fill(buffer, buffer + sizeof(buffer), '\0');
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
-        if (receivedBytes == 0)
-		{
-			if (receivedBytes == 0) 
-			{
-				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-				this->_error = true;
-				return ;
-			} 
-			else
-			{
-				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
-				this->_error = true;
-				return ;
-			}
-		}
+        // if (receivedBytes <= 0)
+		// {
+		// 	if (receivedBytes == 0) 
+		// 	{
+		// 		cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
+		// 		this->_error = true;
+		// 		return ;
+		// 	} 
+		// 	else
+		// 	{
+		// 		cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
+		// 		this->_error = true;
+		// 		return ;
+		// 	}
+		// }
 		buffer[receivedBytes] = '\0';
         request.append(buffer);
 	}

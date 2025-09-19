@@ -166,6 +166,7 @@ void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
 
 void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 {
+	cout << "\n****handle cgi read" << endl;
 	char buffer[1000];
     std::string content_cgi;
     ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer) - 1);
@@ -183,6 +184,7 @@ void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
 	        {
 	            // Séparer headers et premier morceau de body
 	            string headers = cgi->get_read_buffer().substr(0, pos);
+				cout << "headers: " << headers << endl;
 				cgi->set_content_length(extract_content_length(headers));
 	            if (client)
 	            {
@@ -329,7 +331,7 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 	// 4. Libérer la mémoire de l’objet
     delete cgi;
 
-    std::cout << "CGI [" << cgi->get_pipe_out() << "] cleaned up successfully" << std::endl;
+    std::cout << "CGI [" << cgi->get_pipe_out() << "] with pid [" << cgi->get_pid() << "] cleaned up successfully" << std::endl;
 }
 
 				
@@ -402,10 +404,12 @@ void c_server::handle_poll_events()
 				// Gestion POLLHUP pour les pipes CGI
 				if (pfd.revents & POLLHUP)
 				{
-					// cout << __FILE__ << "/" << __LINE__ << endl;
+					cout << __FILE__ << "/" << __LINE__ << endl;
 					if (fd == cgi->get_pipe_out())
 					{
-						cout << cgi->get_pipe_out() << endl;
+						cout << __FILE__ << "/" << __LINE__ << endl;
+						cgi->set_finished(true);
+						// cout << cgi->get_pipe_out() << endl;
 						// Le CGI a ferme stdout - lire les dernieres donnees
 						handle_cgi_final_read(fd, cgi);
 						cgi->mark_stdout_closed();
@@ -421,7 +425,7 @@ void c_server::handle_poll_events()
 						cout << "cgi identifie comme fini" << endl;
 						// c_client *client = find_client(cgi->get_client_fd());
 						cleanup_cgi(cgi);
-						remove_client(fd);
+						// remove_client(fd);
 					}
 				}
 
@@ -429,7 +433,7 @@ void c_server::handle_poll_events()
 				if (pfd.revents & (POLLERR | POLLNVAL))
 				{
 					cleanup_cgi(cgi);
-					remove_client(fd);
+					// remove_client(fd);
 				}
 				continue;
 			}
@@ -559,7 +563,7 @@ void	c_server::handle_client_write(int client_fd)
 	client->set_bytes_written(bytes_written + bytes_sent);
 
 	// Dans handle_client_write
-	cout << "=== ENVOI AU CLIENT ===" << endl;
+	cout << "\n=== ENVOI AU CLIENT ===" << endl;
 	cout << "Total à envoyer: " << client->get_write_buffer().length() << " bytes" << endl;
 	cout << "Reste a envoyer: " << client->get_bytes_written() << endl;
 	cout << "Reponse: " << client->get_write_buffer() << endl;
@@ -575,26 +579,41 @@ void	c_server::handle_client_write(int client_fd)
 		cout << "Réponse envoyée au client " << client_fd << endl;
         // Vérifier si ce client est lié à un CGI terminé
         c_cgi *cgi = find_cgi_by_client(client_fd);
-		if (cgi)
+		if (cgi && !cgi->is_finished())
 		{ 
-			if (cgi->is_finished())
-        	{
-        	    cout << "Suppression du CGI lié au client " << client_fd << endl;
-        	    _active_cgi.erase(cgi->get_pipe_out());
-        	    delete cgi;
-        	}
-			else if (cgi && !cgi->is_finished())
-        	{
-        	    cout << "CGI lié au client " << client_fd << " n'est pas termine" << endl;
-				return ;
-        	}
+			// if (cgi->is_finished())
+        	// {
+			// 	// handle_cgi_final_read(client_fd, cgi);
+        	//     // cout << "Suppression du CGI lié au client " << client_fd << endl;
+			// 	// cleanup_cgi(cgi);
+        	//     // _active_cgi.erase(cgi->get_pipe_out());
+        	//     // delete cgi;
+			// 	cout << "Le client revient en READING" << endl;
+			// 	client->set_bytes_written(0);
+			// 	client->clear_read_buffer();
+			// 	client->clear_write_buffer();
+			// 	cout << "\n=== CLIENT VIDE ===" << endl;
+			// 	cout << "client's read buffer apres clear: " << client->get_read_buffer() << endl; 
+			// 	cout << "client's write buffer apres clear: " << client->get_write_buffer() << endl;
+			// 	cout << "client's bytes written: " << client->get_bytes_written() << endl;
+			// 	client->set_state(READING);
+			// 	return ;
+        	// }
+
+        	cout << "CGI " << cgi->get_pipe_in() << " lié au client " << client_fd << " n'est pas termine" << endl;
+			return ;
 		}
 		// keep-alive
 		cout << "Le client revient en READING" << endl;
 		client->set_bytes_written(0);
 		client->clear_read_buffer();
 		client->clear_write_buffer();
+		cout << "\n=== CLIENT VIDE ===" << endl;
+		cout << "client's read buffer apres clear: " << client->get_read_buffer() << endl; 
+		cout << "client's write buffer apres clear: " << client->get_write_buffer() << endl;
+		cout << "client's bytes written: " << client->get_bytes_written() << endl;
 		client->set_state(READING);
+		return ;
     }
 }
 

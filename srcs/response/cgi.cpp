@@ -5,6 +5,13 @@ _server(server), _client_fd(client_fd), _loc(NULL), _script_name(""), _path_info
 {
     this->_finished = false;
     this->_content_length = 0;
+    this->_headers_parsed = false;
+    this->_content_length = 0;
+    this->_pipe_in = 0;
+    this->_pipe_out = 0;
+    this->_write_buffer.clear();
+    this->_read_buffer.clear();
+    this->_bytes_written = 0;
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
 }

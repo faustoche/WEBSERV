@@ -166,6 +166,7 @@ void	c_response::define_response_content(const c_request &request)
 		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
 		build_cgi_response(*cgi, request);
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
+		
 		return ;
 	}
 	else
