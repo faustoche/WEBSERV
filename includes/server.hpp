@@ -76,8 +76,8 @@ class c_server
 		void		handle_client_read(int client_fd);
 		void		handle_client_write(int client_fd);
 		void		handle_cgi_write(c_cgi* cgi);
-		void		handle_cgi_read(int fd, c_cgi* cgi);
-		void		transfer_by_bytes(c_cgi *cgi, int fd, const string& buffer);
+		void		handle_cgi_read(c_cgi* cgi);
+		void		transfer_by_bytes(c_cgi *cgi, const string& buffer);
 		void 		transfer_with_chunks(c_cgi *cgi, const string& buffer);
 		void		process_client_request(int client_fd);
 		void		cleanup_cgi(c_cgi* cgi);
@@ -87,6 +87,7 @@ class c_server
 		c_location	*find_matching_location(const string &request_path);
 		bool		is_method_allowed(const c_location *location, const string &method);
 		string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
+
 		c_cgi		*find_cgi_by_client(int client_fd);
 		c_cgi 		*find_cgi_by_pid(pid_t pid);
 		int			find_client_fd_by_cgi(c_cgi* cgi);

@@ -151,5 +151,4 @@ void	c_server::print_config() const
 		i++;
 	}
 			
-
 }

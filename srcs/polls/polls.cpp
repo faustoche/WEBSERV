@@ -8,7 +8,6 @@
 * Ajoute les pollfd clients dans le vecteur
 */
 
-
 void c_server::setup_pollfd()
 {
 	_poll_fds.clear();
@@ -103,6 +102,45 @@ size_t	c_server::extract_content_length(string headers)
 	return (content_length);
 }
 
+
+void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer)
+{
+	c_client *client = find_client(cgi->get_client_fd());
+	if (client)
+	{
+	    client->get_write_buffer().append(buffer);
+		cout << "client->get_write_buffer: " << client->get_write_buffer() << endl;
+	    client->set_state(SENDING);
+		client->append_response_body_size(buffer.size());
+		// cgi->consume_read_buffer(buffer.size());
+		
+		cout 
+			<< "**Taille du body: " << client->get_response_body_size() 
+			<< " Content-length attendue: " << cgi->get_content_length() 
+			<< endl;
+			
+		if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
+			cgi->set_finished(true);
+	}
+}
+
+void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
+{
+	c_client *client = find_client(cgi->get_client_fd());
+	if (client)
+	{
+		std::string chunk;
+    	size_t chunk_size = buffer.size();
+
+    	// Construire un chunk avec la taille en hex
+    	chunk = int_to_hex(chunk_size) + "\r\n" +
+    	        buffer + "\r\n";
+		cout << "chunk= " << chunk << endl;
+    	client->get_write_buffer().append(chunk);
+    	client->set_state(SENDING);
+	}
+}
+
 void	c_server::handle_cgi_write(c_cgi* cgi)
 {
 	ssize_t bytes = write(cgi->get_pipe_in(), 
@@ -118,154 +156,128 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	}	
 }
 
-void	c_server::transfer_by_bytes(c_cgi *cgi, int fd, const string& buffer)
+void	c_server::handle_cgi_read(c_cgi* cgi)
 {
-	(void)fd;
-	cout << "Transfer by bytes de buffer: " << buffer << endl;
-	c_client *client = find_client(cgi->get_client_fd());
-	if (client)
-	{
-	    client->get_write_buffer().append(buffer);
-		cout << "client->get_write_buffer: " << client->get_write_buffer() << endl;
-	    client->set_state(SENDING);
-		client->append_response_body_size(buffer.size());
-		cgi->consume_read_buffer(buffer.size());
-		
-		cout 
-			<< "**Taille du body: " << client->get_response_body_size() 
-			<< " Content-length attendue: " << cgi->get_content_length() 
-			<< endl;
-			
-		if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
-		{
-			// cgi->close_cgi();
-			cgi->set_finished(true);
-		}
-	}
-
-}
-
-void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
-{
-	cout << "Transfer by chunks de buffer: " << endl;
-	c_client *client = find_client(cgi->get_client_fd());
-	if (client)
-	{
-		std::string chunk;
-    	size_t chunk_size = buffer.size();
-    	// Construire un chunk avec la taille en hex
-    	chunk = int_to_hex(chunk_size) + "\r\n" +
-    	        buffer + "\r\n";
-		cout << "chunk= " << chunk << endl;
-    	client->get_write_buffer().append(chunk);
-    	client->set_state(SENDING);
-    	// Consommer le buffer CGI une fois transféré
-    	cgi->consume_read_buffer(chunk_size);
-	}
-}
-
-void	c_server::handle_cgi_read(int fd, c_cgi* cgi)
-{
-	cout << "\n****handle cgi read" << endl;
 	char buffer[1000];
-    std::string content_cgi;
-    ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer) - 1);
-	buffer[sizeof(buffer) - 1] = '\0';
-	c_client *client = find_client(cgi->get_client_fd());
-	if (bytes_read > 0)
+	if (sizeof(buffer) < 2)
 	{
-	    cgi->append_read_buffer(buffer, bytes_read);
-			
-	    // Vérifier si on a déjà extrait les headers
-	    if (!cgi->headers_parsed())
-	    {
-	        size_t pos = cgi->get_read_buffer().find("\r\n\r\n");
-	        if (pos != string::npos)
-	        {
-	            // Séparer headers et premier morceau de body
-	            string headers = cgi->get_read_buffer().substr(0, pos);
-				cout << "headers: " << headers << endl;
-				cgi->set_content_length(extract_content_length(headers));
-	            if (client)
-	            {
+		cout << "⚠️ BUFFER_SIZE to small" << endl;
+		return;
+	}
+    std::string content_cgi;
+
+    ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer) - 1);
+	buffer[bytes_read] = '\0';
+
+	c_client *client = find_client(cgi->get_client_fd());
+	if (client)
+	{
+		client->set_response_complete(false);
+		if (bytes_read > 0)
+		{
+		    cgi->append_read_buffer(buffer, bytes_read);
+
+		    // Vérifier si on a déjà extrait les headers
+		    if (!cgi->headers_parsed())
+		    {
+		        size_t pos = cgi->get_read_buffer().find("\r\n\r\n");
+		        if (pos != string::npos)
+		        {
+		            // Séparer headers et premier morceau de body
+		            string headers = cgi->get_read_buffer().substr(0, pos);
+					cgi->set_content_length(extract_content_length(headers));
+
 	                // Construire la réponse HTTP avec headers
 					client->get_write_buffer().append("HTTP/1.1 200 OK\r\n");
 	                client->get_write_buffer().append(headers + "\r\n");
+					if (cgi->get_read_buffer().find("Content-Type") == string::npos)
+						client->get_write_buffer().append("Content-Type: text/plain\r\n");
 					if (cgi->get_content_length() == 0)
 						client->get_write_buffer().append("Transfer-Encoding: chunked\r\n");
 					client->get_write_buffer().append("\r\n");
-					cgi->set_headers_parsed(true);
-					client->set_state(SENDING);
+					pos += 4;
+				}
+				else
+				{
+					if (sizeof(buffer) < 50)
+						return ;
+					// Ou creer des headers si le script CGI n'en transmet pas
+					client->get_write_buffer().append("HTTP/1.1 200 OK\r\n");
+					client->get_write_buffer().append("Content-Type: text/plain\r\n");
+					client->get_write_buffer().append("Transfer-Encoding: chunked\r\n");
+					client->get_write_buffer().append("\r\n");
+				}
 
-					string initial_body = cgi->get_read_buffer().substr(pos + 4);	 
+				cgi->set_headers_parsed(true);
+				client->set_state(SENDING);
 
-    				// Ajouter le premier body s'il existe
-					if (!initial_body.empty())
-					{
-						if (cgi->get_content_length() == 0)
-							transfer_with_chunks(cgi, initial_body);
-						else
-							transfer_by_bytes(cgi, fd, initial_body);
-						cgi->consume_read_buffer(cgi->get_read_buffer().size());
-					}
+				// Ajouter la partie du body deja lue
+				string initial_body;
+				if (pos != string::npos)
+					initial_body = cgi->get_read_buffer().substr(pos);
+				else
+					initial_body = cgi->get_read_buffer();
+				if (!initial_body.empty())
+				{
+					if (cgi->get_content_length() == 0)
+						transfer_with_chunks(cgi, initial_body);
+					else
+						transfer_by_bytes(cgi, initial_body);
+					cgi->consume_read_buffer(cgi->get_read_buffer().size());
 				}
 			}
-		}
-		else
-		{
-			if (cgi->get_content_length() == 0)
-			{
-				transfer_with_chunks(cgi, buffer);
-			}
-
 			else
-				transfer_by_bytes(cgi, fd, buffer);
+			{
+				if (cgi->get_content_length() == 0)
+					transfer_with_chunks(cgi, buffer);
+				else
+					transfer_by_bytes(cgi, buffer);
+				cgi->consume_read_buffer(cgi->get_read_buffer().size());
+			}
 		}
 	}
 }	
 
 void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 {
-	cout << "Handle_cgi_final_read: " << __FILE__ << "/" << __LINE__ << endl; 
-	char buffer[BUFFER_SIZE];
+	cout << "Entree dans final read" << endl;
+	char buffer[1000];
+	ssize_t bytes_read;
 
-	ssize_t bytes_read = read(fd, buffer, sizeof(buffer) - 1);
-	buffer[sizeof(buffer) - 1] = '\0';
 	c_client *client = find_client(cgi->get_client_fd());
-	if (client)
+	while (client &&  (bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0)
 	{
-		if (bytes_read > 0)
-		{
-			cout << "**bytes_read**" << endl;
+		buffer[bytes_read] = '\0';
 
-			cout << "content_length dans final_read: " << cgi->get_content_length() << endl;
-			if (cgi->get_content_length() == 0)
-			{
-				transfer_with_chunks(cgi, buffer);
-			}
-			else
-			transfer_by_bytes(cgi, fd, buffer);
+		if (cgi->get_content_length() == 0)
+		{
+			cout << "Final read transfered with chunks" << endl;
+			transfer_with_chunks(cgi, buffer);
 			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
-		if (bytes_read == 0)
+		else
 		{
-			cout << "pas de bytes_read" << endl;
-			if (cgi->get_content_length() == 0)
-			{
-				cout << "cgi->get_content_length() == 0" << endl;
-				cout << "Transfer by chunks de buffer: " << endl;
-				c_client *client = find_client(cgi->get_client_fd());
-				if (client)
-				{
-					std::string chunk = int_to_hex(0) + "\r\n\r\n";
-					cout << "chunk= " << chunk << endl;
-    				client->get_write_buffer().append(chunk);
-    				client->set_state(SENDING);
-					cgi->consume_read_buffer(5);
-				}
-			}
+			transfer_by_bytes(cgi, buffer);
+			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
 	}
+
+	if (cgi->get_content_length() == 0)
+	{
+		std::string chunk = int_to_hex(0) + "\r\n\r\n";
+		cout << "chunk= " << chunk << endl;
+    	client->get_write_buffer().append(chunk);
+    	client->set_state(SENDING);
+	}
+	cout << "sortie de final read" << endl;
+	client->set_response_complete(true);
+	// cout << "Réponse envoyée au client " << client->get_fd() << endl;
+	// cout << "Le client revient en READING" << endl;
+	// client->set_bytes_written(0);
+	// client->clear_read_buffer();
+	// client->clear_write_buffer();
+	// client->set_state(READING);
+				// cgi->set_finished(true);
 }
 
 void c_server::check_terminated_cgi_processes()
@@ -293,7 +305,6 @@ void c_server::check_terminated_cgi_processes()
             cout << "CGI exited with code: " << exit_code << "\n";
             terminated_cgi->set_exit_status(exit_code);
 			terminated_cgi->set_finished(true);
-			// cleanup_cgi(terminated_cgi);
         }
     }
 }
@@ -324,10 +335,22 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 			<< " exited with code: " << WEXITSTATUS(status) << std::endl;
     }
 
+	c_client *client = find_client(cgi->get_client_fd());
+	if (client && client->get_response_complete())
+	{
+		cout << "Réponse envoyée au client " << client->get_fd() << endl;
+		cout << "Le client revient en READING" << endl;
+		client->set_bytes_written(0);
+		client->clear_read_buffer();
+		client->clear_write_buffer();
+		client->set_state(READING);
+		return ;
+	}
     // 3. Supprimer de la map active_cgi
     _active_cgi.erase(cgi->get_pipe_out());
 	_active_cgi.erase(cgi->get_pipe_in());
-    
+
+
 	// 4. Libérer la mémoire de l’objet
     delete cgi;
 
@@ -349,6 +372,7 @@ void c_server::handle_poll_events()
 {
 	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
+
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 1000);
 	if (num_events < 0)
 	{
@@ -376,6 +400,7 @@ void c_server::handle_poll_events()
 		{
 			if (pfd.revents & POLLIN)
 			{
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_new_connection();
 			}
 			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -387,10 +412,8 @@ void c_server::handle_poll_events()
 		else
 		{
 			int	fd = pfd.fd;
-			/* Si le fd fait partie d'un process cgi */
 			if (_active_cgi.count(fd))
 			{
-				// cout << __FILE__ << "/" << __LINE__ << endl;
 				c_cgi* cgi = _active_cgi[fd];
 
 				// Ecriture vers CGI
@@ -399,19 +422,21 @@ void c_server::handle_poll_events()
 
 				// Lecture vers CGI
 				if ((pfd.revents & POLLIN) && (fd == cgi->get_pipe_out()))
-					handle_cgi_read(fd, cgi);
+					handle_cgi_read(cgi);
 
 				// Gestion POLLHUP pour les pipes CGI
 				if (pfd.revents & POLLHUP)
 				{
-					cout << __FILE__ << "/" << __LINE__ << endl;
+					
 					if (fd == cgi->get_pipe_out())
 					{
-						cout << __FILE__ << "/" << __LINE__ << endl;
-						cgi->set_finished(true);
-						// cout << cgi->get_pipe_out() << endl;
-						// Le CGI a ferme stdout - lire les dernieres donnees
-						handle_cgi_final_read(fd, cgi);
+						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
+						c_client *client = find_client(cgi->get_client_fd());
+						if (client)
+						{
+							cout << "client response is complete" << endl;
+							client->set_response_complete(true);
+						}
 						cgi->mark_stdout_closed();
 					}
 					else if (fd == cgi->get_pipe_in())
@@ -422,29 +447,26 @@ void c_server::handle_poll_events()
 					// Si les 2 sont fermes, nettoyer le cgi
 					if (cgi->is_finished())
 					{
-						cout << "cgi identifie comme fini" << endl;
-						// c_client *client = find_client(cgi->get_client_fd());
+						cout << "CGI is finished" << endl;
 						cleanup_cgi(cgi);
-						// remove_client(fd);
+						return ;
 					}
 				}
 
-				// Gestion des erreurs
-				if (pfd.revents & (POLLERR | POLLNVAL))
-				{
-					cleanup_cgi(cgi);
-					// remove_client(fd);
-				}
+				// // Gestion des erreurs
+				// if (pfd.revents & (POLLERR | POLLNVAL))
+				// {
+				// 	cout << __FILE__ << "/" << __LINE__ << endl;
+				// 	cleanup_cgi(cgi);
+				// }
 				continue;
 			}
-			
 			c_client *client = find_client(fd);
-			
 			if (!client)
 				continue;
 			if (pfd.revents & POLLIN)
 			{
-				// cout << __FILE__ << "/" << __LINE__ << endl;
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
 			}
 			else if (pfd.revents & POLLOUT)
@@ -454,7 +476,7 @@ void c_server::handle_poll_events()
 			}
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				// cout << "****ICI***" << endl;
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				c_cgi* cgi = find_cgi_by_client(client->get_fd());
 				if (cgi)
 				{
@@ -462,8 +484,7 @@ void c_server::handle_poll_events()
 					cleanup_cgi(cgi);
 				}
 				remove_client(fd);
-			}
-				
+			}			
 		}
 	}
 }
@@ -480,6 +501,7 @@ void c_server::handle_poll_events()
 
 void	c_server::handle_new_connection()
 {
+
 	while (true)
 	{
 		socklen_t addrlen = sizeof(_socket_address);
@@ -504,8 +526,10 @@ void c_server::handle_client_read(int client_fd)
 {
 	c_client *client = find_client(client_fd);
 	if (!client)
+	{
+		cout << "Client non trouve ! " << __FILE__ << "/" << __LINE__ << endl;
 		return ;
-
+	}
 	c_request request(*this);
 	request.read_request(client_fd);
 
@@ -540,11 +564,7 @@ void	c_server::handle_client_write(int client_fd)
 
 	size_t remaining = write_buffer.length() - bytes_written;
 	if (remaining == 0)
-	{
 		return ;
-	}
-
-
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
 	size_t bytes_sent = send(client_fd, data_to_send, remaining, 0);
@@ -558,62 +578,34 @@ void	c_server::handle_client_write(int client_fd)
 		return ;
 	}
 
-
-
 	client->set_bytes_written(bytes_written + bytes_sent);
 
-	// Dans handle_client_write
-	cout << "\n=== ENVOI AU CLIENT ===" << endl;
-	cout << "Total à envoyer: " << client->get_write_buffer().length() << " bytes" << endl;
-	cout << "Reste a envoyer: " << client->get_bytes_written() << endl;
-	cout << "Reponse: " << client->get_write_buffer() << endl;
-	if (client->get_bytes_written() >= client->get_write_buffer().length()) 
-	{
+	if ( client->get_response_complete()) 
 	    cout << "✅ ENVOI COMPLET - Réponse complète envoyée" << endl;
-	} else {
-	    cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
-	}
+	else 
+	   cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
+
 
     if (client->get_bytes_written() >= write_buffer.length())
     {
-		cout << "Réponse envoyée au client " << client_fd << endl;
         // Vérifier si ce client est lié à un CGI terminé
         c_cgi *cgi = find_cgi_by_client(client_fd);
 		if (cgi && !cgi->is_finished())
 		{ 
-			// if (cgi->is_finished())
-        	// {
-			// 	// handle_cgi_final_read(client_fd, cgi);
-        	//     // cout << "Suppression du CGI lié au client " << client_fd << endl;
-			// 	// cleanup_cgi(cgi);
-        	//     // _active_cgi.erase(cgi->get_pipe_out());
-        	//     // delete cgi;
-			// 	cout << "Le client revient en READING" << endl;
-			// 	client->set_bytes_written(0);
-			// 	client->clear_read_buffer();
-			// 	client->clear_write_buffer();
-			// 	cout << "\n=== CLIENT VIDE ===" << endl;
-			// 	cout << "client's read buffer apres clear: " << client->get_read_buffer() << endl; 
-			// 	cout << "client's write buffer apres clear: " << client->get_write_buffer() << endl;
-			// 	cout << "client's bytes written: " << client->get_bytes_written() << endl;
-			// 	client->set_state(READING);
-			// 	return ;
-        	// }
-
         	cout << "CGI " << cgi->get_pipe_in() << " lié au client " << client_fd << " n'est pas termine" << endl;
 			return ;
 		}
 		// keep-alive
-		cout << "Le client revient en READING" << endl;
-		client->set_bytes_written(0);
-		client->clear_read_buffer();
-		client->clear_write_buffer();
-		cout << "\n=== CLIENT VIDE ===" << endl;
-		cout << "client's read buffer apres clear: " << client->get_read_buffer() << endl; 
-		cout << "client's write buffer apres clear: " << client->get_write_buffer() << endl;
-		cout << "client's bytes written: " << client->get_bytes_written() << endl;
-		client->set_state(READING);
-		return ;
+		if (client->get_response_complete())
+		{
+			cout << "Réponse envoyée au client " << client_fd << endl;
+			cout << "Le client revient en READING" << endl;
+			client->set_bytes_written(0);
+			client->clear_read_buffer();
+			client->clear_write_buffer();
+			client->set_state(READING);
+			return ;
+		}
     }
 }
 

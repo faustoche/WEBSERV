@@ -1,12 +1,16 @@
 #include "cgi.hpp"
 
 c_cgi::c_cgi(c_server& server, int client_fd) : 
-_server(server), _client_fd(client_fd), _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
+_server(server), _client_fd(client_fd)
 {
+    this->_loc = NULL;
+    this->_script_name = "";
+    this->_path_info = "";
+    this->_translated_path ="";
+    this->_interpreter = "";
     this->_finished = false;
     this->_content_length = 0;
     this->_headers_parsed = false;
-    this->_content_length = 0;
     this->_pipe_in = 0;
     this->_pipe_out = 0;
     this->_write_buffer.clear();
@@ -28,7 +32,7 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_finished = other._finished;
     this->_map_env_vars = other._map_env_vars;
     this->_vec_env_vars = other._vec_env_vars;
-    this->_socket_fd = other._socket_fd;
+    // this->_socket_fd = other._socket_fd;
     this->_status_code = other._status_code;
     this->_loc = other._loc;
     this->_script_name = other._script_name;
@@ -51,9 +55,11 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_read_buffer = rhs._read_buffer;
         this->_bytes_written = rhs._bytes_written;
         this->_finished = rhs._finished;
+        this->_content_length = rhs._content_length;
+        this->_headers_parsed = rhs._headers_parsed;
         this->_map_env_vars = rhs._map_env_vars;
         this->_vec_env_vars = rhs._vec_env_vars;
-        this->_socket_fd = rhs._socket_fd;
+        // this->_socket_fd = rhs._socket_fd;
         this->_status_code = rhs._status_code;
         this->_loc = rhs._loc;
         this->_script_name = rhs._script_name;
