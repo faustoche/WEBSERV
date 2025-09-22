@@ -240,7 +240,6 @@ void	c_server::handle_cgi_read(c_cgi* cgi)
 
 void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 {
-	cout << "Entree dans final read" << endl;
 	char buffer[1000];
 	ssize_t bytes_read;
 
@@ -251,7 +250,6 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 
 		if (cgi->get_content_length() == 0)
 		{
-			cout << "Final read transfered with chunks" << endl;
 			transfer_with_chunks(cgi, buffer);
 			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
@@ -265,11 +263,9 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	if (cgi->get_content_length() == 0)
 	{
 		std::string chunk = int_to_hex(0) + "\r\n\r\n";
-		cout << "chunk= " << chunk << endl;
     	client->get_write_buffer().append(chunk);
     	client->set_state(SENDING);
 	}
-	cout << "sortie de final read" << endl;
 	client->set_response_complete(true);
 }
 
@@ -310,7 +306,7 @@ void c_server::cleanup_cgi(c_cgi* cgi)
     if (cgi->get_pipe_in() > 0) 
 	{
         close(cgi->get_pipe_in());
-        remove_client(cgi->get_pipe_in()); // supprime du vecteur pollfds
+        remove_client(cgi->get_pipe_in());
     }
     if (cgi->get_pipe_out() > 0) 
 	{
@@ -331,7 +327,7 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client && client->get_response_complete())
 	{
-		cout << "Réponse envoyée au client " << client->get_fd() << endl;
+		cout << "✅ ENVOI COMPLET - Réponse complète envoyée au client " << client->get_fd() << endl;
 		cout << "Le client revient en READING" << endl;
 		client->set_bytes_written(0);
 		client->clear_read_buffer();
@@ -397,7 +393,6 @@ void c_server::handle_poll_events()
 			int	fd = pfd.fd;
 			if (_active_cgi.count(fd))
 			{
-				// cout << __FILE__ << "/" << __LINE__ << endl;
 				c_cgi* cgi = _active_cgi[fd];
 				c_client *client = find_client(cgi->get_client_fd());
 				if (!client)
@@ -418,7 +413,6 @@ void c_server::handle_poll_events()
 					if (fd == cgi->get_pipe_out())
 					{
 						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
-						cout << "client response is complete" << endl;
 						client->set_response_complete(true);
 						cgi->mark_stdout_closed();
 					}
@@ -430,18 +424,10 @@ void c_server::handle_poll_events()
 					// Si les 2 sont fermes, nettoyer le cgi
 					if (cgi->is_finished())
 					{
-						cout << "CGI is finished" << endl;
 						cleanup_cgi(cgi);
 						return ;
 					}
 				}
-
-				// // Gestion des erreurs
-				// if (pfd.revents & (POLLERR | POLLNVAL))
-				// {
-				// 	cout << __FILE__ << "/" << __LINE__ << endl;
-				// 	cleanup_cgi(cgi);
-				// }
 				continue;
 			}
 			c_client *client = find_client(fd);
@@ -457,7 +443,6 @@ void c_server::handle_poll_events()
 			}
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				cout << __FILE__ << "/" << __LINE__ << endl;
 				c_cgi* cgi = find_cgi_by_client(client->get_fd());
 				if (cgi)
 				{
@@ -524,7 +509,6 @@ void c_server::handle_client_read(int client_fd)
 	c_response response(*this, client_fd);
 	response.define_response_content(request);
 
-	
 	if (response.get_is_cgi())
 		client->set_state(PROCESSING);
 	else
@@ -557,7 +541,6 @@ void	c_server::handle_client_write(int client_fd)
 
 	const string	&write_buffer = client->get_write_buffer();
 	size_t bytes_written = client->get_bytes_written();
-	// cout << "write_buffer: " << write_buffer << endl;
 
 	size_t remaining = write_buffer.length() - bytes_written;
 	if (remaining == 0)
@@ -565,13 +548,9 @@ void	c_server::handle_client_write(int client_fd)
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
 	size_t bytes_sent = send(client_fd, data_to_send, remaining, MSG_NOSIGNAL);
-	if (bytes_sent < remaining) 
-	{
-    	cout << "WARNING: Partial send! Need to continue..." << endl;
-    }
 	if (bytes_sent <= 0)
 	{
-		cout << "WARNING: pb de sent" << endl;
+		cout << "⚠️ WARNING: pb de sent" << endl;
 		close(client_fd);
 		remove_client(client_fd);
 		return ;
@@ -590,15 +569,15 @@ void	c_server::handle_client_write(int client_fd)
 			return ;
 		}
 
-		if (cgi && client->get_response_complete()) 
-	    	cout << "✅ ENVOI COMPLET - Réponse complète envoyée" << endl;
-		else 
-	   		cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
+		// if (cgi && client->get_response_complete()) 
+	    // 	cout << "✅ ENVOI COMPLET - Réponse complète envoyée" << endl;
+		// else 
+	   	// 	cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
 
 		// keep-alive
 		if (!cgi || (cgi->is_finished() && client->get_response_complete()))
 		{
-			cout << "Réponse envoyée au client " << client_fd << endl;
+			cout << "✅ ENVOI COMPLET - Réponse complète envoyée au client " << client_fd << endl;
 			cout << "Le client revient en READING" << endl;
 			client->set_bytes_written(0);
 			client->clear_read_buffer();
