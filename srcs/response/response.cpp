@@ -85,6 +85,7 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
 
@@ -92,8 +93,9 @@ void	c_response::define_response_content(const c_request &request)
 		this->_is_cgi = true;
 
 
-	if (matching_location == NULL)
+	if (matching_location == NULL) // si on a une requete vers un dossier qui ne matche avec aucune location, sinon build la reponse avec le fichier index
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		cout << "Error: no location found for target: " << target  << endl;
 		build_error_response(404, version, request);
 		return ;
@@ -119,21 +121,24 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	string file_path = _server.convert_url_to_file_path(matching_location, target, "www");
+	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		_file_content = load_file_content(file_path);
 	}
 	if (_file_content.empty())
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
 			this->_is_cgi = false;	
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		build_error_response(404, version, request);
 	}
 	if (this->_is_cgi)

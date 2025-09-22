@@ -3,6 +3,7 @@
 // En-tête HTTP obligatoire pour CGI
 header("Content-Type: text/html; charset=UTF-8");
 
+
 // Contenu HTML
 echo "<!DOCTYPE html>";
 echo "<html lang='fr'>";

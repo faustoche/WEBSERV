@@ -7,7 +7,7 @@ c_server::c_server()
 	// _names.push_back("default server");
 	// _ip = "0.0.0.0";
 	// _port = 80;
-	// _root = "./"; // dossier courrant
+	// _root = "./"; // dossier courrant --> comparer utilisation avec default_root
 	// _indexes.push_back("index.html");
 	// _body_size = 1024 * 1024; // kilo octet converti en octet ---> ou 0 ?
 	// _err_pages = /* generer une page html simple si non configure */
