@@ -271,13 +271,6 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	}
 	cout << "sortie de final read" << endl;
 	client->set_response_complete(true);
-	// cout << "Réponse envoyée au client " << client->get_fd() << endl;
-	// cout << "Le client revient en READING" << endl;
-	// client->set_bytes_written(0);
-	// client->clear_read_buffer();
-	// client->clear_write_buffer();
-	// client->set_state(READING);
-				// cgi->set_finished(true);
 }
 
 void c_server::check_terminated_cgi_processes()
@@ -387,22 +380,12 @@ void c_server::handle_poll_events()
 		struct pollfd &pfd = _poll_fds[i];
 		if (pfd.revents == 0)
 			continue ;
-
-		// cout << "fd=" << pfd.fd << " revents=" << pfd.revents;
-    	// if (pfd.revents & POLLIN) cout << " POLLIN";
-    	// if (pfd.revents & POLLOUT) cout << " POLLOUT"; 
-    	// if (pfd.revents & POLLHUP) cout << " POLLHUP";
-    	// if (pfd.revents & POLLERR) cout << " POLLERR";
-    	// cout << endl;
 		
 		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
 		if (i == 0)
 		{
 			if (pfd.revents & POLLIN)
-			{
-				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_new_connection();
-			}
 			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
 				cerr << "Error: Socket server\n";
@@ -414,7 +397,11 @@ void c_server::handle_poll_events()
 			int	fd = pfd.fd;
 			if (_active_cgi.count(fd))
 			{
+				// cout << __FILE__ << "/" << __LINE__ << endl;
 				c_cgi* cgi = _active_cgi[fd];
+				c_client *client = find_client(cgi->get_client_fd());
+				if (!client)
+					continue ;
 
 				// Ecriture vers CGI
 				if ((pfd.revents & POLLOUT) && (fd == cgi->get_pipe_in()))
@@ -431,12 +418,8 @@ void c_server::handle_poll_events()
 					if (fd == cgi->get_pipe_out())
 					{
 						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
-						c_client *client = find_client(cgi->get_client_fd());
-						if (client)
-						{
-							cout << "client response is complete" << endl;
-							client->set_response_complete(true);
-						}
+						cout << "client response is complete" << endl;
+						client->set_response_complete(true);
 						cgi->mark_stdout_closed();
 					}
 					else if (fd == cgi->get_pipe_in())
@@ -466,12 +449,10 @@ void c_server::handle_poll_events()
 				continue;
 			if (pfd.revents & POLLIN)
 			{
-				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
 			}
 			else if (pfd.revents & POLLOUT)
 			{
-				// cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_write(fd);
 			}
 			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
@@ -530,15 +511,28 @@ void c_server::handle_client_read(int client_fd)
 		cout << "Client non trouve ! " << __FILE__ << "/" << __LINE__ << endl;
 		return ;
 	}
+
 	c_request request(*this);
 	request.read_request(client_fd);
+	if (request.get_error())
+	{
+		close(client_fd);
+		remove_client(client_fd);
+		return ;
+	}
 
 	c_response response(*this, client_fd);
 	response.define_response_content(request);
-	// client->get_write_buffer() = response.get_response();
+
+	
+	if (response.get_is_cgi())
+		client->set_state(PROCESSING);
+	else
+	{
+		client->get_write_buffer() = response.get_response();
+		client->set_state(SENDING);
+	}
 	client->set_bytes_written(0);
-	// SENDING OU PROCESSING ?
-	client->set_state(PROCESSING);
 	cout << "Requête processee par le client " << client_fd << endl;
 }
 
@@ -557,17 +551,20 @@ void	c_server::handle_client_write(int client_fd)
 {
 	c_client *client = find_client(client_fd);
 	if (client == NULL)
+	{
 		return ;
+	}
 
 	const string	&write_buffer = client->get_write_buffer();
 	size_t bytes_written = client->get_bytes_written();
+	// cout << "write_buffer: " << write_buffer << endl;
 
 	size_t remaining = write_buffer.length() - bytes_written;
 	if (remaining == 0)
 		return ;
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
-	size_t bytes_sent = send(client_fd, data_to_send, remaining, 0);
+	size_t bytes_sent = send(client_fd, data_to_send, remaining, MSG_NOSIGNAL);
 	if (bytes_sent < remaining) 
 	{
     	cout << "WARNING: Partial send! Need to continue..." << endl;
@@ -575,15 +572,12 @@ void	c_server::handle_client_write(int client_fd)
 	if (bytes_sent <= 0)
 	{
 		cout << "WARNING: pb de sent" << endl;
+		close(client_fd);
+		remove_client(client_fd);
 		return ;
 	}
 
 	client->set_bytes_written(bytes_written + bytes_sent);
-
-	if ( client->get_response_complete()) 
-	    cout << "✅ ENVOI COMPLET - Réponse complète envoyée" << endl;
-	else 
-	   cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
 
 
     if (client->get_bytes_written() >= write_buffer.length())
@@ -595,8 +589,14 @@ void	c_server::handle_client_write(int client_fd)
         	cout << "CGI " << cgi->get_pipe_in() << " lié au client " << client_fd << " n'est pas termine" << endl;
 			return ;
 		}
+
+		if (cgi && client->get_response_complete()) 
+	    	cout << "✅ ENVOI COMPLET - Réponse complète envoyée" << endl;
+		else 
+	   		cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
+
 		// keep-alive
-		if (client->get_response_complete())
+		if (!cgi || (cgi->is_finished() && client->get_response_complete()))
 		{
 			cout << "Réponse envoyée au client " << client_fd << endl;
 			cout << "Le client revient en READING" << endl;

@@ -25,37 +25,43 @@ void	c_request::read_request(int socket_fd)
 {
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
-	string	request;
 	
 	this->init_request();
 	this->_socket_fd = socket_fd;
 
+
 	/* ----- Lire jusqu'a la fin des headers ----- */
-	while (request.find("\r\n\r\n") == string::npos)
+	while (_buffered_data.find("\r\n\r\n") == string::npos)
 	{
 		fill(buffer, buffer + sizeof(buffer), '\0');
-		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
-        // if (receivedBytes <= 0)
-		// {
-		// 	if (receivedBytes == 0) 
-		// 	{
-		// 		cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-		// 		this->_error = true;
-		// 		return ;
-		// 	} 
-		// 	else
-		// 	{
-		// 		cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
-		// 		this->_error = true;
-		// 		return ;
-		// 	}
-		// }
+		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
+        if (receivedBytes <= 0)
+		{
+			if (receivedBytes == 0) 
+			{
+				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
+				this->_error = true;
+				// close(this->_socket_fd);
+				return ;
+			} 
+			else
+			{
+				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
+				this->_error = true;
+				// close(this->_socket_fd);
+				return ;
+			}
+		}
 		buffer[receivedBytes] = '\0';
-        request.append(buffer);
+        _buffered_data.append(buffer);
 	}
+	size_t pos = _buffered_data.find("\r\n\r\n") + 4;
+	string request = _buffered_data.substr(0, pos);
+	_buffered_data.erase(0, pos);
 	this->parse_request(request);
 	
 	/* -----Lire le body -----*/
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
 
 	if (!this->_error)

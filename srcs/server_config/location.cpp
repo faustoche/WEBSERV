@@ -45,8 +45,22 @@ c_location const&    c_location::operator=(c_location const & rhs)
     return *this;
 }
 
+/*-------------------- getters --------------------*/
+string c_location::extract_interpreter(string const& extension) const
+{
+    string empty_string = "";
 
-/*-------------------- setters  -------------------*/
+    if (this->_cgi_extension.empty())
+        return (empty_string);
+
+    map<string, string>::const_iterator it = this->_cgi_extension.find(extension);
+    if (it != this->_cgi_extension.end())
+        return (it->second);
+    else
+        return (empty_string);
+}
+
+/*-------------------- setters --------------------*/
 
 
 /*--------------------- utils  --------------------*/

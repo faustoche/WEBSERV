@@ -142,6 +142,7 @@ void	c_request::init_request()
 	this->_query.clear();
 	this->_target.clear();
 	this->_version.clear();
+	this->_path.clear();
 	this->_body.clear();
 	this->_chunk_accumulator.clear();
 	this->_status_code = 200;
@@ -152,6 +153,7 @@ void	c_request::init_request()
 	this->_request_fully_parsed = false;
 	this->_error = false; 
 	this->_content_length = 0;
+	this->_chunk_line_count = 0;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
 		it->second = "";

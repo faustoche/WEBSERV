@@ -90,6 +90,7 @@ int main(void)
 		server.setup_pollfd();
 		server.handle_poll_events();	
 	}
+	cout << "On close le serveur" << endl;
 	close(server.get_socket_fd());
 	return (0);
 }

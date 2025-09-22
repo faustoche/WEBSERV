@@ -151,7 +151,8 @@ void	c_response::define_response_content(const c_request &request)
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
-			
+			cout << __FILE__ << "/" << __LINE__ << endl;
+			this->_is_cgi = false;	
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
@@ -162,11 +163,14 @@ void	c_response::define_response_content(const c_request &request)
 		cout << "Process cgi identified" << endl;
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
 		cgi->set_script_filename(file_path);
-		cgi->init_cgi(request, *matching_location);
+		if (cgi->init_cgi(request, *matching_location))
+		{
+			build_error_response(404, version, request);
+			return ;
+		}
 		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
 		build_cgi_response(*cgi, request);
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
-		
 		return ;
 	}
 	else
@@ -406,6 +410,8 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	}
 	else 
 		content += "<li>Cannot read directory</li>";
+
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	content += "</ul><hr></body></html>";
 	ostringstream oss;
 	oss << content.length();

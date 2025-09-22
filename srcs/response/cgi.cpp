@@ -168,16 +168,16 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc)
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
     string extension = find_extension(this->_script_filename);
+
     if (extension.size() > 0)
-    {
-        this->_interpreter = loc.get_cgi().at(extension);
-    }
+        this->_interpreter = loc.extract_interpreter(extension);
+    if (this->_interpreter.empty())
+        return (1);
 
     /* Construction de l'environnement pour l'execution du script */
     set_environment(request);
 
     return (0);
-
 }
 
 void  c_cgi::vectorize_env()
@@ -280,7 +280,6 @@ string  c_cgi::launch_cgi(const string &body)
 
     /**** Processus parent ****/
 
-    cout << "pid parent" << endl;
     close(server_to_cgi[0]);
     close(cgi_to_server[1]);
 

@@ -84,6 +84,7 @@ class c_request
         string              _query;
         string              _path;
         string              _body;
+        string              _buffered_data;
         map<string, string> _headers;
 
 		int                 _status_code;
