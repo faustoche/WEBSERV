@@ -85,22 +85,42 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 
-	cout << __FILE__ << "/" << __LINE__ << endl;
+	
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
-
-	if (matching_location == NULL) // si on a une requete vers un dossier qui ne matche avec aucune location, sinon build la reponse avec le fichier index
-	{
+	
+	if (matching_location == NULL) 
+	{// si on a une requete vers un dossier qui ne matche avec aucune location, sinon build la reponse avec le fichier index s'il existe ou faire un listing du server
+		string full_path = _server.get_root() + target;
 		cout << __FILE__ << "/" << __LINE__ << endl;
-		cout << "Error: no location found for target: " << target  << endl;
-		build_error_response(404, version, request);
-		return ;
-	}
+		if (is_directory(full_path))
+		{
+			cout << __FILE__ << "/" << __LINE__ << endl;
+			if (_server.get_indexes().empty())
+			{
+				cout << __FILE__ << "/" << __LINE__ << endl;
+				cout << "Error: no location found for target: " << target  << endl;
+				build_error_response(404, version, request);
+				return ;
+			}
+			
+			cout << CYAN << get_valid_index(_server.get_indexes()) << RESET << endl;
+			if (target == "/" && get_valid_index(_server.get_indexes()).empty())
+			{ // pb pas empty ici --> PB = trouver autre moyen de verifier si l'index est valid
+				target = "/" + get_valid_index(_server.get_indexes());
 
+				cout << RED "*target = " << target << RESET << endl;
+			}
+			// target = "/index.html";
+		}
+		
+			
+	}
+	cout << RED "**target = " << target << RESET << endl;
 	/***************/
 
 	if (!_server.is_method_allowed(matching_location, method))
@@ -121,7 +141,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
+	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www"); // REVOIR
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
@@ -134,12 +154,17 @@ void	c_response::define_response_content(const c_request &request)
 		cout << __FILE__ << "/" << __LINE__ << endl;
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
-			this->_is_cgi = false;	
+			this->_is_cgi = false;
+			cout << RED << __LINE__ << "file path " << file_path << RESET << endl;
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
 		cout << __FILE__ << "/" << __LINE__ << endl;
-		build_error_response(404, version, request);
+		if (_server.get_indexes().empty())
+		{
+			cout << __FILE__ << "/" << __LINE__ << endl;
+			build_error_response(404, version, request);
+		}
 	}
 	if (this->_is_cgi)
 	{
@@ -156,8 +181,14 @@ void	c_response::define_response_content(const c_request &request)
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		return ;
 	}
+	// if (target == "/")
+	// {
+
+	// }
+
 	else
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		build_success_response(file_path, version, request);
 	}
 }
@@ -393,7 +424,7 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 		}
 		closedir(dir);
 	}
-	else 
+	else
 		content += "<li>Cannot read directory</li>";
 
 	cout << __FILE__ << "/" << __LINE__ << endl;
@@ -489,13 +520,12 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
-	
 	if (location == NULL)
 	{
 		string index = get_valid_index(this->get_indexes());
 		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
-			return (default_root + "/" + index);
+			return (default_root + index);
 		return (default_root + request_path);
 	}
 	string location_root = location->get_alias();
@@ -510,14 +540,14 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			relative_path = relative_path.substr(1);
 	}
 	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
-	if (is_directory(location_root + "/" + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 		{
-			return (location_root + "/" + relative_path);
+			return (location_root + relative_path);
 		}
 		else
 		{
@@ -525,7 +555,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				// 1. essaye index.html 
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + "/" + relative_path + index_files[i]; // on itere dans les index
+				string index_path = location_root + relative_path + index_files[i]; // on itere dans les index
 				ifstream file_checker(index_path.c_str());
 				if (file_checker.is_open()) // est-ce que le fichier existe? est-ce que j'ai reussi a l'ouvrir
 				{
@@ -534,9 +564,9 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				}
 				file_checker.close();
 			}
-			// aucun fichier inde xtrouve alors on retourne le premier de la liste car il renverra une erreur 404
-			return (location_root + "/" + relative_path + index_files[0]);
+			// aucun fichier index trouve alors on retourne le premier de la liste car il renverra une erreur 404
+			return (location_root + relative_path + index_files[0]);
 		}
 	}
-	return (location_root + "/" + relative_path);
+	return (location_root + relative_path);
 }
