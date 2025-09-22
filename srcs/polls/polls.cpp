@@ -126,6 +126,7 @@ void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer)
 
 void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
 {
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client)
 	{
@@ -135,9 +136,11 @@ void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
     	// Construire un chunk avec la taille en hex
     	chunk = int_to_hex(chunk_size) + "\r\n" +
     	        buffer + "\r\n";
-		cout << "chunk= " << chunk << endl;
+		cout << "Envoi d'un chunk de taille " << chunk_size << " octets" << endl;
     	client->get_write_buffer().append(chunk);
-    	client->set_state(SENDING);
+
+		if (client->get_state() != SENDING)
+    		client->set_state(SENDING);
 	}
 }
 
@@ -220,7 +223,10 @@ void	c_server::handle_cgi_read(c_cgi* cgi)
 				if (!initial_body.empty())
 				{
 					if (cgi->get_content_length() == 0)
+					{
+						cout << __FILE__ << "/" << __LINE__ << endl;
 						transfer_with_chunks(cgi, initial_body);
+					}
 					else
 						transfer_by_bytes(cgi, initial_body);
 					cgi->consume_read_buffer(cgi->get_read_buffer().size());
@@ -409,7 +415,6 @@ void c_server::handle_poll_events()
 				// Gestion POLLHUP pour les pipes CGI
 				if (pfd.revents & POLLHUP)
 				{
-					
 					if (fd == cgi->get_pipe_out())
 					{
 						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
@@ -533,6 +538,7 @@ void c_server::handle_client_read(int client_fd)
 
 void	c_server::handle_client_write(int client_fd)
 {
+	// cout << __FILE__ << "/" << __LINE__ << endl;
 	c_client *client = find_client(client_fd);
 	if (client == NULL)
 	{
@@ -577,6 +583,8 @@ void	c_server::handle_client_write(int client_fd)
 		// keep-alive
 		if (!cgi || (cgi->is_finished() && client->get_response_complete()))
 		{
+			cout << __FILE__ << "/" << __LINE__ << endl;
+			
 			cout << "✅ ENVOI COMPLET - Réponse complète envoyée au client " << client_fd << endl;
 			cout << "Le client revient en READING" << endl;
 			client->set_bytes_written(0);
