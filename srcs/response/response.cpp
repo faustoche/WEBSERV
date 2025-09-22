@@ -69,12 +69,9 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
-
 	/***** VÉRIFICATIONS *****/
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
-		cout << RED << __LINE__ << " " << __FILE__ << RESET << endl;
 		build_error_response(405, version, request);
 		return ;
 	}
