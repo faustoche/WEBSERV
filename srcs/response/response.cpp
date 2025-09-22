@@ -498,7 +498,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		{
 			// if (!relative_path.empty())
 			// 	relative_path = '/' + relative_path;
-			return (location_root + "/" + relative_path);
+			return (location_root + relative_path);
 		}
 		else
 		{
