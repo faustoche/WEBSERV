@@ -30,7 +30,7 @@ public:
 		void								set_body_size(size_t const & size) {this->_location_body_size = size; };
 		void								set_auto_index(bool const & index) {this->_auto_index = index; };
 		void								set_redirect(pair<int, string> redirect) {this->_redirect = redirect; };
-		void								set_cgi(map<string, string> cgi) {this->_cgi_extension = cgi; };
+		void								set_cgi(string extension, string path);
 		void								set_upload_path(string const & path) {this->_upload_path = path; };
 		void								set_is_directory(bool const & dir) {this->_is_directory = dir; };	
 		void								set_err_pages(map<int, string> err_pages) {this->_location_err_pages = err_pages; };
@@ -55,6 +55,7 @@ public:
 		void								print_indexes() const;
 		void								print_methods() const;
 		void								print_error_page() const;
+		void								print_cgi() const;
 
 		void								clear_cgi();
 		void								clear_indexes();

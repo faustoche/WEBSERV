@@ -13,6 +13,9 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
     _auto_index = false;
     _upload_path = "";
     _cgi_extension.clear();
+    _location_methods.push_back("GET");
+    _location_methods.push_back("POST");
+    _location_methods.push_back("DELETE");
 }
 
 
@@ -62,6 +65,12 @@ string c_location::extract_interpreter(string const& extension) const
 
 /*-------------------- setters --------------------*/
 
+void    c_location::set_cgi(string extension, string path)
+{
+    if (_cgi_extension.find(extension) != _cgi_extension.end())
+        return;
+    _cgi_extension[extension] = path;
+}
 
 /*--------------------- utils  --------------------*/
 
@@ -98,7 +107,6 @@ void	c_location::print_methods() const
 
 void	c_location::print_error_page() const
 {
-    
     if (_location_err_pages.empty())
         cout << "No error pages defined" << endl;
     else
@@ -111,6 +119,19 @@ void	c_location::print_error_page() const
     }
 }
 
+void    c_location::print_cgi() const
+{
+    if (_cgi_extension.empty())
+        cout << "               No cgi defined" << endl;
+    else
+    {
+	    for (map<string, string>::const_iterator it = _cgi_extension.begin(); it != _cgi_extension.end(); ++it)
+	    {
+
+	    	cout << "		" << it->first << " " << it->second << " " << endl;
+	    }
+    }
+}
 
 void    c_location::print_location() const
 {
@@ -131,14 +152,14 @@ void    c_location::print_location() const
     cout << endl
             << "            upload path: " << get_upload_path() << endl
             // << "Redirect = " << get_redirect() << endl
-            << "            CGI extension (.py): " << get_cgi().at(".py")<< endl
-            << "            CGI extension (.sh): " << get_cgi().at(".sh") << endl
-            << "            is directory: ";
-            if (get_bool_is_directory())
-                cout << "yes";
-            else
-                cout << "no";
-    cout << endl
+            << "            CGI extensions:" << endl;
+            print_cgi();
+    // cout    << "            is directory: ";
+    //         if (get_bool_is_directory())
+    //             cout << "yes";
+    //         else
+    //             cout << "no";
+    cout
             << "            Error pages = " << endl;
             print_error_page();
 }

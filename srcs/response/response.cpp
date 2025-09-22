@@ -85,33 +85,12 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 
-	/* A SUPPRIMER */
-	c_location loc;
-	map<string, string> cgi_extension;
-	cgi_extension[".php"] = "/usr/bin/php-cgi";
-	cgi_extension[".py"] = "/usr/bin/python3";
-	loc.set_url_key("/cgi-bin");
-	loc.set_alias("./www/cgi-bin");
-	loc.set_cgi(cgi_extension);
-	loc.set_auto_index(true);
-	// vector<string> index_file;
-	// index_file.push_back("index.py");
-	// loc.set_index_files(index_file);
-
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
-	/* A SUPPRIMER */
-	if (target.find("cgi") != string::npos)
-	{
-		this->_is_cgi = true;
-		request.print_full_request();
-		matching_location = &loc;
-	}
-	/***************/
 
 	if (matching_location == NULL)
 	{
@@ -144,14 +123,13 @@ void	c_response::define_response_content(const c_request &request)
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
+	{
 		_file_content = load_file_content(file_path);
-
-	/* SI AUCUN FICHIER, GENERER UNE PAGE QUI LISTE LES FICHIERS DU DOSSIER */
+	}
 	if (_file_content.empty())
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
-			cout << __FILE__ << "/" << __LINE__ << endl;
 			this->_is_cgi = false;	
 			build_directory_listing_response(file_path, version, request);
 			return ;
@@ -174,7 +152,9 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 	else
+	{
 		build_success_response(file_path, version, request);
+	}
 }
 
 /* Proceed to load the file content. Nothing else to say. */
@@ -515,7 +495,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 	}
 	string location_root = location->get_alias();
 	string location_key = location->get_url_key();
-
 	// calculer le chemin relatif en enlevant la partie location du chemin de requete
 	string relative_path;
 	if (request_path.find(location_key) == 0) // on verifie si l'url commence par le pattern de la location

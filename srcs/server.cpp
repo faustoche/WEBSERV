@@ -9,7 +9,7 @@ c_server::c_server()
 	// _port = 80;
 	// _root = "./"; // dossier courrant
 	// _indexes.push_back("index.html");
-	// _body_size = 1 * 1024; // kilo octet converti en octet ---> ou 0 ?
+	// _body_size = 1024 * 1024; // kilo octet converti en octet ---> ou 0 ?
 	// _err_pages = /* generer une page html simple si non configure */
 }
 c_server::~c_server()

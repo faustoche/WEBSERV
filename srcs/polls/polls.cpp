@@ -497,6 +497,7 @@ void c_server::handle_client_read(int client_fd)
 		return ;
 	}
 
+<<<<<<< HEAD
 	c_request request(*this);
 	request.read_request(client_fd);
 	if (request.get_error())
@@ -516,6 +517,15 @@ void c_server::handle_client_read(int client_fd)
 		client->get_write_buffer() = response.get_response();
 		client->set_state(SENDING);
 	}
+=======
+	cout << "client_fd: " << client_fd << endl;
+	c_request request;
+	request.read_request(client_fd);
+	request.print_full_request();
+	c_response response;
+	response.define_response_content(request, *this);
+	client->get_write_buffer() = response.get_response();
+>>>>>>> cassou
 	client->set_bytes_written(0);
 	cout << "Requête processee par le client " << client_fd << endl;
 }
