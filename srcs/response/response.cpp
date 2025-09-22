@@ -119,8 +119,8 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	string file_path = _server.convert_url_to_file_path(matching_location, target, "www");
-
+	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
+	cout << "file_path: " << file_path << endl;
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
@@ -214,24 +214,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	if (cgi.get_interpreter().empty())
 		return ;
 	string content_cgi = cgi.launch_cgi(request_body);
-	// cgi.get_header_from_cgi(*this, content_cgi);
-	// cgi.set_headers_parsed(true);
-	// this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
-	// this->_response += "Server: webserv/1.0\r\n";
-	// if (!get_header_value("Content-Type").empty())
-	// 	this->_response += "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
-	// else
-	// 	this->_response += "Content-Type: text/plain\r\n";
-	// this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
 
-	// string connection;
-	// connection = request.get_header_value("Connection");
-	// if (connection.empty())
-	// 	connection = "keep-alive";
-	// this->_response += "Connection: " + connection + "\r\n";
-
-	// this->_response += "\r\n";
-	// this->_response += get_body() + "\r\n";
 }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
@@ -391,7 +374,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	else 
 		content += "<li>Cannot read directory</li>";
 
-	cout << __FILE__ << "/" << __LINE__ << endl;
 	content += "</ul><hr></body></html>";
 	ostringstream oss;
 	oss << content.length();
@@ -503,15 +485,19 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		// on tej les // qui sont en plus pour evciter les doublons
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
+		// if (!relative_path.empty())
+		// 		relative_path = '/' + relative_path;
 	}
 	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
-	if (is_directory(location_root + "/" + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 		{
+			// if (!relative_path.empty())
+			// 	relative_path = '/' + relative_path;
 			return (location_root + "/" + relative_path);
 		}
 		else
@@ -520,7 +506,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				// 1. essaye index.html 
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + "/" + relative_path + index_files[i]; // on itere dans les index
+				string index_path = location_root + relative_path + index_files[i]; // on itere dans les index
 				ifstream file_checker(index_path.c_str());
 				if (file_checker.is_open()) // est-ce que le fichier existe? est-ce que j'ai reussi a l'ouvrir
 				{
@@ -529,9 +515,9 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				}
 				file_checker.close();
 			}
-			// aucun fichier inde xtrouve alors on retourne le premier de la liste car il renverra une erreur 404
-			return (location_root + "/" + relative_path + index_files[0]);
+			// aucun fichier index trouve alors on retourne le premier de la liste car il renverra une erreur 404
+			return (location_root  + "/" + relative_path + index_files[0]);
 		}
 	}
-	return (location_root + "/" + relative_path);
+	return (location_root + relative_path);
 }
