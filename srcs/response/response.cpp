@@ -120,7 +120,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
-	cout << "file_path: " << file_path << endl;
+	
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
@@ -149,6 +149,7 @@ void	c_response::define_response_content(const c_request &request)
 		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
 		build_cgi_response(*cgi, request);
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
+		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
 		return ;
 	}
 	else
@@ -158,7 +159,6 @@ void	c_response::define_response_content(const c_request &request)
 }
 
 /* Proceed to load the file content. Nothing else to say. */
-
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);

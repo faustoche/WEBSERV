@@ -161,6 +161,7 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 
 void	c_server::handle_cgi_read(c_cgi* cgi)
 {
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	char buffer[1000];
 	if (sizeof(buffer) < 2)
 	{
@@ -169,19 +170,39 @@ void	c_server::handle_cgi_read(c_cgi* cgi)
 	}
     std::string content_cgi;
 
+	cout << __FILE__ << "/" << __LINE__ << endl;
     ssize_t bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer) - 1);
+	cout << __FILE__ << "/" << __LINE__ << endl;
+	if (bytes_read <= 0) 
+	{
+        if (bytes_read == 0) 
+		{
+            // EOF - le CGI a fermé sa sortie
+            cout << "CGI EOF detected" << endl;
+            cgi->set_finished(true);
+        } 
+		else if (errno != EAGAIN && errno != EWOULDBLOCK) 
+		{
+            // Erreur de lecture
+            cout << "Erreur lecture CGI: " << strerror(errno) << endl;
+            cgi->set_finished(true);
+        }
+        return;
+    }
+
 	buffer[bytes_read] = '\0';
+	// cout << "bytes_read: " << buffer << endl;
 
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client)
 	{
 		client->set_response_complete(false);
-		if (bytes_read > 0)
-		{
+		// if (bytes_read > 0)
+		// {
 		    cgi->append_read_buffer(buffer, bytes_read);
 
 		    // Vérifier si on a déjà extrait les headers
-		    if (!cgi->headers_parsed())
+		    if (!cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
 		    {
 		        size_t pos = cgi->get_read_buffer().find("\r\n\r\n");
 		        if (pos != string::npos)
@@ -206,8 +227,10 @@ void	c_server::handle_cgi_read(c_cgi* cgi)
 						return ;
 					// Ou creer des headers si le script CGI n'en transmet pas
 					client->get_write_buffer().append("HTTP/1.1 200 OK\r\n");
-					client->get_write_buffer().append("Content-Type: text/plain\r\n");
-					client->get_write_buffer().append("Transfer-Encoding: chunked\r\n");
+					if (cgi->get_read_buffer().find("Content-Type") == string::npos)
+						client->get_write_buffer().append("Content-Type: text/plain\r\n");
+					if (cgi->get_content_length() == 0)
+						client->get_write_buffer().append("Transfer-Encoding: chunked\r\n");
 					client->get_write_buffer().append("\r\n");
 				}
 
@@ -229,8 +252,10 @@ void	c_server::handle_cgi_read(c_cgi* cgi)
 					}
 					else
 						transfer_by_bytes(cgi, initial_body);
-					cgi->consume_read_buffer(cgi->get_read_buffer().size());
+					
 				}
+				cgi->consume_read_buffer(cgi->get_read_buffer().size());
+				return ;
 			}
 			else
 			{
@@ -240,7 +265,6 @@ void	c_server::handle_cgi_read(c_cgi* cgi)
 					transfer_by_bytes(cgi, buffer);
 				cgi->consume_read_buffer(cgi->get_read_buffer().size());
 			}
-		}
 	}
 }	
 
@@ -266,7 +290,7 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 		}
 	}
 
-	if (cgi->get_content_length() == 0)
+	if (cgi->get_content_length() == 0 && !client->get_response_complete())
 	{
 		std::string chunk = int_to_hex(0) + "\r\n\r\n";
     	client->get_write_buffer().append(chunk);
@@ -322,18 +346,12 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 
     // 2. Attendre la fin du process enfant (si pas déjà récupéré)
     int status;
-    pid_t result = waitpid(cgi->get_pid(), &status, WNOHANG);
-    if (result > 0) 
-	{
-        cout 
-			<< "CGI process " << result 
-			<< " exited with code: " << WEXITSTATUS(status) << std::endl;
-    }
+    waitpid(cgi->get_pid(), &status, WNOHANG);
 
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client && client->get_response_complete())
 	{
-		cout << "✅ ENVOI COMPLET - Réponse complète envoyée au client " << client->get_fd() << endl;
+		cout << GREEN << "✅ ENVOI COMPLET - Réponse complète envoyée au client " << client->get_fd() << RESET << endl;
 		cout << "Le client revient en READING" << endl;
 		client->set_bytes_written(0);
 		client->clear_read_buffer();
@@ -515,7 +533,7 @@ void c_server::handle_client_read(int client_fd)
 	response.define_response_content(request);
 
 	if (response.get_is_cgi())
-		client->set_state(PROCESSING);
+		client->set_state(SENDING);
 	else
 	{
 		client->get_write_buffer() = response.get_response();
@@ -554,6 +572,7 @@ void	c_server::handle_client_write(int client_fd)
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
 	size_t bytes_sent = send(client_fd, data_to_send, remaining, MSG_NOSIGNAL);
+	cout << "Fonction send appelee, pour le client " << client_fd <<  " data:\n" << write_buffer << endl;
 	if (bytes_sent <= 0)
 	{
 		cout << "⚠️ WARNING: pb de sent" << endl;
@@ -569,22 +588,15 @@ void	c_server::handle_client_write(int client_fd)
     {
         // Vérifier si ce client est lié à un CGI terminé
         c_cgi *cgi = find_cgi_by_client(client_fd);
-		if (cgi && !cgi->is_finished())
+		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
         	cout << "CGI " << cgi->get_pipe_in() << " lié au client " << client_fd << " n'est pas termine" << endl;
 			return ;
 		}
 
-		// if (cgi && client->get_response_complete()) 
-	    // 	cout << "✅ ENVOI COMPLET - Réponse complète envoyée" << endl;
-		// else 
-	   	// 	cout << "⚠️ ENVOI PARTIEL - Il reste des données" << endl;
-
 		// keep-alive
-		if (!cgi || (cgi->is_finished() && client->get_response_complete()))
-		{
-			cout << __FILE__ << "/" << __LINE__ << endl;
-			
+		if (!cgi)
+		{	
 			cout << "✅ ENVOI COMPLET - Réponse complète envoyée au client " << client_fd << endl;
 			cout << "Le client revient en READING" << endl;
 			client->set_bytes_written(0);
