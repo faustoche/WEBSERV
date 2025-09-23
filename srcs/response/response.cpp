@@ -84,7 +84,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);

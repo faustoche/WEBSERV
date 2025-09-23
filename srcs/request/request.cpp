@@ -25,20 +25,24 @@ void	c_request::read_request(int socket_fd)
 {
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
+	string	request;
 	
 	this->init_request();
 	this->_socket_fd = socket_fd;
 
 
 	/* ----- Lire jusqu'a la fin des headers ----- */
-	while (_buffered_data.find("\r\n\r\n") == string::npos)
+	while (request.find("\r\n\r\n") == string::npos)
 	{
+		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		fill(buffer, buffer + sizeof(buffer), '\0');
+		// condition pour l'appel de recv ?
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
-			if (receivedBytes == 0) 
+			if (receivedBytes == 0) // break ou vrai erreur ?
 			{
+				cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
 				// close(this->_socket_fd);
@@ -46,6 +50,7 @@ void	c_request::read_request(int socket_fd)
 			} 
 			else
 			{
+				cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
 				// close(this->_socket_fd);
@@ -53,16 +58,15 @@ void	c_request::read_request(int socket_fd)
 			}
 		}
 		buffer[receivedBytes] = '\0';
-        _buffered_data.append(buffer);
+		request.append(buffer);
 	}
-	size_t pos = _buffered_data.find("\r\n\r\n") + 4;
-	string request = _buffered_data.substr(0, pos);
-	_buffered_data.erase(0, pos);
 	this->parse_request(request);
 	
 	/* -----Lire le body -----*/
-	cout << __FILE__ << "/" << __LINE__ << endl;
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+	cout << "Request : " << request << endl;
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 
 	if (!this->_error)
 		this->_request_fully_parsed = true;
@@ -304,7 +308,7 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 	}
 }
 
-void	c_request::read_body_with_length(int socket_fd, char* buffer, string request)
+void	c_request::read_body_with_length(int socket_fd, char* buffer, string request, size_t buffer_size)
 {
 	size_t 	body_start = request.find("\r\n\r\n") + 4;
 	string 	body_part = request.substr(body_start);
@@ -314,36 +318,67 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 	size_t	total_bytes = 0;
 
 	if (!body_part.empty())
+	{
 		this->fill_body_with_bytes(body_part.data(), body_part.size());
+		total_bytes += body_part.size();
 
-	total_bytes += body_part.size();
+		if (total_bytes >= max_body_size)
+		{
+			cout << "(Request) Body complet deja recu dans la requete initiale" << endl;
+			return;
+		}
+	}
+
+	// /* debuggage */
+	// cout << CYAN << "Content-Length attendu: " << max_body_size << endl;
+	// cout << "Body déjà reçu: " << body_part.size() << " bytes" << RESET << endl;
+	// if (!body_part.empty()) {
+	//     cout << "Body content: [" << body_part << "]" << endl;
+	// }
+	
+	// total_bytes += body_part.size();
 	while (total_bytes < max_body_size)
 	{	
-		fill(buffer, buffer + sizeof(buffer), '\0');
-		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) -1, 0);
+		fill(buffer, buffer + buffer_size, '\0');
+		receivedBytes = recv(socket_fd, buffer, buffer_size -1, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{
-    		if (receivedBytes == 0)
+    		if (receivedBytes == 0) // faut-il vraiment return et mettre _error a true ?
 			{
+				// verifier si on a recu tout ce qu'on attendait
+				if (total_bytes == max_body_size)
+				{
+					cout << "(Request) Body complet recu, connexion fermee" << endl;
+					return ;
+				}
 				// Connexion fermee avant d'avoir tout recu
-				cerr << "(Request) Error: Incomplete body" << endl;
+				cerr << "(Request) Error: Incomplete body. Expected " << max_body_size 
+					<< " and received " << total_bytes << endl;
 				this->_error = true;
+				return;
 			}
-			else
+			else // faut-il vraiment return et mettre _error a true ?
 			{
+				// erreur reseau
 				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;
 				this->_error = true;
+				return;
 			}
 		}
 		buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
+		
 		if (total_bytes > max_body_size)
 		{
+			cout << __FILE__ << "/" << __LINE__ << endl;
 			cerr << "(Request) Error: actual body size (" << total_bytes 
 				<< ") excess announced size (" << max_body_size << ")" << endl;
 			this->_status_code = 413;
+			return ;
 		}
+
     	this->fill_body_with_bytes(buffer, receivedBytes);
+
 		if (total_bytes == max_body_size)
 			break;
 	}
@@ -357,7 +392,8 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 	{
 		if (this->get_content_length())
 		{
-			this->read_body_with_length(socket_fd, buffer, request);
+			cout << __FILE__ << "/" << __LINE__ << endl;
+			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer));
 		}
 		else
 			this->read_body_with_chunks(socket_fd, buffer, request);

@@ -57,8 +57,8 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 
 void c_request::check_required_headers()
 {
-	bool has_content_length = this->_headers.count("Content-Length");
-	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding");
+	bool has_content_length = this->_headers.count("Content-Length"); // body dont on connait la  taille
+	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding"); // on ne connait pas la taille du body donc chunck
 
     if (this->_method == "POST" && (has_content_length || has_transfer_encoding))
 	{
