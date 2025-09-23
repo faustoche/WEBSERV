@@ -228,8 +228,6 @@ string  c_cgi::launch_cgi(const string &body)
     int server_to_cgi[2];
     int cgi_to_server[2];
 
-
-
     if (pipe(server_to_cgi) < 0 || pipe(cgi_to_server) < 0)
     {
         cout << "(CGI): Error de pipe" << endl;
@@ -244,7 +242,7 @@ string  c_cgi::launch_cgi(const string &body)
 
     int flags_out = fcntl(this->_pipe_out, F_GETFL, 0);
     int flags_in = fcntl(this->_pipe_in, F_GETFL, 0);
-    cout << __FILE__ << "/" << __LINE__ << endl;
+
     if (flags_out == -1 || flags_in == -1) 
     {
         perror("fcntl F_GETFL failed");
@@ -267,7 +265,6 @@ string  c_cgi::launch_cgi(const string &body)
     /**** Processus enfant ****/
     if (this->_pid == 0)
     {
-        cout << __FILE__ << "/" << __LINE__ << endl;
         /* Redirection stdin depuis le pipe d'entree: permet au parent server le body au cgi */
         dup2(server_to_cgi[0], STDIN_FILENO);
         close(server_to_cgi[1]);
@@ -290,17 +287,13 @@ string  c_cgi::launch_cgi(const string &body)
         argv[1] = const_cast<char*>(this->_map_env_vars["SCRIPT_FILENAME"].c_str());
         argv[2] = NULL;
 
-        // cout << __FILE__ << "/" << __LINE__ << endl;
         execve(this->_interpreter.c_str(), argv, &envp[0]);
-        cout << __FILE__ << "/" << __LINE__ << endl;
 
         cout << "Status: 500 Internal Server Error" << endl;
         exit(1);
     }
 
     /**** Processus parent ****/
-
-    cout << __FILE__ << "/" << __LINE__ << endl;
     close(server_to_cgi[0]);
     close(cgi_to_server[1]);
 

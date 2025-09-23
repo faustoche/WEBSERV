@@ -110,16 +110,17 @@ void	c_request::print_full_request() const
 {
 	if (this->_request_fully_parsed)
 	{
-		cout << "************ IP CLIENT ************" << endl;
-		cout << "ip_client: " << this->_ip_client << endl << endl;
+		cout << "************ SOCKET FD ************" << endl;
+		cout << "Socket fd: " << this->_socket_fd << endl << endl;
 		
 		cout << "*********** START-LINE ************" << endl;
 		cout << "method: " << this->_method << endl;
-		cout << "query: " << this->_query << endl;
+		if (!this->_query.empty())
+			cout << "query: " << this->_query << endl;
 		cout << "target: " << this->_target << endl;
 		cout << "version: " << this->_version << endl << endl;
 
-		cout << "************ HEADERS *************" << endl;
+		cout << "************ HEADERS **************" << endl;
 		
 		for (map<string, string>::const_iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 			cout << it->first << " : " << it->second << endl;
@@ -131,7 +132,7 @@ void	c_request::print_full_request() const
 			cout << this->_body << endl;
 		}
 
-		cout << "Status code: " << this->_status_code << endl;
+		// cout << "Status code: " << this->_status_code << endl;
 		cout << endl;
 	}
 }

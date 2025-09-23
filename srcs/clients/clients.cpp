@@ -42,26 +42,31 @@ void c_server::add_client(int client_fd)
     _clients[client_fd] = c_client(client_fd);
     set_non_blocking(client_fd);
     add_fd(client_fd, POLLIN);
+    cout << PINK << "\n*Client " << client_fd << " set to READING mode*" << RESET << endl;
 }
 
 void c_server::remove_client(int client_fd)
 {
     close(client_fd);
-    _clients.erase(client_fd);
-}
-
-void c_server::remove_client_from_pollout(int client_fd)
-{
-    for (size_t i = 0; i < _poll_fds.size(); i++)
+    if (_clients.find(client_fd) != _clients.end())
     {
-        if (_poll_fds[i].fd == client_fd)
-        {
-            _poll_fds[i].events &= ~POLLOUT;
-            cout << "Removed POLLOUT for client fd " << client_fd << "\n";
-            return;
-        }
+        _clients.erase(client_fd);
+        cout << PINK << "*Client " << client_fd << " erased from _poll_fds*" << RESET << endl;
     }
 }
+
+// void c_server::remove_client_from_pollout(int client_fd)
+// {
+//     for (size_t i = 0; i < _poll_fds.size(); i++)
+//     {
+//         if (_poll_fds[i].fd == client_fd)
+//         {
+//             _poll_fds[i].events &= ~POLLOUT;
+//             cout << "Removed POLLOUT for client fd " << client_fd << "\n";
+//             return;
+//         }
+//     }
+// }
 
 c_client *c_server::find_client(int client_fd)
 {

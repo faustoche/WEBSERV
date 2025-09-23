@@ -61,7 +61,6 @@ void	c_request::read_request(int socket_fd)
 	this->parse_request(request);
 	
 	/* -----Lire le body -----*/
-	cout << __FILE__ << "/" << __LINE__ << endl;
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
 
 	if (!this->_error)
