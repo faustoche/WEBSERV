@@ -84,7 +84,6 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -108,13 +107,13 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
 		return ;	
 	}
-
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
@@ -125,7 +124,7 @@ void	c_response::define_response_content(const c_request &request)
 			return ;
 		}
 	}
-
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www"); // REVOIR
 
@@ -147,6 +146,7 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
+	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (this->_is_cgi)
 	{
 		cout << "Process cgi identified" << endl;
@@ -162,14 +162,9 @@ void	c_response::define_response_content(const c_request &request)
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		return ;
 	}
-	// if (target == "/")
-	// {
-
-	// }
-
 	else
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
+		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_success_response(file_path, version, request);
 	}
 }
@@ -255,6 +250,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 {
 	if (_file_content.empty())
 	{
+		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
