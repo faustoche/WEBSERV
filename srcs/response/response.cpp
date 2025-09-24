@@ -85,13 +85,13 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 	
+
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
-	
 	if (matching_location == NULL) 
 	{// si on a une requete vers un dossier qui ne matche avec aucune location, sinon build la reponse avec le fichier index s'il existe ou renvoyer une erreur
 		string full_path = _server.get_root() + target;
@@ -107,13 +107,14 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+	
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
 		return ;	
 	}
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+
+	
 	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
@@ -124,7 +125,7 @@ void	c_response::define_response_content(const c_request &request)
 			return ;
 		}
 	}
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+	
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www"); // REVOIR
 
@@ -146,7 +147,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (this->_is_cgi)
 	{
 		cout << "Process cgi identified" << endl;
@@ -162,12 +162,191 @@ void	c_response::define_response_content(const c_request &request)
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		return ;
 	}
+	else if (method == "POST") //peut etre a bouger a la fin
+	{
+		handle_post_request(request, matching_location, version);
+		return;
+	}
 	else
 	{
 		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_success_response(file_path, version, request);
 	}
 }
+
+/********************    POST    ********************/
+
+void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
+{
+	(void)location;
+	string	body = request.get_body();
+	string	content_type = request.get_header_value("Content-Type");
+	string	target = request.get_target();
+
+	cout << "=== DEBUG POST ===" << endl
+			<< "Body recu: [" << body << "]" << endl
+			<< "Content-Type: [" << content_type << "]" << endl
+			<< "Target: [" << request.get_target() << "]" << endl;
+
+	if (target == "/test_post")
+		handle_test_form(request, version);
+	if (target == "/contact") // sauvegarde des donnees
+		handle_contact_form(request, version);
+
+	 // if (content_type.find("application/x-www-form-urlencoded") != string::npos)
+	// upload file
+	// else
+	// 	create_generic_response()
+
+	// string response_content =
+	// "<!DOCTYPE html>\n"
+    //     "<html><head><title>POST Success</title></head>\n"
+    //     "<body>\n"
+    //     "<h1>Requete POST recue avec succes!</h1>\n"
+    //     "<p><strong>URL:</strong> " + request.get_target() + "</p>\n"
+    //     "<p><strong>Content-Type:</strong> " + content_type + "</p>\n"
+    //     "<p><strong>Body:</strong> " + body + "</p>\n"
+    //     "<a href=\"/\">Retour</a>\n"
+    //     "</body></html>";
+	
+	// 	_file_content = response_content;
+	// 	build_success_response("response.html", version, request);
+}
+
+/*******************   contact form    *******************/
+
+void	c_response::handle_contact_form(const c_request &request, const string &version)
+{
+	(void)version;
+	string body = request.get_body();
+	map<string, string> form_data = parse_form_data(request.get_body());
+
+	// valider les champs requis
+	if (form_data["nom"].empty() || form_data["email"].empty())
+	{} // create_error_form_response()
+		
+	// sauvegarder
+	save_contact_data(form_data);
+	// create_success_form_response()
+	// else
+	// create_error_form_response()
+}
+
+bool	c_response::save_contact_data(const map<string, string> &data)
+{
+	(void)data;
+	/*
+	1) definir filename
+	2) verifier si existant
+	3)
+	*/
+	return true;
+}
+
+/********************    test form    ********************/
+
+void	c_response::handle_test_form(const c_request &request, const string &version)
+{
+	map<string, string> form_data = parse_form_data(request.get_body());
+	// cout << GREEN << "=== DONNEES PARSEES ===" << endl;
+	// for (map<string, string>::iterator it = form_data.begin(); it != form_data.end(); it++)
+	// 	cout << it->first << " = [ " << it->second << " ]" << endl;
+	create_form_response(form_data, request, version);
+}
+
+void	c_response::create_form_response(const map<string, string> &form, const c_request &request, const string &version)
+{
+	string html = "<!DOCTYPE html>\n<html><head><title>Formulaire recu</title></head>\n<body>\n";
+	html += "<h1>Donnees recues :</h1>\n<ul>\n";
+
+	for (map<string, string>::const_iterator it = form.begin(); it != form.end(); it++)
+	{
+		html += "<li><strong>" + it->first + "</strong>" + ": " + it->second + "</li>\n";
+	}
+	html += "</ul>\n<a href=\"/post_test.html\">Nouveau formulaire</a>\n</body></html>";
+	_file_content = html;
+	build_success_response("response.html", version, request);
+}
+
+/****************   utils for test form   ****************/
+
+string const	c_response::url_decode(const string &body)
+{
+	string	res;
+	size_t	i = 0;
+	
+	while (i < body.size())
+	{
+		if (body[i] == '+')
+		{
+			res += ' ';
+			i++;
+		}
+		else if (body[i] == '%' && i + 2 < body.size())
+		{
+			bool	ishexa = true;
+			string hex_str = body.substr(i + 1, 2);
+			for (size_t j = 0; j < hex_str.size(); ++j)
+			{
+				if (!isxdigit(hex_str[j]))
+					ishexa = false;
+			}
+			if (ishexa)
+			{
+				int value = 0;
+				istringstream iss(hex_str);
+				iss >> std::hex >> value;
+				res += static_cast<char>(value);
+				i +=3 ;
+			}
+			else
+			{
+				res += body[i];
+				i++;
+			}
+		}
+		else
+		{
+			res += body[i];
+			i++;
+		}
+	}
+	return res;
+}
+
+map<string, string> const	c_response::parse_form_data(const string &body)
+{
+	map<string, string>	form_data;
+
+	size_t	pos_and = 0;
+	string	key;
+	string	value;
+	size_t start = 0;
+
+	while (start < body.size())
+	{
+		size_t pos_equal = 0;
+
+		pos_and = body.find("&", start);
+		if (pos_and == string::npos)
+			pos_and = body.size();
+		
+		string pairs = body.substr(start, pos_and - start);
+		pos_equal = pairs.find("=", 0);
+		key = pairs.substr(0, pos_equal);
+		value = pairs.substr(pos_equal + 1);
+
+		key = url_decode(key);
+		value = url_decode(value);
+
+		form_data[key] = value;
+
+		start += pairs.size();
+		start++;
+	}
+	return form_data;
+}
+
 
 /* Proceed to load the file content. Nothing else to say. */
 

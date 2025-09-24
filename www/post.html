@@ -1,18 +1,12 @@
 <!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Test POST</title>
-</head>
+<html>
+<head><title>Test POST</title></head>
 <body>
-    <h1>Formulaire de test POST</h1>
-    <form action="/post_test" method="POST">
-        <label for="name">Nom :</label>
-        <input type="text" id="name" name="name">
-        <br><br>
-        <label for="message">Message :</label>
-        <textarea id="message" name="message"></textarea>
-        <br><br>
+    <h1>Test formulaire POST</h1>
+    <form method="POST" action="/test_post">
+        <label>Nom: <input type="text" name="nom" value="John"></label><br><br>
+        <label>Email: <input type="email" name="email" value="john@test.com"></label><br><br>
+        <label>Message: <textarea name="message">Hello world!</textarea></label><br><br>
         <button type="submit">Envoyer</button>
     </form>
 </body>

@@ -20,6 +20,7 @@ using namespace std;
 class	c_request;
 class	c_server;
 class	c_cgi;
+class	c_location;
 
 class c_response
 {
@@ -63,4 +64,12 @@ private:
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
 
+	/***** POST method *****/
+	void						handle_post_request(const c_request &request, c_location *location, const string &version);
+	map<string, string> const	parse_form_data(const string &body);
+	string const				url_decode(const string &body);
+	void						create_form_response(const map<string, string> &form, const c_request &request, const string &version);
+	void						handle_test_form(const c_request &request, const string &version);
+	void						handle_contact_form(const c_request &request, const string &version);
+	bool						save_contact_data(const map<string, string> &data);
 };

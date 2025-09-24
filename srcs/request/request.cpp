@@ -393,7 +393,7 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 		if (this->get_content_length())
 		{
 			cout << __FILE__ << "/" << __LINE__ << endl;
-			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer));
+			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer)); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
 		}
 		else
 			this->read_body_with_chunks(socket_fd, buffer, request);
