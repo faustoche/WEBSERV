@@ -138,7 +138,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (this->_is_cgi)
 	{
-		cout << YELLOW << "==PROCESS CGI IDENTIFIED=="  << RESET << endl;
+		cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
 		cgi->set_script_filename(file_path);
 		if (cgi->init_cgi(request, *matching_location))

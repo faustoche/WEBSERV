@@ -34,6 +34,7 @@ void    c_server::add_fd(int fd, short events)
     tmp_poll_fd.revents = 0;
 
     _poll_fds.push_back(tmp_poll_fd);
+    cout << "fd " << fd << " is now monitored by _poll_fds" << endl;
     // _clients[fd] = c_client(fd);
 }
 
@@ -42,17 +43,48 @@ void c_server::add_client(int client_fd)
     _clients[client_fd] = c_client(client_fd);
     set_non_blocking(client_fd);
     add_fd(client_fd, POLLIN);
-    cout << PINK << "\n*Client " << client_fd << " set to READING mode*" << RESET << endl;
+    cout << PINK << "\n*Client " << client_fd << " can send a request : POLLIN*" << RESET << endl;
 }
+
+// void c_server::remove_client(int client_fd)
+// {
+//     for (vector<struct>::it = _poll_fds.begin(); it != _poll_fds.end(); it++)
+//     {
+//         if (it)
+//     }
+//     if (_poll_fds.find(client_fd) != _poll_fds.end())
+//     {
+//         _clients.erase(client_fd);
+//         cout << PINK << "*Client " << client_fd << " erased from _poll_fds*" << RESET << endl;
+//     }
+//     else
+//         cout << client_fd << " has not been found in _clients" << endl;
+//     close(client_fd);
+// }
 
 void c_server::remove_client(int client_fd)
 {
-    close(client_fd);
-    if (_clients.find(client_fd) != _clients.end())
+    if (client_fd < 0)
+        return ;
+   
+    for (vector<struct pollfd>::iterator it = _poll_fds.begin(); it != _poll_fds.end(); it++)
     {
-        _clients.erase(client_fd);
-        cout << PINK << "*Client " << client_fd << " erased from _poll_fds*" << RESET << endl;
+        if (it->fd == client_fd)
+        {
+            _poll_fds.erase(it);
+            cout << "fd " << client_fd << " is no longer monitored by _poll_fds" << endl;
+            break;
+        }
     }
+    
+    map<int, c_client>::iterator it = _clients.find(client_fd);
+    if (it != _clients.end())
+    {
+        _clients.erase(it);
+        cout << "Client with fd " << client_fd << " erased from _clients" << endl;
+    }
+     close(client_fd);
+    
 }
 
 // void c_server::remove_client_from_pollout(int client_fd)

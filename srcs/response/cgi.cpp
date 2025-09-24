@@ -10,6 +10,7 @@ _server(server), _client_fd(client_fd)
     this->_interpreter = "";
     this->_finished = false;
     this->_content_length = 0;
+    this->_body_size = 0;
     this->_headers_parsed = false;
     this->_pipe_in = 0;
     this->_pipe_out = 0;
@@ -18,6 +19,7 @@ _server(server), _client_fd(client_fd)
     this->_bytes_written = 0;
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
+    this->_request_fully_sent_to_cgi = false;
 }
 
 c_cgi::c_cgi(const c_cgi& other): _server(other._server)
@@ -32,6 +34,8 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_finished = other._finished;
     this->_map_env_vars = other._map_env_vars;
     this->_vec_env_vars = other._vec_env_vars;
+    this->_content_length = other._content_length;
+    this->_body_size = other._body_size;
     // this->_socket_fd = other._socket_fd;
     this->_status_code = other._status_code;
     this->_loc = other._loc;
@@ -39,6 +43,7 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_path_info = other._path_info;
     this->_translated_path = other._translated_path;
     this->_interpreter = other._interpreter;
+    this->_request_fully_sent_to_cgi = other._request_fully_sent_to_cgi;
 }
 
 
@@ -59,6 +64,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_headers_parsed = rhs._headers_parsed;
         this->_map_env_vars = rhs._map_env_vars;
         this->_vec_env_vars = rhs._vec_env_vars;
+        this->_body_size = rhs._body_size;
         // this->_socket_fd = rhs._socket_fd;
         this->_status_code = rhs._status_code;
         this->_loc = rhs._loc;
@@ -66,6 +72,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_path_info = rhs._path_info;
         this->_translated_path = rhs._translated_path;
         this->_interpreter = rhs._interpreter;
+        this->_request_fully_sent_to_cgi = rhs._request_fully_sent_to_cgi;
     }
     return (*this);
 }
@@ -297,8 +304,8 @@ string  c_cgi::launch_cgi(const string &body)
     close(server_to_cgi[0]);
     close(cgi_to_server[1]);
 
-    _server.add_fd(this->_pipe_out, POLLIN);
     _server.add_fd(this->_pipe_in, POLLOUT);
+    _server.add_fd(this->_pipe_out, POLLIN);
 
     return ("");
 }

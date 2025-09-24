@@ -39,13 +39,17 @@ class c_cgi
         void            set_headers_parsed(bool state) { _headers_parsed = state; };
         void            consume_read_buffer(size_t n);
         void            set_content_length(size_t bytes) { _content_length = bytes; };
-        void            mark_stdin_closed() { _stdin_closed = true; };
-        void            mark_stdout_closed() { _stdout_closed = true; };
+        void            set_body_size(size_t bytes) { _body_size = bytes; };
+        const size_t&   get_body_size() { return _body_size; };
+        void            mark_request_fully_sent() { _request_fully_sent_to_cgi = true; };
+        void            mark_stdin_closed() { _pipe_in = -1; };
+        void            mark_stdout_closed() { _pipe_out = -1; };
 
         void            add_bytes_written(ssize_t bytes) { _bytes_written += bytes; };
         void            append_read_buffer(const char* buffer, ssize_t bytes);
         int             parse_headers(c_response &response, string& headers);
         bool            is_valid_header_value(string& key, const string& value);
+        bool            is_request_fully_sent_to_cgi() { return _request_fully_sent_to_cgi; };
         void            vectorize_env();
         void            close_cgi();
         size_t          identify_script_type(const string& path);
@@ -60,10 +64,12 @@ class c_cgi
         string              _read_buffer; // reponse CGI accumulee
         size_t              _bytes_written;
         size_t              _content_length;
-        bool                _stdout_closed;
-        bool                _stdin_closed;
+        size_t              _body_size;
+        // bool                _stdout_closed;
+        // bool                _stdin_closed;
         bool                _finished;
         bool                _headers_parsed;
+        bool                _request_fully_sent_to_cgi;
 
         map<string, string> _map_env_vars;
         vector<string>      _vec_env_vars;

@@ -41,7 +41,7 @@ OBJS		= ${CPP_OBJS}
 # ************************************************************************ #
 
 CC			= c++
-CFLAGS		= -Wall -Werror -Wextra -std=c++98 -I$(INCLUDES) -I./response -I./request -I./clients
+CFLAGS		= -Wall -Werror -Wextra -std=c++98 -g -I$(INCLUDES) -I./response -I./request -I./clients
 RM			= rm -rf
 
 # ************************************************************************ #

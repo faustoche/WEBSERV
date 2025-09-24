@@ -67,6 +67,7 @@ class c_request
         const string    &get_ip_client() const { return _ip_client; }
         bool            get_has_body() {return _has_body; }
         bool            get_error() {return _error; }
+        bool            is_client_disconnected() { return _disconnected; };
         const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;
         const string    &get_body() const { return _body; }
@@ -84,7 +85,7 @@ class c_request
         string              _query;
         string              _path;
         string              _body;
-        string              _buffered_data;
+        // string              _buffered_data;
         map<string, string> _headers;
 
 		int                 _status_code;
@@ -93,6 +94,7 @@ class c_request
 		bool                _request_fully_parsed;
 		bool                _error;
 		bool                _has_body;
+        bool                _disconnected;
 
 		int                 _chunk_line_count;
 		string              _chunk_accumulator;

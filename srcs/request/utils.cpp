@@ -110,9 +110,6 @@ void	c_request::print_full_request() const
 {
 	if (this->_request_fully_parsed)
 	{
-		cout << "************ SOCKET FD ************" << endl;
-		cout << "Socket fd: " << this->_socket_fd << endl << endl;
-		
 		cout << "*********** START-LINE ************" << endl;
 		cout << "method: " << this->_method << endl;
 		if (!this->_query.empty())
@@ -152,7 +149,8 @@ void	c_request::init_request()
 	this->_chunk_line_count = 0;
 	this->_expected_chunk_size = -1;
 	this->_request_fully_parsed = false;
-	this->_error = false; 
+	this->_error = false;
+	this->_disconnected = false;
 	this->_content_length = 0;
 	this->_chunk_line_count = 0;
 
