@@ -80,6 +80,8 @@ class c_server
 		void		transfer_by_bytes(c_cgi *cgi, const string& buffer);
 		void 		transfer_with_chunks(c_cgi *cgi, const string& buffer);
 		void		process_client_request(int client_fd);
+		void		fill_cgi_response_headers(string headers, c_cgi *cgi);
+		void		fill_cgi_response_body(string body_part, c_cgi *cgi);
 		void		cleanup_cgi(c_cgi* cgi);
 		void 		clear_read_buffer();
 		void 		clear_write_buffer();

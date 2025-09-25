@@ -1,7 +1,7 @@
 #!/usr/bin/php-cgi
 
 <?php
-header("Content-type: text/html; charset=UTF-8");
+header("Content-Type: text/html; charset=UTF-8");
 header("Connection: close");
 
 ob_implicit_flush(true);
