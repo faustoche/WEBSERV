@@ -284,16 +284,17 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 		{
 			if (receivedBytes == 0) 
 			{
-				cout << "Client closed connection: " << __FILE__ << "/" << __LINE__ << endl;
-				this->_error = true;
+				cout << "Client " << socket_fd << " closed connection, cleaning up socket " << endl;;
+				this->_disconnected = true;
 			} 
 			else
 			{
-				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;
+				cout << "Client " << socket_fd << " client disconnected unexepectedly, closing socket " << endl;;
 				this->_error = true;
+				return ;
 			}
 		}
-		buffer[receivedBytes] = '\0';
+		// buffer[receivedBytes] = '\0';
 		this->_chunk_accumulator.append(buffer, receivedBytes);
 		this->fill_body_with_chunks(this->_chunk_accumulator);
 	}
@@ -321,13 +322,14 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
     		if (receivedBytes == 0)
 			{
 				// Connexion fermee avant d'avoir tout recu
-				cerr << "(Request) Error: Incomplete body" << endl;
-				this->_error = true;
+				cout << "Client " << socket_fd << " closed connection, cleaning up socket " << endl;;
+				this->_disconnected = true;
 			}
 			else
 			{
-				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;
+				cout << "Client " << socket_fd << " client disconnected unexepectedly, closing socket " << endl;;
 				this->_error = true;
+				return ;
 			}
 		}
 		buffer[receivedBytes] = '\0';
