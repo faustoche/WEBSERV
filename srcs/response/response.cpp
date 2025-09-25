@@ -175,6 +175,12 @@ void	c_response::define_response_content(const c_request &request)
 }
 
 /********************    POST    ********************/
+/* Content-Type
+--> formulaire classique = application/x-www-form-urlencoded
+--> formulaire avec fichiers ou champs multiples = multipart/form-data
+	en-tete du content-type contient un boundary, c'est une chaine unique choisit par le client qui sert de
+	separateur entre les differentes parties du body
+ */
 
 void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
 {
@@ -183,34 +189,37 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	cout << "=== DEBUG POST ===" << endl
-			<< "Body recu: [" << body << "]" << endl
-			<< "Content-Type: [" << content_type << "]" << endl
-			<< "Target: [" << request.get_target() << "]" << endl;
+	// cout << "=== DEBUG POST ===" << endl
+	// 		<< "Body recu: [" << body << "]" << endl
+	// 		<< "Content-Type: [" << content_type << "]" << endl
+	// 		<< "Target: [" << request.get_target() << "]" << endl;
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
-	if (target == "/contact") // sauvegarde des donnees
+	if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
 		handle_contact_form(request, version);
+	if (content_type.find("multipart/form-data") != string::npos)
+		handle_upload_form_file(request, version);
 
 	 // if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 	// upload file
 	// else
 	// 	create_generic_response()
 
-	// string response_content =
-	// "<!DOCTYPE html>\n"
-    //     "<html><head><title>POST Success</title></head>\n"
-    //     "<body>\n"
-    //     "<h1>Requete POST recue avec succes!</h1>\n"
-    //     "<p><strong>URL:</strong> " + request.get_target() + "</p>\n"
-    //     "<p><strong>Content-Type:</strong> " + content_type + "</p>\n"
-    //     "<p><strong>Body:</strong> " + body + "</p>\n"
-    //     "<a href=\"/\">Retour</a>\n"
-    //     "</body></html>";
+}
+
+/********************   upload form   ********************/
+
+void	c_response::handle_upload_form_file(const c_request &request, const string &version)
+{
+	(void)version;
+	string content_type = request.get_header_value("Content-Type");
+	string boundary;
+	size_t start = content_type.find("boundary=");
 	
-	// 	_file_content = response_content;
-	// 	build_success_response("response.html", version, request);
+	cout << PINK << content_type << RESET << endl;
+	
+
 }
 
 /*******************   contact form    *******************/
@@ -221,25 +230,49 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 	string body = request.get_body();
 	map<string, string> form_data = parse_form_data(request.get_body());
 
-	// valider les champs requis
 	if (form_data["nom"].empty() || form_data["email"].empty())
-	{} // create_error_form_response()
-		
-	// sauvegarder
-	save_contact_data(form_data);
-	// create_success_form_response()
-	// else
-	// create_error_form_response()
+	{
+		build_error_response(400, version, request);
+		return;
+	}
+	// creer fonciton is_valid email ?
+	if (save_contact_data(form_data))
+	{
+		string success_html = "<html><body><h1>Message enregistre !</h1>"
+                             "<p>Merci " + form_data["nom"] + "</p>"
+                             "<a href=\"/contact.html\">Nouveau message</a></body></html>";
+		_file_content = success_html;
+		build_success_response("response.html", version, request);
+		return;
+	}
+	else
+		build_error_response(500, version, request);
 }
+
+
 
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
-	(void)data;
-	/*
-	1) definir filename
-	2) verifier si existant
-	3)
-	*/
+	string filename = "./www/data/contact.txt"; //location.get_upload_path();
+	ofstream file(filename.c_str(), ios::app);
+
+	if (!file.is_open())
+	{
+		cerr << "Error with the creation of the file " << filename << endl;
+		return false;
+	}
+
+	time_t now = time(0);
+	char *str_time = ctime(&now);
+	str_time[strlen(str_time) - 1] = '\0';
+
+	file << "[ " << str_time << " ] ";
+	for (map<string, string>::const_iterator it = data.begin(); it != data.end(); it++)
+	{
+		file << it->first << "=" << it->second << "; ";
+	}
+	file << endl;
+	file.close();
 	return true;
 }
 

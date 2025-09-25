@@ -324,7 +324,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 		if (total_bytes >= max_body_size)
 		{
-			cout << "(Request) Body complet deja recu dans la requete initiale" << endl;
+			cout << "(Request) Complete body already received in the initial request" << endl;
 			return;
 		}
 	}
@@ -348,7 +348,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 				// verifier si on a recu tout ce qu'on attendait
 				if (total_bytes == max_body_size)
 				{
-					cout << "(Request) Body complet recu, connexion fermee" << endl;
+					cout << "(Request) Full body received, connection closed" << endl;
 					return ;
 				}
 				// Connexion fermee avant d'avoir tout recu

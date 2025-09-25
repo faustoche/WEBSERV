@@ -72,4 +72,6 @@ private:
 	void						handle_test_form(const c_request &request, const string &version);
 	void						handle_contact_form(const c_request &request, const string &version);
 	bool						save_contact_data(const map<string, string> &data);
+	void						error_form_response(const string &msg, const c_request &request);
+	void						handle_upload_form_file(const c_request &request, const string &version);
 };
