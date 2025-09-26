@@ -8,6 +8,8 @@ _server(server), _client_fd(client_fd)
     this->_path_info = "";
     this->_translated_path ="";
     this->_interpreter = "";
+    this->_relative_argv = "";
+    this->_relative_script_name = "";
     this->_finished = false;
     this->_content_length = 0;
     this->_body_size = 0;
@@ -43,6 +45,8 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_path_info = other._path_info;
     this->_translated_path = other._translated_path;
     this->_interpreter = other._interpreter;
+    this->_relative_argv = other._relative_argv;
+    this->_relative_script_name = other._relative_script_name;
     this->_request_fully_sent_to_cgi = other._request_fully_sent_to_cgi;
 }
 
@@ -72,6 +76,8 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_path_info = rhs._path_info;
         this->_translated_path = rhs._translated_path;
         this->_interpreter = rhs._interpreter;
+        this->_relative_argv = rhs._relative_argv;
+        this->_relative_script_name = rhs._relative_script_name;
         this->_request_fully_sent_to_cgi = rhs._request_fully_sent_to_cgi;
     }
     return (*this);
@@ -114,14 +120,22 @@ map<string, c_location>::const_iterator   find_location(const string &path, map<
     return (best_match);
 }
 
-string  find_extension(const string& real_path)
+string  find_script_extension(const string& target)
 {
     string empty_string = "";
-    size_t dot_position = real_path.find_last_of('.');
+    size_t dot_position = target.find('.');
 
-    if (dot_position != string::npos && dot_position != 0)
+    if (dot_position == 0)
+        dot_position = target.find('.');
+    if (dot_position != string::npos)
     {
-        string extension = real_path.substr(dot_position);
+        string tmp_extension = target.substr(dot_position);
+        size_t slash_position = tmp_extension.find("/");
+        string extension;
+        if (slash_position != string::npos)
+           extension = tmp_extension.substr(0, slash_position);
+        else
+            extension = tmp_extension;
         return (extension);
     }
     return (empty_string);
@@ -142,9 +156,11 @@ size_t c_cgi::identify_script_type(const string& path)
             return (string::npos);
         }
          this->_script_name = path.substr(0, pos_script + 4);
+         this->_path_info = path.substr(pos_script + 4);
         return (pos_script + 4);
     }
     this->_script_name = path.substr(0, pos_script + 3);
+    this->_path_info = path.substr(pos_script + 3);
     return (pos_script + 3);
 }
 
@@ -154,28 +170,37 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 
     if (ext_pos == string::npos)
         return(1);
-    if (this->_script_name.size() < script_filename.size())
-    {
-        this->_path_info = script_filename.substr(ext_pos);
-        this->_translated_path = loc.get_alias() + this->_path_info;
-    }
-
     string  root = loc.get_alias();
     string  url_key = loc.get_url_key();
     string  relative_path = this->_script_name.substr(url_key.size());
     this->_script_filename = root + relative_path;
-    
+    this->_relative_script_name = this->_script_name.substr(url_key.size());
+    if (!this->_path_info.empty())
+    {
+        this->_relative_argv = ".." + this->_path_info;
+        this->_translated_path = "./www" + this->_path_info;
+    }
     return(0);
 }
 
-int    c_cgi::init_cgi(const c_request &request, const c_location &loc)
+int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string target)
 {
     this->_status_code = request.get_status_code();
     this->_loc = &loc;
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
-    string extension = find_extension(this->_script_filename);
+    // size_t pos = file_path.find(".");
+    string extension = find_script_extension(target);
 
+    resolve_cgi_paths(loc, request.get_target());
+    if (!this->_relative_argv.empty())
+    {
+        if (this->_relative_argv.find("data") == string::npos)
+        {
+            cout << "WARNING: CGI's argument file is outside data file" << endl;
+            return (1);
+        }
+    }
     if (extension.size() > 0)
         this->_interpreter = loc.extract_interpreter(extension);
     if (this->_interpreter.empty())
@@ -286,15 +311,34 @@ string  c_cgi::launch_cgi(const string &body)
             envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
         envp.push_back(NULL);
 
-        string  abs_path = make_absolute(this->_map_env_vars["SCRIPT_FILENAME"]);
-        this->_map_env_vars["SCRIPT_FILENAME"] = abs_path;
+        if (!this->_relative_argv.empty())
+        {
+            if (chdir("www/cgi-bin/") != 0) 
+            {
+                perror("chdir failed");
+                return ("");
+            }
+            // string  abs_path = make_absolute(this->_map_env_vars["SCRIPT_FILENAME"]);
+            // this->_map_env_vars["SCRIPT_FILENAME"] = abs_path;
+            // cout << "this->_script_filename :" << this->_script_filename  << endl;
+            // cout << "this->_relative_argv: " << this->_relative_argv << endl;
 
-        char *argv[3];
-        argv[0] = const_cast<char*>(this->_interpreter.c_str());
-        argv[1] = const_cast<char*>(this->_map_env_vars["SCRIPT_FILENAME"].c_str());
-        argv[2] = NULL;
-
-        execve(this->_interpreter.c_str(), argv, &envp[0]);
+                char *argv[4];
+                argv[0] = const_cast<char*>(this->_interpreter.c_str());
+                argv[1] = const_cast<char*>(this->_relative_script_name.c_str());
+                argv[2] = const_cast<char*>(this->_relative_argv.c_str());
+                argv[3] = NULL;
+                execve(this->_interpreter.c_str(), argv, &envp[0]);
+        }
+        else
+        {
+            cout << __FILE__ << "/" << __LINE__ << endl;
+            char *argv[3];
+            argv[0] = const_cast<char*>(this->_interpreter.c_str());
+            argv[1] = const_cast<char*>(this->_script_filename.c_str());
+            argv[2] = NULL;
+            execve(this->_interpreter.c_str(), argv, &envp[0]);
+        }
 
         cout << "Status: 500 Internal Server Error" << endl;
         exit(1);

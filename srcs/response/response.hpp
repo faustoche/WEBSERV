@@ -34,6 +34,7 @@ private:
 	int					_client_fd;
 	int					_status;
 	bool				_is_cgi;
+	bool				_error;
 
 public:
 
@@ -51,8 +52,10 @@ public:
 	void			set_status(const int &status) { this->_status = status; };
 	const string	&get_body() { return this->_body; };
 	bool			get_is_cgi() { return this->_is_cgi; };
+	bool			get_error() { return this->_error; };
 
 	void			clear_response();
+	void			set_error() { this->_error = true; };
 
 private:
 	void	build_success_response(const string &file_path, const string version, const c_request &request);

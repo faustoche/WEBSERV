@@ -5,6 +5,7 @@
 c_response::c_response(c_server& server, int client_fd) : _server(server), _client_fd(client_fd)
 {
 	this->_is_cgi = false;
+	this->_error = false;
 }
 
 c_response::~c_response()
@@ -119,6 +120,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
+
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
 	
 	/***** CHARGER LE CONTENU DU FICHIER *****/
@@ -126,7 +128,7 @@ void	c_response::define_response_content(const c_request &request)
 	{
 		_file_content = load_file_content(file_path);
 	}
-	if (_file_content.empty())
+	if (_file_content.empty() && !this->_is_cgi)
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
@@ -136,17 +138,30 @@ void	c_response::define_response_content(const c_request &request)
 		}
 		build_error_response(404, version, request);
 	}
+
 	if (this->_is_cgi)
 	{
+		if (request.get_path().find(".") == string::npos)
+		{
+			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+			{
+				this->_is_cgi = false;	
+				build_directory_listing_response(file_path, version, request);
+				return ;
+			}
+			build_error_response(404, version, request);
+		}
+
 		cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
-		cgi->set_script_filename(file_path);
-		if (cgi->init_cgi(request, *matching_location))
+		
+		if (cgi->init_cgi(request, *matching_location, request.get_target()))
 		{
+			set_error();
 			build_error_response(404, version, request);
 			return ;
 		}
-		cgi->resolve_cgi_paths(*matching_location, cgi->get_script_filename());
+		
 		build_cgi_response(*cgi, request);
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);

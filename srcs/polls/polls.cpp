@@ -236,7 +236,7 @@ void c_server::handle_client_read(int client_fd)
 	c_response response(*this, client_fd);
 	response.define_response_content(request);
 
-	if (response.get_is_cgi())
+	if (response.get_is_cgi() && !response.get_error())
 	{
 		client->set_state(PROCESSING);
 		cout << PINK << "*Client " << client->get_fd() << " processing request*" << RESET << endl;
@@ -287,7 +287,6 @@ void	c_server::handle_client_write(int client_fd)
 	}
 
 	client->set_bytes_written(bytes_written + bytes_sent);
-	cout << "Bytes_written: " << client->get_bytes_written() << endl;
 
     if (client->get_bytes_written() >= write_buffer.length())
     {

@@ -16,7 +16,7 @@ class c_cgi
         ~c_cgi();
 
 
-        int             init_cgi(const c_request &request, const c_location &loc);
+        int             init_cgi(const c_request &request, const c_location &loc, string file_path);
         string          launch_cgi(const string &body);
         int             resolve_cgi_paths(const c_location &loc, const string& filename);
         void            set_environment(const c_request &request);
@@ -24,6 +24,8 @@ class c_cgi
         const string&   get_script_filename() const { return this->_script_filename; };
         void            get_header_from_cgi(c_response &response, const string& content_cgi);
         const string&   get_interpreter() const { return _interpreter; };
+        const string&   get_relative_script_name() const { return _relative_script_name; };
+        const string&   get_relative_argv() const { return _relative_argv; };
         const int&      get_client_fd() const { return _client_fd; };
         const int&      get_pipe_in() const { return _pipe_in; };
         const int&      get_pipe_out() const { return _pipe_out; };
@@ -77,6 +79,8 @@ class c_cgi
         int                 _status_code;
         const c_location*   _loc;
         string              _script_name;
+        string              _relative_script_name;
+        string              _relative_argv;
         string              _path_info;
         string              _translated_path;
         string              _script_filename;
