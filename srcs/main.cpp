@@ -108,10 +108,13 @@ int main(int argc, char **argv) //main du parsing
 		// initialisation des serveurs
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
-			servers[i].create_socket();
-			servers[i].bind_and_listen();
-			servers[i].set_non_blocking(servers[i].get_socket_fd());
-			cout << "Server " << i << " initialized on port " << servers[i].get_port() << endl;
+			std::vector<int> empty_ports; // Vecteur vide
+			servers[i].create_socket_for_each_port(empty_ports); // Utilisera 8080 par défaut
+			cout << "Server " << i << " initialized" << endl;
+			// servers[i].create_socket();
+			// servers[i].bind_and_listen();
+			// servers[i].set_non_blocking(servers[i].get_socket_fd());
+			// cout << "Server " << i << " initialized on port " << servers[i].get_port() << endl;
 		}
 		run_multiserver(servers);
 		for (size_t i = 0; i < servers.size(); ++i)
