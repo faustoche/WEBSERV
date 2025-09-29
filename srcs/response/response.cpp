@@ -2,9 +2,10 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_response::c_response()
+c_response::c_response(c_server& server, int client_fd) : _server(server), _client_fd(client_fd)
 {
 	this->_is_cgi = false;
+	this->_error = false;
 }
 
 c_response::~c_response()
@@ -58,11 +59,10 @@ bool	is_regular_file(const string& path)
 	return (S_ISREG(path_stat.st_mode));
 }
 
-void	c_response::define_response_content(c_request &request, c_server &server)
+void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
 	_file_content.clear();
-	
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
@@ -86,33 +86,12 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 		return ;
 	}
 
-	/* A SUPPRIMER */
-	c_location loc;
-	map<string, string> cgi_extension;
-	cgi_extension[".php"] = "/usr/bin/php-cgi";
-	cgi_extension[".py"] = "/usr/bin/python3";
-	loc.set_url_key("/cgi-bin");
-	loc.set_alias("./www/cgi-bin");
-	loc.set_cgi(cgi_extension);
-	loc.set_auto_index(true);
-	// vector<string> index_file;
-	// index_file.push_back("index.py");
-	// loc.set_index_files(index_file);
-
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
-	c_location *matching_location = server.find_matching_location(target);
+	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
-	/* A SUPPRIMER */
-	if (target.find("cgi") != string::npos)
-	{
-		this->_is_cgi = true;
-		request.print_full_request();
-		matching_location = &loc;
-	}
-	/***************/
 
 	if (matching_location == NULL)
 	{
@@ -122,8 +101,8 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 
 	/***************/
-	cout << "ici" << endl;
-	if (!server.is_method_allowed(matching_location, method))
+
+	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
 		return ;	
@@ -141,36 +120,60 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
-	string file_path = server.convert_url_to_file_path(matching_location, target, "www");
 
+	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
+	
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
+	{
 		_file_content = load_file_content(file_path);
-	if (_file_content.empty())
+	}
+	if (_file_content.empty() && !this->_is_cgi)
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
-			
+			this->_is_cgi = false;	
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
 		build_error_response(404, version, request);
 	}
+
 	if (this->_is_cgi)
 	{
-		c_cgi cgi;
-		cgi.set_script_filename(file_path);
-		cgi.init_cgi(request, *matching_location);
-		cgi.resolve_cgi_paths(*matching_location, cgi.get_script_filename());
-		build_cgi_response(cgi, request);
+		if (request.get_path().find(".") == string::npos)
+		{
+			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+			{
+				this->_is_cgi = false;	
+				build_directory_listing_response(file_path, version, request);
+				return ;
+			}
+			build_error_response(404, version, request);
+		}
+
+		cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
+		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
+		
+		if (cgi->init_cgi(request, *matching_location, request.get_target()))
+		{
+			set_error();
+			build_error_response(404, version, request);
+			return ;
+		}
+		
+		build_cgi_response(*cgi, request);
+		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
+		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
 		return ;
 	}
 	else
+	{
 		build_success_response(file_path, version, request);
+	}
 }
 
 /* Proceed to load the file content. Nothing else to say. */
-
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
@@ -248,24 +251,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	if (cgi.get_interpreter().empty())
 		return ;
 	string content_cgi = cgi.launch_cgi(request_body);
-	cgi.get_header_from_cgi(*this, content_cgi);
 
-	this->_response += request.get_version() + " " + int_to_string(this->_status) + "\r\n";
-	this->_response += "Server: webserv/1.0\r\n";
-	if (!get_header_value("Content-Type").empty())
-		this->_response += "Content-Type: " + this->_headers_response["Content-Type"] + "\r\n";
-	else
-		this->_response += "Content-Type: text/plain\r\n";
-	this->_response += "Content-Length: " + this->_headers_response["Content-Length"] + "\r\n";
-
-	string connection;
-	connection = request.get_header_value("Connection");
-	if (connection.empty())
-		connection = "keep-alive";
-	this->_response += "Connection: " + connection + "\r\n";
-
-	this->_response += "\r\n";
-	this->_response += get_body() + "\r\n";
 }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
@@ -424,6 +410,7 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	}
 	else 
 		content += "<li>Cannot read directory</li>";
+
 	content += "</ul><hr></body></html>";
 	ostringstream oss;
 	oss << content.length();
@@ -527,7 +514,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 	}
 	string location_root = location->get_alias();
 	string location_key = location->get_url_key();
-
 	// calculer le chemin relatif en enlevant la partie location du chemin de requete
 	string relative_path;
 	if (request_path.find(location_key) == 0) // on verifie si l'url commence par le pattern de la location
@@ -536,16 +522,20 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		// on tej les // qui sont en plus pour evciter les doublons
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
+		// if (!relative_path.empty())
+		// 		relative_path = '/' + relative_path;
 	}
 	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
-	if (is_directory(location_root + "/" + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 		{
-			return (location_root + "/" + relative_path);
+			// if (!relative_path.empty())
+			// 	relative_path = '/' + relative_path;
+			return (location_root + relative_path);
 		}
 		else
 		{
@@ -553,7 +543,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				// 1. essaye index.html 
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + "/" + relative_path + index_files[i]; // on itere dans les index
+				string index_path = location_root + relative_path + index_files[i]; // on itere dans les index
 				ifstream file_checker(index_path.c_str());
 				if (file_checker.is_open()) // est-ce que le fichier existe? est-ce que j'ai reussi a l'ouvrir
 				{
@@ -562,9 +552,9 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				}
 				file_checker.close();
 			}
-			// aucun fichier inde xtrouve alors on retourne le premier de la liste car il renverra une erreur 404
-			return (location_root + "/" + relative_path + index_files[0]);
+			// aucun fichier index trouve alors on retourne le premier de la liste car il renverra une erreur 404
+			return (location_root  + "/" + relative_path + index_files[0]);
 		}
 	}
-	return (location_root + "/" + relative_path);
+	return (location_root + relative_path);
 }

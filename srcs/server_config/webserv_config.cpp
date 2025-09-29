@@ -4,7 +4,8 @@
 
 c_webserv_config::c_webserv_config(string const & file) : _config_files(file)
 {
-    
+    if (!load_configuration())
+        throw invalid_argument("Invalid server configuration");
 }
 
 /*-----------------  DESTRUCTOR -------------------*/

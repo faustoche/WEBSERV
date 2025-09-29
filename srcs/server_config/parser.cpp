@@ -191,8 +191,7 @@ void                c_parser::location_directives(c_location & location)
 
     if (is_token_value("cgi"))
     {
-        //flag_cgi++;
-        location.clear_cgi();
+        flag_cgi++;
         parse_cgi(location);
     }
     else if (is_token_value("index"))
@@ -251,7 +250,6 @@ void                c_parser::parse_cgi(c_location & location)
 {
     string  extension;
     string  path;
-    map<string, string> temp;
 
     advance_token(); // skip directive
     expected_token_type(TOKEN_VALUE);
@@ -271,8 +269,7 @@ void                c_parser::parse_cgi(c_location & location)
         throw invalid_argument("Invalid path for the CGI: " + path);
     if (!is_executable_file(path))
         throw invalid_argument("No such file or permission denied: " + path);
-    temp[extension] = path;
-    location.set_cgi(temp);
+    location.set_cgi(extension, path);
 }
 
 void                c_parser::location_indexes(c_location & location)

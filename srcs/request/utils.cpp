@@ -106,22 +106,20 @@ void    c_request::check_port()
 
 /************ UTILS ************/
 
-void	c_request::print_full_request()
+void	c_request::print_full_request() const
 {
 	if (this->_request_fully_parsed)
 	{
-		cout << "************ IP CLIENT ************" << endl;
-		cout << "ip_client: " << this->_ip_client << endl << endl;
-		
 		cout << "*********** START-LINE ************" << endl;
 		cout << "method: " << this->_method << endl;
-		cout << "query: " << this->_query << endl;
+		if (!this->_query.empty())
+			cout << "query: " << this->_query << endl;
 		cout << "target: " << this->_target << endl;
 		cout << "version: " << this->_version << endl << endl;
 
-		cout << "************ HEADERS *************" << endl;
+		cout << "************ HEADERS **************" << endl;
 		
-		for (map<string, string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
+		for (map<string, string>::const_iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 			cout << it->first << " : " << it->second << endl;
 		cout << endl;
 		
@@ -131,7 +129,7 @@ void	c_request::print_full_request()
 			cout << this->_body << endl;
 		}
 
-		cout << "Status code: " << this->_status_code << endl;
+		// cout << "Status code: " << this->_status_code << endl;
 		cout << endl;
 	}
 }
@@ -142,6 +140,7 @@ void	c_request::init_request()
 	this->_query.clear();
 	this->_target.clear();
 	this->_version.clear();
+	this->_path.clear();
 	this->_body.clear();
 	this->_chunk_accumulator.clear();
 	this->_status_code = 200;
@@ -150,8 +149,10 @@ void	c_request::init_request()
 	this->_chunk_line_count = 0;
 	this->_expected_chunk_size = -1;
 	this->_request_fully_parsed = false;
-	this->_error = false; 
+	this->_error = false;
+	this->_disconnected = false;
 	this->_content_length = 0;
+	this->_chunk_line_count = 0;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
 		it->second = "";

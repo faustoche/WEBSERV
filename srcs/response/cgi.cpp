@@ -1,14 +1,106 @@
 #include "cgi.hpp"
 
-c_cgi::c_cgi()
-: _loc(NULL), _script_name(""), _path_info(""), _translated_path(""), _interpreter("")
+c_cgi::c_cgi(c_server& server, int client_fd) : 
+_server(server), _client_fd(client_fd)
 {
+    this->_loc = NULL;
+    this->_script_name = "";
+    this->_path_info = "";
+    this->_translated_path ="";
+    this->_interpreter = "";
+    this->_relative_argv = "";
+    this->_relative_script_name = "";
+    this->_finished = false;
+    this->_content_length = 0;
+    this->_body_size = 0;
+    this->_headers_parsed = false;
+    this->_pipe_in = 0;
+    this->_pipe_out = 0;
+    this->_write_buffer.clear();
+    this->_read_buffer.clear();
+    this->_bytes_written = 0;
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
+    this->_request_fully_sent_to_cgi = false;
+}
+
+c_cgi::c_cgi(const c_cgi& other): _server(other._server)
+{
+    this->_client_fd = other._client_fd;
+    this->_pipe_in = other._pipe_in;
+    this->_pipe_out = other._pipe_out;
+    this->_pid = other._pid;
+    this->_write_buffer = other._write_buffer;
+    this->_read_buffer = other._read_buffer;
+    this->_bytes_written = other._bytes_written;
+    this->_finished = other._finished;
+    this->_map_env_vars = other._map_env_vars;
+    this->_vec_env_vars = other._vec_env_vars;
+    this->_content_length = other._content_length;
+    this->_body_size = other._body_size;
+    // this->_socket_fd = other._socket_fd;
+    this->_status_code = other._status_code;
+    this->_loc = other._loc;
+    this->_script_name = other._script_name;
+    this->_path_info = other._path_info;
+    this->_translated_path = other._translated_path;
+    this->_interpreter = other._interpreter;
+    this->_relative_argv = other._relative_argv;
+    this->_relative_script_name = other._relative_script_name;
+    this->_request_fully_sent_to_cgi = other._request_fully_sent_to_cgi;
+}
+
+
+c_cgi const& c_cgi::operator=(const c_cgi& rhs)
+{
+    if (this != &rhs)
+    {
+        this->_server = rhs._server;
+        this->_client_fd = rhs._client_fd;
+        this->_pipe_in = rhs._pipe_in;
+        this->_pipe_out = rhs._pipe_out;
+        this->_pid = rhs._pid;
+        this->_write_buffer = rhs._write_buffer;
+        this->_read_buffer = rhs._read_buffer;
+        this->_bytes_written = rhs._bytes_written;
+        this->_finished = rhs._finished;
+        this->_content_length = rhs._content_length;
+        this->_headers_parsed = rhs._headers_parsed;
+        this->_map_env_vars = rhs._map_env_vars;
+        this->_vec_env_vars = rhs._vec_env_vars;
+        this->_body_size = rhs._body_size;
+        // this->_socket_fd = rhs._socket_fd;
+        this->_status_code = rhs._status_code;
+        this->_loc = rhs._loc;
+        this->_script_name = rhs._script_name;
+        this->_path_info = rhs._path_info;
+        this->_translated_path = rhs._translated_path;
+        this->_interpreter = rhs._interpreter;
+        this->_relative_argv = rhs._relative_argv;
+        this->_relative_script_name = rhs._relative_script_name;
+        this->_request_fully_sent_to_cgi = rhs._request_fully_sent_to_cgi;
+    }
+    return (*this);
 }
 
 c_cgi::~c_cgi()
 {
+}
+
+void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
+{
+    if (!buffer || bytes == 0)
+        return ;
+
+    this->_read_buffer.append(buffer, bytes);
+}
+
+void    c_cgi::consume_read_buffer(size_t n) 
+{
+    if (n >= _read_buffer.size())
+        _read_buffer.clear();
+    else
+        _read_buffer.erase(0, n);
 }
 
 map<string, c_location>::const_iterator   find_location(const string &path, map<string, c_location>& map_location)
@@ -28,14 +120,22 @@ map<string, c_location>::const_iterator   find_location(const string &path, map<
     return (best_match);
 }
 
-string  find_extension(const string& real_path)
+string  find_script_extension(const string& target)
 {
     string empty_string = "";
-    size_t dot_position = real_path.find_last_of('.');
+    size_t dot_position = target.find('.');
 
-    if (dot_position != string::npos && dot_position != 0)
+    if (dot_position == 0)
+        dot_position = target.find('.');
+    if (dot_position != string::npos)
     {
-        string extension = real_path.substr(dot_position);
+        string tmp_extension = target.substr(dot_position);
+        size_t slash_position = tmp_extension.find("/");
+        string extension;
+        if (slash_position != string::npos)
+           extension = tmp_extension.substr(0, slash_position);
+        else
+            extension = tmp_extension;
         return (extension);
     }
     return (empty_string);
@@ -56,9 +156,11 @@ size_t c_cgi::identify_script_type(const string& path)
             return (string::npos);
         }
          this->_script_name = path.substr(0, pos_script + 4);
+         this->_path_info = path.substr(pos_script + 4);
         return (pos_script + 4);
     }
     this->_script_name = path.substr(0, pos_script + 3);
+    this->_path_info = path.substr(pos_script + 3);
     return (pos_script + 3);
 }
 
@@ -68,37 +170,46 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 
     if (ext_pos == string::npos)
         return(1);
-    if (this->_script_name.size() < script_filename.size())
-    {
-        this->_path_info = script_filename.substr(ext_pos);
-        this->_translated_path = loc.get_alias() + this->_path_info;
-    }
-
     string  root = loc.get_alias();
     string  url_key = loc.get_url_key();
     string  relative_path = this->_script_name.substr(url_key.size());
     this->_script_filename = root + relative_path;
-    
+    this->_relative_script_name = this->_script_name.substr(url_key.size());
+    if (!this->_path_info.empty())
+    {
+        this->_relative_argv = ".." + this->_path_info;
+        this->_translated_path = "./www" + this->_path_info;
+    }
     return(0);
 }
 
-int    c_cgi::init_cgi(const c_request &request, const c_location &loc)
+int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string target)
 {
     this->_status_code = request.get_status_code();
     this->_loc = &loc;
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
-    string extension = find_extension(this->_script_filename);
-    if (extension.size() > 0)
+    // size_t pos = file_path.find(".");
+    string extension = find_script_extension(target);
+
+    resolve_cgi_paths(loc, request.get_target());
+    if (!this->_relative_argv.empty())
     {
-        this->_interpreter = loc.get_cgi().at(extension);
+        if (this->_relative_argv.find("data") == string::npos)
+        {
+            cout << "WARNING: CGI's argument file is outside data file" << endl;
+            return (1);
+        }
     }
+    if (extension.size() > 0)
+        this->_interpreter = loc.extract_interpreter(extension);
+    if (this->_interpreter.empty())
+        return (1);
 
     /* Construction de l'environnement pour l'execution du script */
     set_environment(request);
 
     return (0);
-
 }
 
 void  c_cgi::vectorize_env()
@@ -134,95 +245,6 @@ void    c_cgi::set_environment(const c_request &request)
     this->vectorize_env();
 }
 
-bool    c_cgi::is_valid_header_value(string& key, const string& value)
-{
-	for (size_t i = 0; i < value.length(); i++)
-	{
-		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
-		{
-			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
-			return (false);
-		}
-	}
-
-	if (key == "Content-Length")
-	{
-		for (size_t i = 0; i < value.length(); i++)
-		{
-			if (!isdigit(value[i]))
-			{
-				cerr << "(Request) Error: Invalid content length: " << value << endl;
-				return (false);
-			}
-		}
-	}
-
-	if (value.size() > 4096)
-	{
-		cerr << "(Request) Error: Header field too large: " << value << endl;
-		return (false);
-	}
-	return (true);
-}
-
-int c_cgi::parse_headers(c_response &response, string& headers)
-{
-	size_t pos = headers.find(':', 0);
-	string key;
-	string value;
-
-	key = ft_trim(headers.substr(0, pos));
-	if (!is_valid_header_name(key))
-	{
-		cerr << "(Request) Error: invalid header_name: " << key << endl;
-		response.set_status(500);
-        return (1);
-	}
-
-	pos++;
-	if (headers[pos] != 32)
-    {
-		response.set_status(500);
-        return (1);
-    }
-
-	value = ft_trim(headers.substr(pos + 1));
-	if (!is_valid_header_value(key, value))
-	{
-		cerr << "(Request) Error: invalid header_value: " << key << endl;
-		response.set_status(500);
-	}
-
-	response.set_header_value(key, value);
-
-	return (0);
-}
-
-void	c_cgi::get_header_from_cgi(c_response &response, const string& content_cgi)
-{
-	size_t end_of_headers;
-
-	if ((end_of_headers = content_cgi.find("\r\n\r\n")) == string::npos)
-		return ;
-	string headers = content_cgi.substr(0, end_of_headers);
-
-	istringstream stream(headers);
-	string	line;
-	while (getline(stream, line, '\n'))
-	{
-		if (line[line.size() - 1] == '\r')
-			line.erase(line.size() - 1);
-		parse_headers(response, line);
-	}
-
-	response.set_body(content_cgi.substr(end_of_headers + 4));
-
-    string body = response.get_body();
-    if (response.get_header_value("Content-Length").empty() && !body.empty())
-        response.set_header_value("Content-Length", int_to_string(body.size()));
-
-}
-
 string make_absolute(const string &path)
 {
     char resolved[1000];
@@ -244,23 +266,42 @@ string  c_cgi::launch_cgi(const string &body)
         return ("500 Internal server error");
     }
 
-    pid_t   pid = fork();
-    if (pid < 0)
+    this->_pipe_in = server_to_cgi[1];
+    this->_pipe_out = cgi_to_server[0];
+    this->_write_buffer = body;
+    this->_read_buffer.clear();
+    this->_bytes_written = 0;
+
+    int flags_out = fcntl(this->_pipe_out, F_GETFL, 0);
+    int flags_in = fcntl(this->_pipe_in, F_GETFL, 0);
+
+    if (flags_out == -1 || flags_in == -1) 
+    {
+        perror("fcntl F_GETFL failed");
+        return (""); // ou gérer l'erreur
+    }
+
+    if (fcntl(this->_pipe_out, F_SETFL, flags_out | O_NONBLOCK) == -1 || fcntl(this->_pipe_in, F_SETFL, flags_out | O_NONBLOCK) == -1) 
+    {
+        perror("fcntl F_SETFL O_NONBLOCK failed");
+        return (""); // ou gérer l'erreur
+    }
+
+    this->_pid = fork();
+    if (this->_pid < 0)
     {
         cout << "(CGI): Error de fork";
         return ("500 Internal server error");        
     }
 
     /**** Processus enfant ****/
-    if (pid == 0)
+    if (this->_pid == 0)
     {
         /* Redirection stdin depuis le pipe d'entree: permet au parent server le body au cgi */
-        // fcntl(server_to_cgi[0], F_SETFL, O_NONBLOCK);
         dup2(server_to_cgi[0], STDIN_FILENO);
         close(server_to_cgi[1]);
 
         /* Redirection stdout vers le pipe de sortie: permet au cgi de renvoyer la reponse au server */
-        // fcntl(cgi_to_server[1], F_SETFL, O_NONBLOCK);
         dup2(cgi_to_server[1], STDOUT_FILENO);
         close(cgi_to_server[0]);
      
@@ -270,46 +311,46 @@ string  c_cgi::launch_cgi(const string &body)
             envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
         envp.push_back(NULL);
 
-        string  abs_path = make_absolute(this->_map_env_vars["SCRIPT_FILENAME"]);
-        this->_map_env_vars["SCRIPT_FILENAME"] = abs_path;
+        if (!this->_relative_argv.empty())
+        {
+            if (chdir("www/cgi-bin/") != 0) 
+            {
+                perror("chdir failed");
+                return ("");
+            }
+            // string  abs_path = make_absolute(this->_map_env_vars["SCRIPT_FILENAME"]);
+            // this->_map_env_vars["SCRIPT_FILENAME"] = abs_path;
+            // cout << "this->_script_filename :" << this->_script_filename  << endl;
+            // cout << "this->_relative_argv: " << this->_relative_argv << endl;
 
-        char *argv[3];
-        argv[0] = const_cast<char*>(this->_interpreter.c_str());
-        argv[1] = const_cast<char*>(this->_map_env_vars["SCRIPT_FILENAME"].c_str());
-        argv[2] = NULL;
+                char *argv[4];
+                argv[0] = const_cast<char*>(this->_interpreter.c_str());
+                argv[1] = const_cast<char*>(this->_relative_script_name.c_str());
+                argv[2] = const_cast<char*>(this->_relative_argv.c_str());
+                argv[3] = NULL;
+                execve(this->_interpreter.c_str(), argv, &envp[0]);
+        }
+        else
+        {
+            cout << __FILE__ << "/" << __LINE__ << endl;
+            char *argv[3];
+            argv[0] = const_cast<char*>(this->_interpreter.c_str());
+            argv[1] = const_cast<char*>(this->_script_filename.c_str());
+            argv[2] = NULL;
+            execve(this->_interpreter.c_str(), argv, &envp[0]);
+        }
 
-        execve(this->_interpreter.c_str(), argv, &envp[0]);
         cout << "Status: 500 Internal Server Error" << endl;
         exit(1);
     }
-    else
-    {
-        /**** Processus parent ****/
-        close(server_to_cgi[0]);
-        close(cgi_to_server[1]);
 
-        /* Envoyer le body au CGI */
-        if (!body.empty())
-            write(server_to_cgi[1], body.c_str(), body.size());
-        close(server_to_cgi[1]); // signale EOF au script
+    /**** Processus parent ****/
+    close(server_to_cgi[0]);
+    close(cgi_to_server[1]);
 
-       
-        /* Lire la sortie du CGI */
-        char buffer[BUFFER_SIZE];
-        std::string content_cgi;
-        ssize_t bytes_read;
-        while ((bytes_read = read(cgi_to_server[0], buffer, sizeof(buffer) - 1)) > 0)
-        {
-            buffer[bytes_read] = '\0';
-            content_cgi += buffer;
-        }
-        close(cgi_to_server[0]);
-        
-        // Attendre la fin du process enfant
-        int status;
-        waitpid(pid, &status, 0);
-        
-        return content_cgi;
-    }
+    _server.add_fd(this->_pipe_in, POLLOUT);
+    _server.add_fd(this->_pipe_out, POLLIN);
+
+    return ("");
 }
 

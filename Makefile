@@ -25,11 +25,13 @@ WEBSERV		= $(addprefix $(SRCS_DIR)/, main.cpp\
 										utils/utils.cpp\
 										server.cpp\
 										polls/polls.cpp\
+										polls/utils.cpp\
 										server/sockets.cpp\
 										server_config/lexer.cpp\
 										server_config/parser.cpp\
 										server_config/location.cpp\
-										server_config/webserv_config.cpp)
+										server_config/webserv_config.cpp\
+										)
 #										main.cpp \ )
 SRCS		= ${WEBSERV}
 CPP_OBJS	= ${WEBSERV:${SRCS_DIR}/%.cpp=$(OBJS_DIR)/%.o}
@@ -41,7 +43,7 @@ OBJS		= ${CPP_OBJS}
 # ************************************************************************ #
 
 CC			= c++
-CFLAGS		= -Wall -Werror -Wextra -std=c++98 -I$(INCLUDES) -I./response -I./request -I./clients
+CFLAGS		= -Wall -Werror -Wextra -std=c++98 -g -I$(INCLUDES) -I./response -I./request -I./clients
 RM			= rm -rf
 
 # ************************************************************************ #

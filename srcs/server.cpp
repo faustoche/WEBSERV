@@ -1,5 +1,6 @@
 #include "server.hpp"
 
+/*------------------  CONSTRUCTORS AND DESTRUCTORS  -------------------*/
 
 c_server::c_server()
 { // REVOIR ENSEMBLE LES VALEURS PAR DEFAUT
@@ -8,7 +9,7 @@ c_server::c_server()
 	// _port = 80;
 	// _root = "./"; // dossier courrant
 	// _indexes.push_back("index.html");
-	// _body_size = 1 * 1024; // kilo octet converti en octet ---> ou 0 ?
+	// _body_size = 1024 * 1024; // kilo octet converti en octet ---> ou 0 ?
 	// _err_pages = /* generer une page html simple si non configure */
 }
 c_server::~c_server()
@@ -74,7 +75,18 @@ void	c_server::add_error_page(vector<int> const & codes, string path)
 
 /*-------------------------   setters   -----------------------------*/
 
+void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
+{
+	if (!cgi)
+		return ;
 
+	// Verifie si la cle existe
+	map<int, c_cgi*>::iterator it = _active_cgi.find(key_fd);
+	if (it != _active_cgi.end())
+		it->second = cgi;
+	else
+		_active_cgi.insert(make_pair(key_fd, cgi));
+}
 
 
 /*-------------------------   debug   -----------------------------*/
@@ -138,4 +150,5 @@ void	c_server::print_config() const
 		cout << RESET;
 		i++;
 	}
+			
 }

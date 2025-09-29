@@ -24,13 +24,16 @@ using namespace std;
 
 #define MAX_BODY_SIZE 1048576
 
+class	c_server;
+
 /************ CLASS ************/
 
 class c_request
 {
     public:
-        c_request();
-        c_request(char* ip_str);
+        // c_request();
+        c_request(c_server& server);
+        // c_request(char* ip_str);
 
         ~c_request();
     
@@ -50,7 +53,7 @@ class c_request
         
 
         // string  ft_trim(const string& str);
-        void    print_full_request();
+        void    print_full_request() const;
         void    init_request();
 
         const string    &get_method() const { return _method; }
@@ -64,6 +67,7 @@ class c_request
         const string    &get_ip_client() const { return _ip_client; }
         bool            get_has_body() {return _has_body; }
         bool            get_error() {return _error; }
+        bool            is_client_disconnected() { return _disconnected; };
         const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;
         const string    &get_body() const { return _body; }
@@ -72,6 +76,7 @@ class c_request
 		const map<string, string> &get_headers() const { return _headers; }
 
     private:
+        c_server&           _server;
         int                 _socket_fd;
         string              _ip_client;
         string              _method;
@@ -80,6 +85,7 @@ class c_request
         string              _query;
         string              _path;
         string              _body;
+        // string              _buffered_data;
         map<string, string> _headers;
 
 		int                 _status_code;
@@ -88,6 +94,7 @@ class c_request
 		bool                _request_fully_parsed;
 		bool                _error;
 		bool                _has_body;
+        bool                _disconnected;
 
 		int                 _chunk_line_count;
 		string              _chunk_accumulator;

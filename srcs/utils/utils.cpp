@@ -1,9 +1,17 @@
 #include "server.hpp"
 
-std::string	int_to_string(int n){
+std::string	int_to_string(int n)
+{
 	std::ostringstream oss;
 	oss << n;
 	return (oss.str());
+}
+
+std::string int_to_hex(size_t value) 
+{
+    std::stringstream ss;
+    ss << hex << value;
+    return ss.str();
 }
 
 bool    is_valid_header_name(const string& key_name)
