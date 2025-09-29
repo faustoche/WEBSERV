@@ -213,11 +213,12 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 void	c_response::handle_upload_form_file(const c_request &request, const string &version)
 {
 	(void)version;
-	string content_type = request.get_header_value("Content-Type");
-	string boundary;
-	size_t start = content_type.find("boundary=");
+	(void)request;
+	// string content_type = request.get_header_value("Content-Type");
+	// string boundary;
+	// size_t start = content_type.find("boundary=");
 	
-	cout << PINK << content_type << RESET << endl;
+	// cout << PINK << content_type << RESET << endl;
 	
 
 }
