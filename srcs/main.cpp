@@ -73,6 +73,8 @@ void c_server::set_non_blocking(int fd)
 	}
 }
 
+/* MAIN TEST POUR LES CONNEXIONS MULTIPLES */
+
 
 void	run_multiserver(vector<c_server> servers)
 {

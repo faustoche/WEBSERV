@@ -441,6 +441,28 @@ string c_response::get_content_type(const string &file_path)
 		return ("text/plain"); 
 }
 
+/* READING PAGES */
+
+/* Reading the error pages*/
+
+string c_response::read_error_pages(int error_code)
+{
+	ostringstream path;
+	path << "www/error_pages/" << error_code << ".html";
+	ifstream file(path.str().c_str());
+	if (file.is_open())
+	{
+		ostringstream content;
+		content << file.rdbuf();
+		file.close();
+		return (content.str());
+	}
+	ostringstream fallback;
+	fallback << "<html><body><h1>" << error_code << " - Error</h1></body></html>";
+	return (fallback.str());
+}
+
+
 /************ BUILDING RESPONSES ************/
 
 /* Build the successfull request response */
@@ -497,26 +519,26 @@ void c_response::build_error_response(int error_code, const string version, cons
 	{
 		case 400:
 			status = "Bad Request";
-			error_content = "<html><body><h1>400 - Bad Request</h1></body></html>";
+			//error_content = "<html><body><h1>400 - Bad Request</h1></body></html>";
 			break;
 		case 404:
 			status = "Not Found";
-			error_content = "<html><body><h1>404 - Page Not Found</h1></body></html>";
+			//error_content = "<html><body><h1>404 - Page Not Found</h1></body></html>";
 			break;
 		case 405:
 			status = "Method Not Allowed";
-			error_content = "<html><body><h1>405 - Method Not Allowed</h1></body></html>";
+			//error_content = "<html><body><h1>405 - Method Not Allowed</h1></body></html>";
 			break;
 		case 505:
 			status = "HTTP Version Not Supported";
-			error_content = "<html><body><h1>505 - HTTP Version Not Supported</h1></body></html>";
+			//error_content = "<html><body><h1>505 - HTTP Version Not Supported</h1></body></html>";
 			break;
 		default:
 			status = "Internal Server Error";
-			error_content = "<html><body><h1>500 - Internal Server Error</h1></body></html>";
+			//error_content = "<html><body><h1>500 - Internal Server Error</h1></body></html>";
 			break;
 	}
-	
+	error_content = read_error_pages(error_code);
 	ostringstream oss;
 	oss << error_content.length();
 	

@@ -40,6 +40,7 @@ class c_server
 		map<int, c_client>		_clients;
 		vector<struct pollfd>	_poll_fds;
 		map<int, c_cgi*>		_active_cgi;
+		map<int, int>		_multiple_ports; // on stocke socket_fd + port
 
 		// CONFIGURATION FILE
 	    string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
@@ -64,6 +65,11 @@ class c_server
 		const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
 		const map<string, c_location>	&get_location_map() const { return _location_map; };
 
+			// À TESTER POUR LES MULTIPLES PORTS
+		void		create_socket_for_each_port(const std::vector<int>& ports);
+		int			get_port_from_socket(int socket_fd);
+		bool		is_listening_socket(int fd);
+
 		void 		create_socket();
 		void 		bind_and_listen();
 		void 		set_non_blocking(int fd);
@@ -72,7 +78,7 @@ class c_server
 		c_client	*find_client(int client_fd);
 		void		setup_pollfd();
 		void		handle_poll_events();
-		void		handle_new_connection();
+		void		handle_new_connection(int listening_socket);
 		void		handle_client_read(int client_fd);
 		void		handle_client_write(int client_fd);
 		void		handle_cgi_write(c_cgi* cgi);

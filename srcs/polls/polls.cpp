@@ -13,13 +13,17 @@ void c_server::setup_pollfd()
 	_poll_fds.clear();
 
 	/**** INITIALISATION DES DONNÉES *****/
-	/**** LE SERVEUR DE BASE DOIT ÊTRE EN PREMIER DANS NOTRE CONTAINER *****/
-	struct pollfd server_pollfd;
-	server_pollfd.fd = _socket_fd;
-	server_pollfd.events = POLLIN; // evenements attendus et surveillés - POLLIN = données en attente de lecture
-	server_pollfd.revents = 0; // evenement detectes et produits. 0 pour commencer
-	_poll_fds.push_back(server_pollfd);
 
+	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
+	{
+		struct pollfd server_pollfd;
+		server_pollfd.fd = it->first; // ici socket_fd où on itere 
+		server_pollfd.events = POLLIN;
+		server_pollfd.revents = 0;
+		_poll_fds.push_back(server_pollfd);
+	}
+
+	/**** AJOUT DES CLIENTS *****/
 	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		/**** AJOUT DES CLIENTS ACTIFS *****/
@@ -102,16 +106,18 @@ void c_server::handle_poll_events()
 		/*struct*/ pollfd pfd = _poll_fds[i];
 		if (pfd.revents == 0)
 			continue ;
-		
-		/**** GESTION DEPUIS LA SOCKET SERVEUR *****/
-		if (i == 0)
+
+		if (is_listening_socket(pfd.fd))
 		{
 			if (pfd.revents & POLLIN)
-				handle_new_connection();
-			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
 			{
-				cerr << "Error: Socket server\n";
-				// gestion d'erreur du serveur, fermeture etc
+				int port = get_port_from_socket(pfd.fd);
+				cout << "Nouvelle connection sur le port " << port << endl;
+				handle_new_connection(pfd.fd);
+			}
+			if (pfd.revents & (POLL_ERR | POLLHUP | POLLNVAL))
+			{
+				cerr << "Error: socet server on port " << get_port_from_socket(pfd.fd) << endl;
 			}
 		}
 		else
@@ -184,25 +190,24 @@ void c_server::handle_poll_events()
 	* Ajoute le client à la map
 	* Log d'arrivée d'un nouveau client
 */
-void	c_server::handle_new_connection()
+
+
+void	c_server::handle_new_connection(int listening_socket)
 {
+	struct sockaddr_in client_address;
+	socklen_t client_len = sizeof(client_address);
 
-	vector<int> new_fds;
-	while (true)
-	{
-		socklen_t addrlen = sizeof(_socket_address);
-		int client_fd = accept(_socket_fd, (struct sockaddr*)&_socket_address, &addrlen);
-		if (client_fd < 0)
-			break ;
+	int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
+	if (client_fd < 0)
+		return ;
 
-		set_non_blocking(client_fd);
-		cout << "*********************************" << endl;
-		cout << GREEN << "\n✅ NEW CONNECTION FOR CLIENT : " << client_fd << RESET << endl;
-		new_fds.push_back(client_fd);
-		
-	}
-	for (size_t i = 0; i < new_fds.size(); i++)
-		add_client(new_fds[i]);
+	int port = get_port_from_socket(listening_socket);
+	cout << "Nouveau client connecté sur le port " << port << endl;
+	set_non_blocking(client_fd);
+
+	c_client new_client;
+	new_client.set_state(READING);
+	_clients[client_fd] = new_client;
 }
 
 /*
