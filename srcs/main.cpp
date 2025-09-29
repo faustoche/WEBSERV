@@ -72,67 +72,90 @@ void c_server::set_non_blocking(int fd)
 	}
 }
 
+/* MAIN TEST POUR LES CONNEXIONS MULTIPLES */
+
 int main(void)
 {
-	c_server server;
-	
-	server.create_socket();
-	server.bind_and_listen();
-	server.set_non_blocking(server.get_socket_fd());
-	
-	//struct sockaddr_in socket_address = server.get_socket_addr();
-	//int socket_fd = server.get_socket_fd();
-	//int connected_socket_fd = 0;
-	//c_response response_handler;
-
-	while (true)
-	{
-		//cout << "Waiting for connections..." << endl;
-		server.setup_pollfd();
-		server.handle_poll_events();
-		// socklen_t addrlen = sizeof(socket_address);
-		// connected_socket_fd = accept(socket_fd, (struct sockaddr *) &socket_address, &addrlen);
-		
-		// if (connected_socket_fd < 0)
-		// {
-			// 	cerr << "Error: Accepting mode - " << errno << endl;
-			// 	return (-1);
-			// }
-			// cout << "New client connected !\n" << endl;
-			
-		// c_request my_request;
-		// bool	keep_alive = true;
-		// while (keep_alive)
-        // {
-		// 	int status_code;
-		// 	status_code = my_request.read_request(connected_socket_fd);
-		// 	if (status_code == 400 || status_code == 408 || status_code == 413)
-		// 	{
-		// 		my_request.set_status_code(status_code);
-		// 		close(connected_socket_fd);
-		// 		keep_alive = false;
-		// 	}
-		// 	drain_socket(connected_socket_fd);
-
-		// 	my_request.print_full_request();
-
-		// 	if (!keep_alive)
-		// 		break;
-
-		// 	response_handler.define_response_content(my_request);
-
-		// 	const string &response = response_handler.get_response();
-		// 	if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
-		// 	{
-		// 		cerr << "Error: Message not sent - " << errno << endl;
-		// 		keep_alive = false;
-		// 		break;
-		// 	}
-		// 	if (!keep_alive)
-		// 		break;
-		// }
-		// close(connected_socket_fd);		
-	}
-	close(server.get_socket_fd());
-	return (0);
+    c_server server;
+    
+    std::vector<int> ports;
+    ports.push_back(8080);
+    ports.push_back(8081);
+    ports.push_back(8082);
+    
+    server.create_socket_for_each_port(ports);
+    
+    while (true)
+    {
+        server.setup_pollfd();
+        server.handle_poll_events();
+    }
+    return (0);
 }
+
+/*  MAIN CLASSIQUE */
+
+// int main(void)
+// {
+// 	c_server server;
+	
+// 	server.create_socket();
+// 	server.bind_and_listen();
+// 	server.set_non_blocking(server.get_socket_fd());
+	
+// 	//struct sockaddr_in socket_address = server.get_socket_addr();
+// 	//int socket_fd = server.get_socket_fd();
+// 	//int connected_socket_fd = 0;
+// 	//c_response response_handler;
+
+// 	while (true)
+// 	{
+// 		//cout << "Waiting for connections..." << endl;
+// 		server.setup_pollfd();
+// 		server.handle_poll_events();
+// 		// socklen_t addrlen = sizeof(socket_address);
+// 		// connected_socket_fd = accept(socket_fd, (struct sockaddr *) &socket_address, &addrlen);
+		
+// 		// if (connected_socket_fd < 0)
+// 		// {
+// 			// 	cerr << "Error: Accepting mode - " << errno << endl;
+// 			// 	return (-1);
+// 			// }
+// 			// cout << "New client connected !\n" << endl;
+			
+// 		// c_request my_request;
+// 		// bool	keep_alive = true;
+// 		// while (keep_alive)
+//         // {
+// 		// 	int status_code;
+// 		// 	status_code = my_request.read_request(connected_socket_fd);
+// 		// 	if (status_code == 400 || status_code == 408 || status_code == 413)
+// 		// 	{
+// 		// 		my_request.set_status_code(status_code);
+// 		// 		close(connected_socket_fd);
+// 		// 		keep_alive = false;
+// 		// 	}
+// 		// 	drain_socket(connected_socket_fd);
+
+// 		// 	my_request.print_full_request();
+
+// 		// 	if (!keep_alive)
+// 		// 		break;
+
+// 		// 	response_handler.define_response_content(my_request);
+
+// 		// 	const string &response = response_handler.get_response();
+// 		// 	if (send(connected_socket_fd, response.data(), response.size(), 0) == -1)
+// 		// 	{
+// 		// 		cerr << "Error: Message not sent - " << errno << endl;
+// 		// 		keep_alive = false;
+// 		// 		break;
+// 		// 	}
+// 		// 	if (!keep_alive)
+// 		// 		break;
+// 		// }
+// 		// close(connected_socket_fd);		
+// 	}
+// 	close(server.get_socket_fd());
+// 	return (0);
+// }

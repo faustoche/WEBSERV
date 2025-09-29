@@ -70,8 +70,7 @@ private:
 		c_client	*find_client(int client_fd);
 		void		setup_pollfd();
 		void		handle_poll_events();
-		void		handle_new_connection();
-		void		handle_new_connection_multiple(int listening_socket);
+		void		handle_new_connection(int listening_socket);
 		void		handle_client_read(int client_fd);
 		void		handle_client_write(int client_fd);
 		void		process_client_request(int client_fd);

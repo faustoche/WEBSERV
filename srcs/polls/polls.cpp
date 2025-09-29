@@ -14,14 +14,7 @@ void c_server::setup_pollfd()
 	_poll_fds.clear();
 
 	/**** INITIALISATION DES DONNÉES *****/
-	/**** 1 SEUL PORT *****/
-	struct pollfd server_pollfd;
-	server_pollfd.fd = _socket_fd;
-	server_pollfd.events = POLLIN; // evenements attendus et surveillés - POLLIN = données en attente de lecture
-	server_pollfd.revents = 0; // evenement detectes et produits. 0 pour commencer
-	_poll_fds.push_back(server_pollfd);
 
-	/**** MULTIPLES PORTS *****/
 	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		struct pollfd server_pollfd;
@@ -94,12 +87,11 @@ void c_server::handle_poll_events()
 
 		if (is_listening_socket(pfd.fd))
 		{
-			if (pfd.revents && POLLIN)
+			if (pfd.revents & POLLIN)
 			{
 				int port = get_port_from_socket(pfd.fd);
 				cout << "Nouvelle connection sur le port " << port << endl;
-				//handle_new_connection(pfd.fd);
-				handle_new_connection_multiple(pfd.fd);
+				handle_new_connection(pfd.fd);
 			}
 			if (pfd.revents & (POLL_ERR | POLLHUP | POLLNVAL))
 			{
@@ -129,22 +121,8 @@ void c_server::handle_poll_events()
 	* Log d'arrivée d'un nouveau client
 */
 
-void	c_server::handle_new_connection()
-{
-	while (true)
-	{
-		socklen_t addrlen = sizeof(_socket_address);
-		int client_fd = accept(_socket_fd, (struct sockaddr*)&_socket_address, &addrlen);
-		if (client_fd < 0)
-			break ;
 
-		set_non_blocking(client_fd);
-		add_client(client_fd);
-		cout << "Nouvelle connexion acceptée : " << client_fd << endl;
-	}
-}
-
-void	c_server::handle_new_connection_multiple(int listening_socket)
+void	c_server::handle_new_connection(int listening_socket)
 {
 	struct sockaddr_in client_address;
 	socklen_t client_len = sizeof(client_address);
