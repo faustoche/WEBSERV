@@ -122,7 +122,7 @@ void	c_response::define_response_content(c_request &request, c_server &server)
 	}
 
 	/***************/
-
+	cout << "ici" << endl;
 	if (!server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
