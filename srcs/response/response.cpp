@@ -538,7 +538,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 			//error_content = "<html><body><h1>500 - Internal Server Error</h1></body></html>";
 			break;
 	}
-	error_content = read_error_pages(error_code);
+	error_content = read_error_pages(error_code); // changer pour prendre en compte la page d'erreur depuis le fichier de conf -> error_content = _err_pages [ code d'erreur ]
 	ostringstream oss;
 	oss << error_content.length();
 	
