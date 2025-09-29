@@ -108,8 +108,7 @@ int main(int argc, char **argv) //main du parsing
 		// initialisation des serveurs
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
-			std::vector<int> empty_ports; // Vecteur vide
-			servers[i].create_socket_for_each_port(empty_ports); // Utilisera 8080 par défaut
+			servers[i].create_socket_for_each_port(servers[i].get_ports()); // Utilisera 8080 par défaut
 			cout << "Server " << i << " initialized" << endl;
 			// servers[i].create_socket();
 			// servers[i].bind_and_listen();

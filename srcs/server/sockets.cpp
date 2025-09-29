@@ -9,10 +9,10 @@ void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 	if (ports_to_use.empty())
 	{
 		cout << "⚠️  WARNING: Aucun port configuré, utilisation du port 8080 par défaut" << endl;
-		ports_to_use.push_back(8080);
+		// ports_to_use.push_back(8080);
 	}
 	
-	for (std::vector<int>::const_iterator it = ports_to_use.begin(); it != ports_to_use.end(); it++)
+	for (std::vector<int>::const_iterator it = ports.begin(); it != ports.end(); it++)
 	{
 		int port = *it;
 		int socket_fd = socket(AF_INET, SOCK_STREAM, 0);

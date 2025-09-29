@@ -435,7 +435,7 @@ void                c_parser::parse_listen_directive(c_server & server)
     }
     if (port == ERANGE || port < 0 || port > 65535)
         throw invalid_argument("Invalid port [0-65535]: " + get_value());
-    server.set_port(static_cast<uint16_t>(port));
+    server.add_port(static_cast<int>(port));
     server.set_ip(str_ip);
 
     advance_token(); // skip ip+port

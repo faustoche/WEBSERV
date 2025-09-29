@@ -44,8 +44,9 @@ class c_server
 
 		// CONFIGURATION FILE
 	    string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
-	    uint16_t                        _port; // dans RFC entier non signe de 16 bits + pas de negatif
-	    string                          _root; // root propre au serveur a definir en dur
+	    // uint16_t                        _port; // dans RFC entier non signe de 16 bits + pas de negatif
+	    vector<int>						_ports;
+		string                          _root; // root propre au serveur a definir en dur
 	    // string							_host;
 		vector <string>                 _indexes; // plusieurs fichiers index possibles, il faut verifier la validite de l'index au moment de la requete & prendre le premier valide 
 	    vector <string>					_names;
@@ -109,7 +110,7 @@ class c_server
 		~c_server();
 		c_server const &	operator=(c_server const & rhs);
 	    // Setters
-		void								set_port(uint16_t const & port);
+		void								add_port(int const & port);
 		void								set_ip(string const & ip);
 	    void                				add_location(string const & path, c_location const & loc);
 		void								set_name(vector<string> const & names);
@@ -120,7 +121,7 @@ class c_server
 	    // Getters
 	    vector<string> const &      		get_indexes() const { return (_indexes); };
 		string const &						get_ip_adress() const {return (_ip); };
-		uint16_t const &					get_port() const {return (_port); };
+		vector<int> const &					get_ports() const {return (_ports); };
 		string								get_root() const {return (_root);} ;
 		vector<string> const &				get_name() const {return (_names); };
 		size_t								get_body_size() const {return (_body_size); };
@@ -132,6 +133,7 @@ class c_server
 		void					print_indexes() const;
 		void					print_names() const;
 		void					print_error_page() const;
+		void					print_ports() const;
 };
 
 /************ FUNCTIONS ************/

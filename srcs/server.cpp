@@ -22,7 +22,7 @@ c_server const &	c_server::operator=(c_server const & rhs)
 	if (this != &rhs)
 	{
 		_ip = rhs._ip;
-		_port = rhs._port;
+		_ports = rhs._ports;
 		_names = rhs._names;
 		_root = rhs._root;
 		_indexes = rhs._indexes;
@@ -43,9 +43,9 @@ void	c_server::set_indexes(vector<string> const & indexes)
 	this->_indexes = indexes;
 }
 
-void	c_server::set_port(uint16_t const & port)
+void	c_server::add_port(int const & port)
 {
-	this->_port = port;
+	this->_ports.push_back(port);
 }
 
 void	c_server::set_ip(string const & ip)
@@ -119,6 +119,15 @@ void	c_server::print_error_page() const
 	}
 }
 
+void	c_server::print_ports() const
+{
+	vector<int>::const_iterator it;
+	for (it = _ports.begin(); it != _ports.end(); it++)
+	{
+		cout << *it << " ";
+	}
+}
+
 
 void	c_server::print_config() const
 {
@@ -127,10 +136,12 @@ void	c_server::print_config() const
 			print_names();
 			cout << endl;
 	cout	<< "	IP adress: " << get_ip_adress() << endl
-			<< "	Port: " << get_port() << endl
 			<< "	Max body size: " << get_body_size() << " " << endl
 			<< "	Index files: " << flush;
 			print_indexes();
+	cout	<< endl;
+	cout	<< "	Port(s): " << flush;
+			print_ports();
 	cout	<< endl;
 	cout	<< "	Error pages:" << endl;
 			print_error_page();
