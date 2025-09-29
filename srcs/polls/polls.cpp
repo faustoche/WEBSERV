@@ -216,7 +216,7 @@ void c_server::handle_client_read(int client_fd)
 	c_client *client = find_client(client_fd);
 	if (!client)
 	{
-		cout << "Client not found ! " << __FILE__ << "/" << __LINE__ << endl;
+		std::cout << "Client not found ! " << __FILE__ << "/" << __LINE__ << endl;
 		return ;
 	}
 
@@ -224,22 +224,23 @@ void c_server::handle_client_read(int client_fd)
 	request.read_request(client_fd);
 	if (request.is_client_disconnected() || request.get_error())
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+		std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		close(client_fd);
 		remove_client(client_fd);
 		// client->set_state(IDLE);
 		return ;
 	}
 	/* */
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	request.print_full_request();
 	c_response response(*this, client_fd);
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	response.define_response_content(request);
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (response.get_is_cgi())
+	{
 		client->set_state(PROCESSING);
-		cout << PINK << "*Client " << client->get_fd() << " processing request*" << RESET << endl;
+		std::cout << PINK << "*Client " << client->get_fd() << " processing request*" << RESET << endl;
 	}
 	else
 	{
@@ -248,7 +249,6 @@ void c_server::handle_client_read(int client_fd)
 		cout << PINK << "*Client " << client->get_fd() << " is ready to receive data : POLLOUT*" << RESET << endl;
 	}
 	client->set_bytes_written(0);
-	
 }
 
 /*
