@@ -370,7 +370,6 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		
 		if (total_bytes > max_body_size)
 		{
-			cout << __FILE__ << "/" << __LINE__ << endl;
 			cerr << "(Request) Error: actual body size (" << total_bytes 
 				<< ") excess announced size (" << max_body_size << ")" << endl;
 			this->_status_code = 413;
