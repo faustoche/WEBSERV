@@ -85,6 +85,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
+	
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -92,22 +93,29 @@ void	c_response::define_response_content(const c_request &request)
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
-
-	if (matching_location == NULL)
-	{
-		cout << "Error: no location found for target: " << target  << endl;
-		build_error_response(404, version, request);
-		return ;
+	if (matching_location == NULL) 
+	{// si on a une requete vers un dossier qui ne matche avec aucune location, sinon build la reponse avec le fichier index s'il existe ou renvoyer une erreur
+		string full_path = _server.get_root() + target;
+		if (is_directory(full_path))
+		{
+			if (_server.get_indexes().empty())
+			{
+				cout << "Error: no location found for target: " << target  << endl;
+				build_error_response(404, version, request);
+				return ;
+			}
+		}
 	}
 
 	/***************/
-
+	
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
 		return ;	
 	}
 
+	
 	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
@@ -118,7 +126,7 @@ void	c_response::define_response_content(const c_request &request)
 			return ;
 		}
 	}
-
+	
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
@@ -132,11 +140,14 @@ void	c_response::define_response_content(const c_request &request)
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
-			this->_is_cgi = false;	
+			this->_is_cgi = false;
 			build_directory_listing_response(file_path, version, request);
 			return ;
 		}
-		build_error_response(404, version, request);
+		if (_server.get_indexes().empty())
+		{
+			build_error_response(404, version, request);
+		}
 	}
 
 	if (this->_is_cgi)
@@ -167,11 +178,225 @@ void	c_response::define_response_content(const c_request &request)
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
 		return ;
 	}
+	else if (method == "POST") //peut etre a bouger a la fin
+	{
+		handle_post_request(request, matching_location, version);
+		return;
+	}
 	else
 	{
+		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_success_response(file_path, version, request);
 	}
 }
+
+/********************    POST    ********************/
+/* Content-Type
+--> formulaire classique = application/x-www-form-urlencoded
+--> formulaire avec fichiers ou champs multiples = multipart/form-data
+	en-tete du content-type contient un boundary, c'est une chaine unique choisit par le client qui sert de
+	separateur entre les differentes parties du body
+ */
+
+void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
+{
+	(void)location;
+	string	body = request.get_body();
+	string	content_type = request.get_header_value("Content-Type");
+	string	target = request.get_target();
+
+	// cout << "=== DEBUG POST ===" << endl
+	// 		<< "Body recu: [" << body << "]" << endl
+	// 		<< "Content-Type: [" << content_type << "]" << endl
+	// 		<< "Target: [" << request.get_target() << "]" << endl;
+
+	if (target == "/test_post")
+		handle_test_form(request, version);
+	if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
+		handle_contact_form(request, version);
+	if (content_type.find("multipart/form-data") != string::npos)
+		handle_upload_form_file(request, version);
+
+	 // if (content_type.find("application/x-www-form-urlencoded") != string::npos)
+	// upload file
+	// else
+	// 	create_generic_response()
+
+}
+
+/********************   upload form   ********************/
+
+void	c_response::handle_upload_form_file(const c_request &request, const string &version)
+{
+	(void)version;
+	(void)request;
+	// string content_type = request.get_header_value("Content-Type");
+	// string boundary;
+	// size_t start = content_type.find("boundary=");
+	
+	// cout << PINK << content_type << RESET << endl;
+	
+
+}
+
+/*******************   contact form    *******************/
+
+void	c_response::handle_contact_form(const c_request &request, const string &version)
+{
+	(void)version;
+	string body = request.get_body();
+	map<string, string> form_data = parse_form_data(request.get_body());
+
+	if (form_data["nom"].empty() || form_data["email"].empty())
+	{
+		build_error_response(400, version, request);
+		return;
+	}
+	// creer fonciton is_valid email ?
+	if (save_contact_data(form_data))
+	{
+		string success_html = "<html><body><h1>Message enregistre !</h1>"
+                             "<p>Merci " + form_data["nom"] + "</p>"
+                             "<a href=\"/contact.html\">Nouveau message</a></body></html>";
+		_file_content = success_html;
+		build_success_response("response.html", version, request);
+		return;
+	}
+	else
+		build_error_response(500, version, request);
+}
+
+
+
+bool	c_response::save_contact_data(const map<string, string> &data)
+{
+	string filename = "./www/data/contact.txt"; //location.get_upload_path();
+	ofstream file(filename.c_str(), ios::app);
+
+	if (!file.is_open())
+	{
+		cerr << "Error with the creation of the file " << filename << endl;
+		return false;
+	}
+
+	time_t now = time(0);
+	char *str_time = ctime(&now);
+	str_time[strlen(str_time) - 1] = '\0';
+
+	file << "[ " << str_time << " ] ";
+	for (map<string, string>::const_iterator it = data.begin(); it != data.end(); it++)
+	{
+		file << it->first << "=" << it->second << "; ";
+	}
+	file << endl;
+	file.close();
+	return true;
+}
+
+/********************    test form    ********************/
+
+void	c_response::handle_test_form(const c_request &request, const string &version)
+{
+	map<string, string> form_data = parse_form_data(request.get_body());
+	// cout << GREEN << "=== DONNEES PARSEES ===" << endl;
+	// for (map<string, string>::iterator it = form_data.begin(); it != form_data.end(); it++)
+	// 	cout << it->first << " = [ " << it->second << " ]" << endl;
+	create_form_response(form_data, request, version);
+}
+
+void	c_response::create_form_response(const map<string, string> &form, const c_request &request, const string &version)
+{
+	string html = "<!DOCTYPE html>\n<html><head><title>Formulaire recu</title></head>\n<body>\n";
+	html += "<h1>Donnees recues :</h1>\n<ul>\n";
+
+	for (map<string, string>::const_iterator it = form.begin(); it != form.end(); it++)
+	{
+		html += "<li><strong>" + it->first + "</strong>" + ": " + it->second + "</li>\n";
+	}
+	html += "</ul>\n<a href=\"/post_test.html\">Nouveau formulaire</a>\n</body></html>";
+	_file_content = html;
+	build_success_response("response.html", version, request);
+}
+
+/****************   utils for test form   ****************/
+
+string const	c_response::url_decode(const string &body)
+{
+	string	res;
+	size_t	i = 0;
+	
+	while (i < body.size())
+	{
+		if (body[i] == '+')
+		{
+			res += ' ';
+			i++;
+		}
+		else if (body[i] == '%' && i + 2 < body.size())
+		{
+			bool	ishexa = true;
+			string hex_str = body.substr(i + 1, 2);
+			for (size_t j = 0; j < hex_str.size(); ++j)
+			{
+				if (!isxdigit(hex_str[j]))
+					ishexa = false;
+			}
+			if (ishexa)
+			{
+				int value = 0;
+				istringstream iss(hex_str);
+				iss >> std::hex >> value;
+				res += static_cast<char>(value);
+				i +=3 ;
+			}
+			else
+			{
+				res += body[i];
+				i++;
+			}
+		}
+		else
+		{
+			res += body[i];
+			i++;
+		}
+	}
+	return res;
+}
+
+map<string, string> const	c_response::parse_form_data(const string &body)
+{
+	map<string, string>	form_data;
+
+	size_t	pos_and = 0;
+	string	key;
+	string	value;
+	size_t start = 0;
+
+	while (start < body.size())
+	{
+		size_t pos_equal = 0;
+
+		pos_and = body.find("&", start);
+		if (pos_and == string::npos)
+			pos_and = body.size();
+		
+		string pairs = body.substr(start, pos_and - start);
+		pos_equal = pairs.find("=", 0);
+		key = pairs.substr(0, pos_equal);
+		value = pairs.substr(pos_equal + 1);
+
+		key = url_decode(key);
+		value = url_decode(value);
+
+		form_data[key] = value;
+
+		start += pairs.size();
+		start++;
+	}
+	return form_data;
+}
+
 
 /* Proceed to load the file content. Nothing else to say. */
 string c_response::load_file_content(const string &file_path)
@@ -236,6 +461,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 {
 	if (_file_content.empty())
 	{
+		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
@@ -386,7 +612,7 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 		}
 		closedir(dir);
 	}
-	else 
+	else
 		content += "<li>Cannot read directory</li>";
 
 	content += "</ul><hr></body></html>";
@@ -481,10 +707,9 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
-	
 	if (location == NULL)
 	{
-		string index = get_valid_index(this->get_indexes());
+		string index = get_valid_index(_root, this->get_indexes());
 		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
 			return (default_root + "/" + index);
@@ -509,12 +734,9 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
+		cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
-		{
-			// if (!relative_path.empty())
-			// 	relative_path = '/' + relative_path;
 			return (location_root + relative_path);
-		}
 		else
 		{
 			// Processus: On teste tous les autres fichiers dans l'ordre
@@ -526,12 +748,16 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 				if (file_checker.is_open()) // est-ce que le fichier existe? est-ce que j'ai reussi a l'ouvrir
 				{
 					file_checker.close();
+			
 					return (index_path); // ca fonctione donc je le return
 				}
 				file_checker.close();
 			}
 			// aucun fichier index trouve alors on retourne le premier de la liste car il renverra une erreur 404
-			return (location_root  + "/" + relative_path + index_files[0]);
+			// CM = si aucun fichier index n'est trouve dans le dossier de la location et que l'autoindex est on il faut afficher le listing du dossier
+			if (location->get_auto_index())
+				return (location_root + relative_path);
+			return (location_root + relative_path + index_files[0]);
 		}
 	}
 	return (location_root + relative_path);
