@@ -72,6 +72,7 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
+		cout << "status code: " << status_code << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}

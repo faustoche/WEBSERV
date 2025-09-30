@@ -189,10 +189,10 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
     this->_loc = &loc;
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
-    // size_t pos = file_path.find(".");
     string extension = find_script_extension(target);
 
     resolve_cgi_paths(loc, request.get_target());
+    cout << "this->_relative_argv: " << this->_relative_argv << endl;
     if (!this->_relative_argv.empty())
     {
         if (this->_relative_argv.find("data") == string::npos)
