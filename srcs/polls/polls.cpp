@@ -194,20 +194,24 @@ void c_server::handle_poll_events()
 
 void	c_server::handle_new_connection(int listening_socket)
 {
-	struct sockaddr_in client_address;
-	socklen_t client_len = sizeof(client_address);
+	vector<int> new_fds;
+	while (true)
+	{
+		struct sockaddr_in client_address;
+		socklen_t client_len = sizeof(client_address);
 
-	int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
-	if (client_fd < 0)
-		return ;
-
-	int port = get_port_from_socket(listening_socket);
-	cout << "Nouveau client connecté sur le port " << port << endl;
-	set_non_blocking(client_fd);
-
-	c_client new_client;
-	new_client.set_state(READING);
-	_clients[client_fd] = new_client;
+		int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
+		if (client_fd < 0)
+			break ;
+		set_non_blocking(client_fd);
+		int port = get_port_from_socket(listening_socket);
+		cout << GREEN << "\n✅ NEW CONNECTION FOR CLIENT : " << client_fd << " ON PORT : " << port << RESET << endl;
+		c_client new_client(client_fd);
+		new_client.set_state(READING);
+		_clients[client_fd] = new_client;
+	}
+	for (size_t i = 0; i < new_fds.size(); i++)
+		add_client(new_fds[i]);
 }
 
 /*
@@ -229,19 +233,15 @@ void c_server::handle_client_read(int client_fd)
 	request.read_request(client_fd);
 	if (request.is_client_disconnected() || request.get_error())
 	{
-		std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		close(client_fd);
 		remove_client(client_fd);
 		// client->set_state(IDLE);
 		return ;
 	}
 	/* */
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	request.print_full_request();
 	c_response response(*this, client_fd);
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	response.define_response_content(request);
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (response.get_is_cgi())
 	{
 		client->set_state(PROCESSING);
