@@ -318,6 +318,10 @@ string  c_cgi::launch_cgi(const string &body)
                 perror("chdir failed");
                 return ("");
             }
+            // string  abs_path = make_absolute(this->_map_env_vars["SCRIPT_FILENAME"]);
+            // this->_map_env_vars["SCRIPT_FILENAME"] = abs_path;
+            // cout << "this->_script_filename :" << this->_script_filename  << endl;
+            // cout << "this->_relative_argv: " << this->_relative_argv << endl;
 
                 char *argv[4];
                 argv[0] = const_cast<char*>(this->_interpreter.c_str());
@@ -328,6 +332,7 @@ string  c_cgi::launch_cgi(const string &body)
         }
         else
         {
+            cout << __FILE__ << "/" << __LINE__ << endl;
             char *argv[3];
             argv[0] = const_cast<char*>(this->_interpreter.c_str());
             argv[1] = const_cast<char*>(this->_script_filename.c_str());
