@@ -356,15 +356,6 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
 	}
-	else if (bytes_read == 0 && cgi->get_read_buffer().size() > 0)
-	{
-		if (!cgi->headers_parsed())
-			fill_cgi_response_headers("", cgi);
-		fill_cgi_response_body(cgi->get_read_buffer(), cgi);
-		client->set_state(SENDING);
-		cgi->consume_read_buffer(cgi->get_read_buffer().size());
-	}
-
 }	
 
 // Le CGI a ferme son pipe_out, on envoie tout ce qui a ete lu au client
@@ -374,6 +365,13 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	ssize_t bytes_read;
 
 	c_client *client = find_client(cgi->get_client_fd());
+	if (client && !cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
+	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
+		fill_cgi_response_headers("", cgi);
+		fill_cgi_response_body(cgi->get_read_buffer(), cgi);
+	}
+
 	while (client &&  (bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0)
 	{
 		if (cgi->get_content_length() == 0)
