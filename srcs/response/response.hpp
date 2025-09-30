@@ -91,4 +91,6 @@ private:
 	s_multipart const			parse_single_part(const string &raw_part);
 	void						parse_header_section(const string &header_section, s_multipart &part);
 	string						extract_line(const string &header_section, const size_t &pos);
+	string						extract_quotes(const string &line, const string &type);
+	string						extract_after_points(const string &line);
 };

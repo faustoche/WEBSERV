@@ -310,20 +310,31 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	size_t	pos_disposition = header_section.find("Content-Disposition");
 	if (pos_disposition != string::npos)
 	{
-		// extraire la ligne 
 		string line = extract_line(header_section, pos_disposition);
-		cout << MAGENTA << line << endl;
-		part.name = 
-		
+		cout << GREEN << line << endl;
+		part.name = extract_quotes(line, "name=");
+		// cout << GREEN << part.name << endl;
+		part.filename = extract_quotes(line, "filename=");
+		// cout << GREEN << part.filename << RESET << endl;
 		//creer fonction pour extraire la valeur entre guillemets
 		//peut etre vide
+		// y a t-il dautres info dans content-disposition ?
 	}
 
 	// Parser Content-Type
+	size_t	pos_type = header_section.find("Content-Type");
+	if (pos_type != string::npos)
+	{
+		string line = extract_line(header_section, pos_type);
+		cout << GREEN << line << endl;
+		part.content_type = extract_after_points(line);
+		cout << GREEN << part.content_type << RESET << endl;
+	}
 		// extraire toute la ligne
 		// extraite la valeur apres Content-Type
 		// trim les espaces
 }
+
 
 string	c_response::extract_line(const string &header_section, const size_t &pos)
 {
@@ -334,6 +345,36 @@ string	c_response::extract_line(const string &header_section, const size_t &pos)
 	
 	string line = header_section.substr(pos, end_pos);
 	return line;
+}
+
+string	c_response::extract_quotes(const string &line, const string &type)
+{
+	size_t key_pos = line.find(type);
+	if (key_pos == string::npos)
+		return "";
+	
+	size_t first_quote = line.find('"', key_pos);
+	if (first_quote == string::npos)
+		return ""; // fautil throw une exception pour format invalide ?
+	size_t second_quote = line.find('"', first_quote + 1);
+
+	if (second_quote == string::npos)
+		return ""; // fautil throw une exception pour format invalide ?
+	
+	string value = line.substr(first_quote + 1, second_quote - first_quote - 1);
+	return value;
+}
+
+string	c_response::extract_after_points(const string &line)
+{
+	size_t pos = line.find(':');
+	if (pos == string::npos)
+		return "";
+	
+	string value = line.substr(pos + 1);
+	// value.erase(line.find_last_not_of(" "));
+	// trim les espaces
+	return value;
 }
 
 /*******************   contact form    *******************/
