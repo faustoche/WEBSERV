@@ -145,4 +145,5 @@ string 		ft_trim(const string& str);
 string		get_valid_index(const string & root, vector<string> const & indexes);
 // string		get_valid_index(vector<string> const & indexes);
 bool		is_executable_file(const string & path);
+bool        is_existing_file(const string & path);
 bool		is_readable_file(const string & path);

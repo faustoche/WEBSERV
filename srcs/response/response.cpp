@@ -183,6 +183,26 @@ void	c_response::define_response_content(const c_request &request)
 		handle_post_request(request, matching_location, version);
 		return;
 	}
+	else if (method == "DELETE")
+	{
+		std::cout << "DELETE request for: " << file_path << std::endl;
+		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+   		 std::cout << "File exists: " << is_existing_file(file_path) << std::endl;
+		if (!is_existing_file(file_path))
+		{
+			cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+			cout << "404 - file not found" << endl;
+			build_error_response(404, version, request);
+			return ;
+		}
+		if (remove(file_path.c_str()) != 0)
+		{
+			cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
+			build_error_response(500, version, request);
+			return ;
+		}
+		build_success_response(file_path, version, request);
+	}
 	else
 	{
 		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
@@ -515,24 +535,24 @@ void c_response::build_error_response(int error_code, const string version, cons
 	string error_content;
 
 	// Définir le message de statut
-	switch (error_code)
-	{
-		case 400:
-			status = "Bad Request";
-			break;
-		case 404:
-			status = "Not Found";
-			break;
-		case 405:
-			status = "Method Not Allowed";
-			break;
-		case 505:
-			status = "HTTP Version Not Supported";
-			break;
-		default:
-			status = "Internal Server Error";
-			break;
-	}
+	// switch (error_code)
+	// {
+	// 	case 400:
+	// 		status = "Bad Request";
+	// 		break;
+	// 	case 404:
+	// 		status = "Not Found";
+	// 		break;
+	// 	case 405:
+	// 		status = "Method Not Allowed";
+	// 		break;
+	// 	case 505:
+	// 		status = "HTTP Version Not Supported";
+	// 		break;
+	// 	default:
+	// 		status = "Internal Server Error";
+	// 		break;
+	// }
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);

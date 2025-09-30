@@ -48,12 +48,17 @@ string  ft_trim(const string& str)
     return (str.substr(start, end - start));
 }
 
-bool        is_readable_file(const std::string & path)
+bool        is_readable_file(const string & path)
 {
     return access(path.c_str(), R_OK) == 0;
 }
 
-bool        is_executable_file(const std::string & path)
+bool        is_existing_file(const string & path)
+{
+    return (access(path.c_str(), F_OK) == 0);
+}
+
+bool        is_executable_file(const string & path)
 {
     return access(path.c_str(), X_OK) == 0;
 }

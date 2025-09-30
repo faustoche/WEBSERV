@@ -78,4 +78,8 @@ private:
 	bool						save_contact_data(const map<string, string> &data);
 	void						error_form_response(const string &msg, const c_request &request);
 	void						handle_upload_form_file(const c_request &request, const string &version);
+
+
+	/***** DELETE method *****/
+	void	handle_delete_request();
 };
