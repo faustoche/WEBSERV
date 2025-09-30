@@ -533,42 +533,24 @@ void c_response::build_error_response(int error_code, const string version, cons
 			status = "Internal Server Error";
 			break;
 	}
-	
-	// Récupérer la page d'erreur depuis la configuration du serveur
+
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
-	
 	if (it != err_pages.end())
 	{
 		string error_path = it->second;
-		
-		// Convertir le chemin URL en chemin filesystem
-		// Si le chemin commence par '/', on le considère comme relatif à la racine du serveur
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
-			
-			// DEBUG: Afficher le root
-			cout << YELLOW << "Server root: [" << root << "]" << RESET << endl;
-			
-			// Si root est vide, "." ou ne contient pas "www", on force "./www"
 			if (root.empty() || root == "." || root == "./")
 				root = "./www";
-			
-			// Retirer le '/' initial et construire le chemin complet
 			error_path = root + error_path;
 		}
-		
-		cout << GREEN << "Trying to load error page from: [" << error_path << "]" << RESET << endl;
-		
-		// Charger la page d'erreur configurée
 		error_content = load_file_content(error_path);
-		
 		if (error_content.empty())
 		{
 			cerr << RED << "Error: Could not load error page: " << error_path << RESET << endl;
 			cerr << RED << "Check if file exists and is readable!" << RESET << endl;
-			// Fallback : page d'erreur HTML minimale
 			ostringstream fallback;
 			fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 			error_content = fallback.str();
@@ -580,7 +562,6 @@ void c_response::build_error_response(int error_code, const string version, cons
 	}
 	else
 	{
-		// Aucune page configurée pour ce code d'erreur : page HTML minimale
 		cerr << YELLOW << "Warning: No error page configured for code " << error_code << RESET << endl;
 		ostringstream fallback;
 		fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
