@@ -45,7 +45,7 @@ class c_request
         // void    read_body_with_length(int socket_fd, char* buffer, string request);
         void    read_body_with_length(int socket_fd, char* buffer, string request, size_t buffer_size);
         void    read_body_with_chunks(int socket_fd, char* buffer, string request);
-        void    fill_body_with_bytes(const char *buffer, size_t len);
+        int    fill_body_with_bytes(const char *buffer, size_t len);
         void    fill_body_with_chunks(string &accumulator);
 
         void    check_required_headers();

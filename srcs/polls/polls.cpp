@@ -229,19 +229,16 @@ void c_server::handle_client_read(int client_fd)
 
 	c_request request(*this);
 	request.read_request(client_fd);
-	c_response response(*this, client_fd);
 	
-	if (request.is_client_disconnected() || request.get_error())
+	if (request.is_client_disconnected())
 	{
-		response.build_error_response(request.get_status_code(), request.get_version(), request);
 		close(client_fd);
 		remove_client(client_fd);
-		// client->set_state(IDLE);
 		return ;
 	}
 	/* */
 	request.print_full_request();
-	// c_response response(*this, client_fd);
+	c_response response(*this, client_fd);
 	response.define_response_content(request);
 	if (response.get_is_cgi())
 	{
