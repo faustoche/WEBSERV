@@ -229,14 +229,111 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 void	c_response::handle_upload_form_file(const c_request &request, const string &version)
 {
 	(void)version;
-	(void)request;
-	// string content_type = request.get_header_value("Content-Type");
-	// string boundary;
-	// size_t start = content_type.find("boundary=");
+	string content_type = request.get_header_value("Content-Type");
+	string boundary;
+	size_t pos = content_type.find("boundary=");
+	if (pos != string::npos)
+		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
+	else
+		throw invalid_argument("Can't find the boundary in the Content-Type value for upload a file");
 	
-	// cout << PINK << content_type << RESET << endl;
-	
+	cout << PINK << boundary << RESET << endl;
+	vector<s_multipart> parsed_body = parse_multipart_data(request.get_body(), boundary);
+	// faut-il forcement avoir un upload_path de definit pour upload un fichier ?
 
+}
+
+vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
+{
+	string			delimiter = "--" + boundary;
+	size_t			pos = 0;
+	vector<size_t>	boundary_pos;
+
+	while((pos = body.find(delimiter, pos)) != string::npos)
+	{
+		boundary_pos.push_back(pos);
+		pos += delimiter.size();
+	}
+
+	vector<s_multipart>	parts;
+	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
+	{
+		size_t	begin = boundary_pos[i] + delimiter.length();
+		size_t	end = boundary_pos[i + 1];
+		string	raw_part = body.substr(begin, end);
+		s_multipart single_part = parse_single_part(raw_part);
+		parts.push_back(single_part);
+	}
+	
+	// for(vector<size_t>::iterator it = boundary_pos.begin(); it != boundary_pos.end(); it++ )
+	// {
+	// 	cout << GREEN << *it << endl;
+	// }
+	return parts;
+}
+
+s_multipart const	c_response::parse_single_part(const string &raw_part)
+{
+	s_multipart	part;
+	size_t		separator_pos = raw_part.find("\r\n\r\n");
+
+	if (separator_pos == string::npos)
+		return part;
+
+	string header_section = raw_part.substr(0, separator_pos);
+	string content_section = raw_part.substr(separator_pos + 4, raw_part.size());
+	cout << ORANGE << header_section << endl;
+	cout << FUCHSIA << content_section << endl;
+	
+	// nettoyer le contenu -> "\r\n" ou boundary de fin 
+
+	// parser les header
+	parse_header_section(header_section, part);
+
+	// determiner le type
+
+	// verifier le content-type ?
+
+	return part;
+
+
+}
+
+void	c_response::parse_header_section(const string &header_section, s_multipart &part)
+{
+	(void)header_section;
+	// Headers possibles :
+    // - Content-Disposition: form-data; name="xxx"; filename="yyy"
+    // - Content-Type: image/jpeg
+
+	// Parser Content-Disposition
+	size_t	pos_disposition = header_section.find("Content-Disposition");
+	if (pos_disposition != string::npos)
+	{
+		// extraire la ligne 
+		string line = extract_line(header_section, pos_disposition);
+		cout << MAGENTA << line << endl;
+		part.name = 
+		
+		//creer fonction pour extraire la valeur entre guillemets
+		//peut etre vide
+	}
+
+	// Parser Content-Type
+		// extraire toute la ligne
+		// extraite la valeur apres Content-Type
+		// trim les espaces
+}
+
+string	c_response::extract_line(const string &header_section, const size_t &pos)
+{
+	size_t	end_pos = header_section.find("\r\n", pos);
+
+	if (end_pos == string::npos)
+		end_pos = header_section.length(); //verifier si lenght ou size
+	
+	string line = header_section.substr(pos, end_pos);
+	return line;
 }
 
 /*******************   contact form    *******************/

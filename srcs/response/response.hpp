@@ -22,6 +22,15 @@ class	c_server;
 class	c_cgi;
 class	c_location;
 
+struct	s_multipart // pour la gestion de POST pour l'upload de fichiers
+{
+	string	name; // description, file
+	string	filename; // vide si champ texte
+	string	content_type; // vide si champ texte
+	string	content; // donnee (texte ou binaire) 
+	bool	is_file;
+};
+
 class c_response
 {
 private:
@@ -78,4 +87,8 @@ private:
 	bool						save_contact_data(const map<string, string> &data);
 	void						error_form_response(const string &msg, const c_request &request);
 	void						handle_upload_form_file(const c_request &request, const string &version);
+	vector<s_multipart> const	parse_multipart_data(const string &body, const string &boundary); // return une reference ?
+	s_multipart const			parse_single_part(const string &raw_part);
+	void						parse_header_section(const string &header_section, s_multipart &part);
+	string						extract_line(const string &header_section, const size_t &pos);
 };

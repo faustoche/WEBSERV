@@ -45,6 +45,12 @@ void	c_server::set_indexes(vector<string> const & indexes)
 
 void	c_server::add_port(int const & port)
 {
+	vector<int>::iterator it;
+	for (it = _ports.begin(); it != _ports.end(); it++)
+	{
+		if (*it == port)
+			throw invalid_argument("One servor can't listen severals times on the same port");
+	}
 	this->_ports.push_back(port);
 }
 
