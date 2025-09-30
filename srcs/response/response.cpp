@@ -458,7 +458,7 @@ string c_response::read_error_pages(int error_code)
 		return (content.str());
 	}
 	ostringstream fallback;
-	fallback << "<html><body><h1>" << error_code << " - Error</h1></body></html>";
+	fallback << "<html><body><h1>" << error_code << " - testetsError</h1></body></html>";
 	return (fallback.str());
 }
 
@@ -484,7 +484,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 	if (_file_content.empty())
 	{
 		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
-		build_error_response(request.get_status_code(), version, request);
+		build_error_response(404, version, request);
 		return ;
 	}
 
@@ -509,36 +509,84 @@ void c_response::build_success_response(const string &file_path, const string ve
 }
 
 /* Build basic error response for some cases. */
-
 void c_response::build_error_response(int error_code, const string version, const c_request &request)
 {
 	string status;
 	string error_content;
 
+	// Définir le message de statut
 	switch (error_code)
 	{
 		case 400:
 			status = "Bad Request";
-			//error_content = "<html><body><h1>400 - Bad Request</h1></body></html>";
 			break;
 		case 404:
 			status = "Not Found";
-			//error_content = "<html><body><h1>404 - Page Not Found</h1></body></html>";
 			break;
 		case 405:
 			status = "Method Not Allowed";
-			//error_content = "<html><body><h1>405 - Method Not Allowed</h1></body></html>";
 			break;
 		case 505:
 			status = "HTTP Version Not Supported";
-			//error_content = "<html><body><h1>505 - HTTP Version Not Supported</h1></body></html>";
 			break;
 		default:
 			status = "Internal Server Error";
-			//error_content = "<html><body><h1>500 - Internal Server Error</h1></body></html>";
 			break;
 	}
-	error_content = read_error_pages(error_code); // changer pour prendre en compte la page d'erreur depuis le fichier de conf -> error_content = _err_pages [ code d'erreur ]
+	
+	// Récupérer la page d'erreur depuis la configuration du serveur
+	map<int, string> const &err_pages = _server.get_err_pages();
+	map<int, string>::const_iterator it = err_pages.find(error_code);
+	
+	if (it != err_pages.end())
+	{
+		string error_path = it->second;
+		
+		// Convertir le chemin URL en chemin filesystem
+		// Si le chemin commence par '/', on le considère comme relatif à la racine du serveur
+		if (!error_path.empty() && error_path[0] == '/')
+		{
+			string root = _server.get_root();
+			
+			// DEBUG: Afficher le root
+			cout << YELLOW << "Server root: [" << root << "]" << RESET << endl;
+			
+			// Si root est vide, "." ou ne contient pas "www", on force "./www"
+			if (root.empty() || root == "." || root == "./")
+				root = "./www";
+			
+			// Retirer le '/' initial et construire le chemin complet
+			error_path = root + error_path;
+		}
+		
+		cout << GREEN << "Trying to load error page from: [" << error_path << "]" << RESET << endl;
+		
+		// Charger la page d'erreur configurée
+		error_content = load_file_content(error_path);
+		
+		if (error_content.empty())
+		{
+			cerr << RED << "Error: Could not load error page: " << error_path << RESET << endl;
+			cerr << RED << "Check if file exists and is readable!" << RESET << endl;
+			// Fallback : page d'erreur HTML minimale
+			ostringstream fallback;
+			fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
+			error_content = fallback.str();
+		}
+		else
+		{
+			cout << GREEN << "Successfully loaded error page (" << error_content.length() << " bytes)" << RESET << endl;
+		}
+	}
+	else
+	{
+		// Aucune page configurée pour ce code d'erreur : page HTML minimale
+		cerr << YELLOW << "Warning: No error page configured for code " << error_code << RESET << endl;
+		ostringstream fallback;
+		fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
+		error_content = fallback.str();
+	}
+	
 	ostringstream oss;
 	oss << error_content.length();
 	
