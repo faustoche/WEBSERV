@@ -41,8 +41,8 @@ void	c_request::read_request(int socket_fd)
 		{
 			if (receivedBytes == 0) // break ou vrai erreur ?
 			{
-				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-				this->_error = true;
+				// cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
+				// this->_error = true;
 				// close(this->_socket_fd);
 				return ;
 			} 
