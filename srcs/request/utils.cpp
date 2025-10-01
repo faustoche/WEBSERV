@@ -153,6 +153,7 @@ void	c_request::init_request()
 	this->_disconnected = false;
 	this->_content_length = 0;
 	this->_chunk_line_count = 0;
+	this->_client_max_body_size = 0;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
 		it->second = "";

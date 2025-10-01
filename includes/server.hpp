@@ -25,6 +25,7 @@
 /************ DEFINE ************/
 
 #define	BUFFER_SIZE 4096
+#define TIMEOUT 10
 using	namespace std;
 
 /************ CLASS ************/

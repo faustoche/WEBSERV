@@ -23,14 +23,23 @@ void c_server::setup_pollfd()
 		_poll_fds.push_back(server_pollfd);
 	}
 
+
 	/**** AJOUT DES CLIENTS *****/
 	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		/**** AJOUT DES CLIENTS ACTIFS *****/
 		int client_fd = it->first; // recoit le descripteur du client concerne
 		c_client &client = it->second; // ref vers l'objet client de la map
-		if (client.get_state() == DISCONNECTED)
+		// if (client.get_state() == DISCONNECTED)
+		// 	continue;
+		time_t now = time(NULL);
+		if (now - client.get_last_modified() > TIMEOUT)
+		{
+			cout << "client.get_fd(): " << client.get_fd() << " has timed out." << endl;
+			remove_client(client_fd);
+			// close(client.get_fd());
 			continue;
+		}
 
 		/***** POLLFD LOCAL POUR LE CLIENT *****/
 		struct pollfd client_pollfd;
@@ -51,7 +60,7 @@ void c_server::setup_pollfd()
 				client_pollfd.events = POLLOUT; // ou 0? a tester 
 				break;
 			case IDLE:
-				client_pollfd.events = POLLIN;
+				client_pollfd.events = 0;
 			default:
 				continue ;
 		}
@@ -90,8 +99,9 @@ void c_server::handle_poll_events()
 {
 	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
-
-	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 30000);
+	// cout << "coucou" << endl;
+	
+	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
 	if (num_events < 0)
 	{
 		cerr << "Error: Poll() failed\n"; 
@@ -105,7 +115,9 @@ void c_server::handle_poll_events()
 	{
 		/*struct*/ pollfd pfd = _poll_fds[i];
 		if (pfd.revents == 0)
+		{
 			continue ;
+		}
 
 		if (is_listening_socket(pfd.fd))
 		{
@@ -152,8 +164,17 @@ void c_server::handle_poll_events()
 			c_client *client = find_client(fd);
 			if (!client)
 				continue;
+			if (pfd.revents & 0 && time(NULL) - client->get_last_modified() > TIMEOUT)
+			{
+				cout << "Client " << fd << " has timed out" << endl;
+				remove_client(fd);
+			}
+
 			if (pfd.revents & POLLIN)
+			{
+				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
+			}
 			else if (pfd.revents & POLLOUT)
 			{
 				handle_client_write(fd);
@@ -229,29 +250,34 @@ void c_server::handle_client_read(int client_fd)
 
 	c_request request(*this);
 	request.read_request(client_fd);
-	
 	if (request.is_client_disconnected())
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		close(client_fd);
-		remove_client(client_fd);
+		remove_client(client_fd);cout << __FILE__ << "/" << __LINE__ << endl;
 		return ;
 	}
 	/* */
-	request.print_full_request();
-	c_response response(*this, client_fd);
-	response.define_response_content(request);
-	if (response.get_is_cgi())
+	if (client->get_state() != IDLE)
 	{
-		client->set_state(PROCESSING);
-		std::cout << PINK << "*Client " << client->get_fd() << " processing request*" << RESET << endl;
+		request.print_full_request();
+		c_response response(*this, client_fd);
+		response.define_response_content(request);
+		if (response.get_is_cgi())
+		{
+			client->set_state(PROCESSING);
+			std::cout << PINK << "*Client " << client->get_fd() << " processing request*" << RESET << endl;
+		}
+		else
+		{
+			client->get_write_buffer() = response.get_response();
+			client->set_state(SENDING);
+			cout << PINK << "*Client " << client->get_fd() << " is ready to receive data : POLLOUT*" << RESET << endl;
+		}
+		client->set_bytes_written(0);
 	}
 	else
-	{
-		client->get_write_buffer() = response.get_response();
-		client->set_state(SENDING);
-		cout << PINK << "*Client " << client->get_fd() << " is ready to receive data : POLLOUT*" << RESET << endl;
-	}
-	client->set_bytes_written(0);
+		cout <<__FILE__ << "/" << __LINE__ << endl;
 }
 
 /*
@@ -288,7 +314,8 @@ void	c_server::handle_client_write(int client_fd)
 		remove_client(client_fd);
 		return ;
 	}
-
+	else
+		client->set_last_modified();
 	client->set_bytes_written(bytes_written + bytes_sent);
 
     if (client->get_bytes_written() >= write_buffer.length())
@@ -302,15 +329,27 @@ void	c_server::handle_client_write(int client_fd)
 
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
-		{	
+		{
 			cout << GREEN << "\n✅ RESPONSE FULLY SENT TO CLIENT " << client->get_fd() << RESET << endl << endl;
 			cout << PINK << "*Client " << client->get_fd() << " can send a new request : POLLIN*" << RESET << endl;
 			client->set_bytes_written(0);
 			client->clear_read_buffer();
 			client->clear_write_buffer();
+			client->set_response_complete(false);
 			client->set_state(READING);
 			return ;
 		}
+		// if (client->get_response_complete() && cgi->is_finished())
+		// {	
+		// 	cout << GREEN << "\n✅ RESPONSE FULLY SENT TO CLIENT " << client->get_fd() << RESET << endl << endl;
+		// 	cout << PINK << "*Client " << client->get_fd() << " can send a new request : POLLIN*" << RESET << endl;
+		// 	client->set_bytes_written(0);
+		// 	client->clear_read_buffer();
+		// 	client->clear_write_buffer();
+		// 	client->set_response_complete(false);
+		// 	client->set_state(READING);
+		// 	return ;
+		// }
     }
 }
 
@@ -365,7 +404,6 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client && !cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		fill_cgi_response_headers("", cgi);
 		fill_cgi_response_body(cgi->get_read_buffer(), cgi);
 	}

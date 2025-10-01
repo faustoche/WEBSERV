@@ -91,8 +91,14 @@ void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
 {
     if (!buffer || bytes == 0)
         return ;
-
+    if (_read_buffer.size() + bytes > 10 * 1024 * 1024) 
+    {
+        std::cerr << "CGI output too large, killing process" << std::endl;
+        kill(this->get_pid(), SIGKILL); // ou close le fd
+        return;
+    }
     this->_read_buffer.append(buffer, bytes);
+    std::cerr << "CGI buffer size: " << _read_buffer.size() << "\n";
 }
 
 void    c_cgi::consume_read_buffer(size_t n) 

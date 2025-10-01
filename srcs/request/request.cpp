@@ -29,7 +29,12 @@ void	c_request::read_request(int socket_fd)
 	
 	this->init_request();
 	this->_socket_fd = socket_fd;
-
+	c_client *client = _server.find_client(socket_fd);
+	if (!client)
+	{
+		this->_error = true;
+		return ;
+	}
 
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
@@ -39,13 +44,22 @@ void	c_request::read_request(int socket_fd)
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
-			if (receivedBytes == 0) // break ou vrai erreur ?
+			// if (receivedBytes == 0 && (time(NULL) - client->get_last_modified() > TIMEOUT)) // break ou vrai erreur ?
+			// {
+			// 	cout << __FILE__ << "/" << __LINE__ << endl;
+			// 	cout << "Client has timed out" << endl;
+			// 	close(this->_socket_fd);
+			// 	// remove_client(this->_socket_fd);
+			// 	// cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
+			// 	// this->_error = true;
+			// 	// close(this->_socket_fd);
+			// 	return ;
+			// }
+			if (receivedBytes == 0)
 			{
-				// cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-				// this->_error = true;
-				// close(this->_socket_fd);
+				client->set_state(IDLE);
 				return ;
-			} 
+			}
 			else
 			{
 				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
