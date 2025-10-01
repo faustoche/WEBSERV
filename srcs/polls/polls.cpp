@@ -190,8 +190,6 @@ void c_server::handle_poll_events()
 	* Ajoute le client à la map
 	* Log d'arrivée d'un nouveau client
 */
-
-
 void	c_server::handle_new_connection(int listening_socket)
 {
 	vector<int> new_fds;
@@ -232,21 +230,17 @@ void c_server::handle_client_read(int client_fd)
 
 	c_request request(*this);
 	request.read_request(client_fd);
-	if (request.is_client_disconnected() || request.get_error())
+	
+	if (request.is_client_disconnected())
 	{
-		std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		close(client_fd);
 		remove_client(client_fd);
-		// client->set_state(IDLE);
 		return ;
 	}
 	/* */
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	request.print_full_request();
 	c_response response(*this, client_fd);
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	response.define_response_content(request);
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (response.get_is_cgi())
 	{
 		client->set_state(PROCESSING);

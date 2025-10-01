@@ -34,7 +34,6 @@ void	c_request::read_request(int socket_fd)
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		fill(buffer, buffer + sizeof(buffer), '\0');
 		// condition pour l'appel de recv ?
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
@@ -42,15 +41,13 @@ void	c_request::read_request(int socket_fd)
 		{
 			if (receivedBytes == 0) // break ou vrai erreur ?
 			{
-				cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
-				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-				this->_error = true;
+				// cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
+				// this->_error = true;
 				// close(this->_socket_fd);
 				return ;
 			} 
 			else
 			{
-				cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
 				return ;
@@ -60,15 +57,19 @@ void	c_request::read_request(int socket_fd)
 		request.append(buffer);
 	}
 	this->parse_request(request);
+	c_location *matching_location = _server.find_matching_location(this->get_target());
+	if (matching_location != NULL && matching_location->get_body_size() > 0)
+	{
+		this->set_client_max_body_size(matching_location->get_body_size());
+	}
 	
 	/* -----Lire le body -----*/
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
-	cout << "Request : " << request << endl;
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 
 	if (!this->_error)
 		this->_request_fully_parsed = true;
+	else
+		return ;
 }
 
 int c_request::parse_request(const string& raw_request)
@@ -78,11 +79,15 @@ int c_request::parse_request(const string& raw_request)
 
 	/*---- ETAPE 1: start-line -----*/
 	if (!getline(stream, line, '\n'))
-		this->_status_code = 400; 
+	{
+		this->_status_code = 400;
+		this->_error = true;
+	} 
 
 	if (line.empty() || line[line.size() - 1] != '\r')
 	{
 		this->_status_code = 400;
+		this->_error = true;
 		return (1);
 	}
 	line.erase(line.size() - 1);
@@ -96,6 +101,7 @@ int c_request::parse_request(const string& raw_request)
 		if (line[line.size() - 1] != '\r')
 		{
 			this->_status_code = 400;
+			this->_error = true;
 			return (1);
 		}
 
@@ -124,12 +130,14 @@ int c_request::parse_start_line(string& start_line)
 	if (space_pos == string::npos)
 	{
 		this->_status_code = 400;
+		this->_error = true;
 		return (0);
 	}
 	this->_method = start_line.substr(start, space_pos - start);;
 	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 	{
 		this->_status_code = 405;
+		this->_error = true;
 		return (0);
 	}
 
@@ -140,6 +148,7 @@ int c_request::parse_start_line(string& start_line)
 	if (space_pos == string::npos)
 	{
 		this->_status_code = 400;
+		this->_error = true;
 		return (0);
 	}
 	tmp = start_line.substr(start, space_pos - start);
@@ -214,9 +223,16 @@ int c_request::parse_headers(string& headers)
 
 /************ BODY ************/
 
-void    c_request::fill_body_with_bytes(const char *buffer, size_t len)
+int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 {
     this->_body.append(buffer, len);
+	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size)
+	{
+		this->_status_code = 413;
+		this->_error = true;
+		return (1);
+	}
+	return (0);
 }
 
 void c_request::fill_body_with_chunks(string &accumulator)
@@ -264,11 +280,13 @@ void c_request::fill_body_with_chunks(string &accumulator)
 				cerr << "(Request) Error: Invalid chunk size: " 
                      << "reçu: " << tmp.size() << " attendu: " << _expected_chunk_size << endl;
                 this->_status_code = 400;
+				this->_error = true;
                 return;				
 			}
             
 			cout << "✓ Chunk valide, ajout au body !\n" << endl;
-            this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size);
+            if (this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size))
+				return ;
         }
     }
 }
@@ -319,7 +337,8 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 	if (!body_part.empty())
 	{
-		this->fill_body_with_bytes(body_part.data(), body_part.size());
+		if (this->fill_body_with_bytes(body_part.data(), body_part.size()))
+			return ;
 		total_bytes += body_part.size();
 
 		if (total_bytes >= max_body_size)
@@ -329,14 +348,6 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		}
 	}
 
-	// /* debuggage */
-	// cout << CYAN << "Content-Length attendu: " << max_body_size << endl;
-	// cout << "Body déjà reçu: " << body_part.size() << " bytes" << RESET << endl;
-	// if (!body_part.empty()) {
-	//     cout << "Body content: [" << body_part << "]" << endl;
-	// }
-	
-	// total_bytes += body_part.size();
 	while (total_bytes < max_body_size)
 	{	
 		fill(buffer, buffer + buffer_size, '\0');
@@ -373,10 +384,12 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 			cerr << "(Request) Error: actual body size (" << total_bytes 
 				<< ") excess announced size (" << max_body_size << ")" << endl;
 			this->_status_code = 413;
+			this->_error = true;
 			return ;
 		}
 
-    	this->fill_body_with_bytes(buffer, receivedBytes);
+    	if (this->fill_body_with_bytes(buffer, receivedBytes))
+			return ;
 
 		if (total_bytes == max_body_size)
 			break;
@@ -391,15 +404,17 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 	{
 		if (this->get_content_length())
 		{
-			cout << __FILE__ << "/" << __LINE__ << endl;
 			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer)); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
 		}
 		else
 			this->read_body_with_chunks(socket_fd, buffer, request);
+		if (this->_error)
+			return ;
 	}
 	else
 		this->_request_fully_parsed = true;
 }
+
 
 /************ SETTERS & GETTERS ************/
 

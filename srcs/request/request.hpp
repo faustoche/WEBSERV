@@ -45,7 +45,7 @@ class c_request
         // void    read_body_with_length(int socket_fd, char* buffer, string request);
         void    read_body_with_length(int socket_fd, char* buffer, string request, size_t buffer_size);
         void    read_body_with_chunks(int socket_fd, char* buffer, string request);
-        void    fill_body_with_bytes(const char *buffer, size_t len);
+        int    fill_body_with_bytes(const char *buffer, size_t len);
         void    fill_body_with_chunks(string &accumulator);
 
         void    check_required_headers();
@@ -72,7 +72,9 @@ class c_request
         const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;
         const string    &get_body() const { return _body; }
+        const size_t    &get_client_max_body_size() const { return _client_max_body_size; };
         void            set_status_code(int code);
+        void            set_client_max_body_size(size_t bytes) { _client_max_body_size = bytes; };
 
 		const map<string, string> &get_headers() const { return _headers; }
 
@@ -101,4 +103,5 @@ class c_request
 		string              _chunk_accumulator;
 		size_t              _content_length;
 		size_t              _expected_chunk_size;
+        size_t              _client_max_body_size;
 };

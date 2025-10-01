@@ -70,6 +70,11 @@ void	c_response::define_response_content(const c_request &request)
 	std::map<string, string> headers = request.get_headers();
 
 	/***** VÉRIFICATIONS *****/
+	if (status_code != 200)
+	{
+		build_error_response(status_code, version, request);
+		return ;
+	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		build_error_response(405, version, request);
@@ -250,6 +255,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 {
 	(void)version;
 	(void)request;
+	cout << __FILE__ << "/" << __LINE__ << endl;
 	// string content_type = request.get_header_value("Content-Type");
 	// string boundary;
 	// size_t start = content_type.find("boundary=");

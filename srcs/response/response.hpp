@@ -57,12 +57,13 @@ public:
 
 	void			clear_response();
 	void			set_error() { this->_error = true; };
+	void			build_error_response(int error_code, const string version, const c_request &request);
 
 private:
 	string	read_error_pages(int error_code);
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
 	void    build_cgi_response(c_cgi & cgi, const c_request &request);
-	void	build_error_response(int error_code, const string version, const c_request &request);
+	// void	build_error_response(int error_code, const string version, const c_request &request);
 	void	build_redirect_response(int code, const string &location, const string &version, const c_request &request);
 	void	build_directory_listing_response(const string &dir_path, const string &version, const c_request &request);
 	string	load_file_content(const string &file_path);
