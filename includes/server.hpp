@@ -104,6 +104,8 @@ class c_server
 		void		check_terminated_cgi_processes();
 		void 		handle_cgi_final_read(int fd, c_cgi* cgi);
 
+		void		close_all_sockets_and_fd(void);
+
 
 		// CONFIGURATION FILE
 		c_server();

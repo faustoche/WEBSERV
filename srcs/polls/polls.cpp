@@ -94,7 +94,7 @@ void c_server::handle_poll_events()
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 30000);
 	if (num_events < 0)
 	{
-		cerr << "Error: Poll() failed\n"; 
+		close_all_sockets_and_fd();
 		return ;
 	}
 	if (num_events == 0)
@@ -117,7 +117,8 @@ void c_server::handle_poll_events()
 			}
 			if (pfd.revents & (POLL_ERR | POLLHUP | POLLNVAL))
 			{
-				cerr << "Error: socet server on port " << get_port_from_socket(pfd.fd) << endl;
+				cerr << "Error: socket server on port " << get_port_from_socket(pfd.fd) << endl;
+				close_all_sockets_and_fd();
 			}
 		}
 		else
@@ -174,6 +175,7 @@ void c_server::handle_poll_events()
 				{
 					kill(cgi->get_pid(), SIGTERM);
 					cleanup_cgi(cgi);
+					close_all_sockets_and_fd();
 				}
 				remove_client(fd);
 			}			
@@ -309,6 +311,7 @@ void	c_server::handle_client_write(int client_fd)
 			client->set_bytes_written(0);
 			client->clear_read_buffer();
 			client->clear_write_buffer();
+			//client->set_response_complete(false);
 			client->set_state(READING);
 			return ;
 		}

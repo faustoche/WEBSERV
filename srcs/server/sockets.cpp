@@ -1,6 +1,4 @@
 #include "server.hpp"
-// Dans srcs/server/sockets.cpp
-// Remplacez la fonction create_socket_for_each_port par :
 
 void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 {
@@ -64,4 +62,28 @@ int c_server::get_port_from_socket(int socket_fd)
 	if (it != _multiple_ports.end())
 		return (it->second);
 	return (-1);
+}
+
+void	c_server::close_all_sockets_and_fd(void)
+{
+	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
+	{
+		int client_fd = it->first;
+		close(client_fd);
+	}
+	_clients.clear();
+	cout << GREEN << "✅ Connexions clients fermées (" << _clients.size() << ")" << RESET << endl;
+
+	cout << ORANGE << "Fermeture des sockets en cours..." << RESET << endl;
+	for (map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
+	{
+		int socket_fd = it->first;
+		int port = it->second;
+		close(socket_fd);
+		cout << ORANGE << "Socket du port " << port << " fermée!" << RESET << endl;
+	}
+	_multiple_ports.clear();
+	cout << GREEN << "✅ Socket fermées!" << RESET << endl;
+	_poll_fds.clear();
+	cout << GREEN << "✅ SERVEUR FERMÉ!" << RESET << endl;
 }
