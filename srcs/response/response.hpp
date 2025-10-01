@@ -86,11 +86,13 @@ private:
 	void						handle_contact_form(const c_request &request, const string &version);
 	bool						save_contact_data(const map<string, string> &data);
 	void						error_form_response(const string &msg, const c_request &request);
-	void						handle_upload_form_file(const c_request &request, const string &version);
+	void						handle_upload_form_file(const c_request &request, const string &version, c_location *location);
 	vector<s_multipart> const	parse_multipart_data(const string &body, const string &boundary); // return une reference ?
 	s_multipart const			parse_single_part(const string &raw_part);
 	void						parse_header_section(const string &header_section, s_multipart &part);
 	string						extract_line(const string &header_section, const size_t &pos);
 	string						extract_quotes(const string &line, const string &type);
 	string						extract_after_points(const string &line);
+	string						extract_boundary(const string &content_type);
+	string						save_uploaded_file(const s_multipart &part, c_location *location);
 };

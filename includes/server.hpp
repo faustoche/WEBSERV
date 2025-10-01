@@ -146,3 +146,6 @@ string		get_valid_index(const string & root, vector<string> const & indexes);
 // string		get_valid_index(vector<string> const & indexes);
 bool		is_executable_file(const string & path);
 bool		is_readable_file(const string & path);
+string 		trim(const string &str);
+string		sanitize_filename(const string &filename);
+string		extract_extension(const string &filename, string &name);

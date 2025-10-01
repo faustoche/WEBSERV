@@ -229,19 +229,15 @@ void c_server::handle_client_read(int client_fd)
 	request.read_request(client_fd);
 	if (request.is_client_disconnected() || request.get_error())
 	{
-		std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		close(client_fd);
 		remove_client(client_fd);
 		// client->set_state(IDLE);
 		return ;
 	}
 	/* */
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	request.print_full_request();
 	c_response response(*this, client_fd);
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	response.define_response_content(request);
-	std::cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	if (response.get_is_cgi())
 	{
 		client->set_state(PROCESSING);

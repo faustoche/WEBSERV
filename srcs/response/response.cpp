@@ -200,7 +200,6 @@ void	c_response::define_response_content(const c_request &request)
 
 void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
 {
-	(void)location;
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
@@ -215,7 +214,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
 		handle_contact_form(request, version);
 	if (content_type.find("multipart/form-data") != string::npos)
-		handle_upload_form_file(request, version);
+		handle_upload_form_file(request, version, location);
 
 	 // if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 	// upload file
@@ -224,24 +223,95 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 }
 
-/********************   upload form   ********************/
+/********************   upload file   ********************/
+/*
+Objectif : Partage d'images
 
-void	c_response::handle_upload_form_file(const c_request &request, const string &version)
+AUTORISER :
+- Images : jpg, png, gif (2 MB max)
+- Documents : pdf, txt (5 MB max)
+
+REJETER : Vidéos, exécutables, archives
+
+Exemple config :
+allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
+max_file_size = 2 * 1024 * 1024  // 2 MB
+*/
+
+void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
 	(void)version;
+	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
+
+	// PARSING
+	string boundary = extract_boundary(content_type);
+	// cout << PINK << boundary << RESET << endl;
+	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
+
+	// TRAITEMENT de chaque partie
+	string 			description;
+	vector<string>	uploaded_files;
+	for(size_t i = 0; i < parts.size(); i++)
+	{
+		s_multipart &part = parts[i];
+		if (part.is_file)
+		{
+			string saved_path = save_uploaded_file(part, location);
+			if (saved_path.empty())
+				//message erreur
+			uploaded_files.push_back(saved_path);
+			cout << "Upload file: " << part.filename
+				<< " (" << part.content.size() << " bytes)" << endl;
+		}
+		else // texte
+		{
+
+		}
+
+	}
+
+	// succes ou error
+	// faut-il forcement avoir un upload_path de definit pour upload un fichier ?
+	// valider: taille ok? extension OK ? nom sur ?
+	// saubegarder => upload_path
+	// creer liste de fichiers sauvegardes ?
+
+}
+
+string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
+{
+	string	uploaded_dir = location->get_upload_path();
+	if (uploaded_dir.empty())
+		uploaded_dir = "./www/uploads/";
+	string safe_filename = sanitize_filename(part.filename);
+	if (safe_filename.empty())
+		return "";
+	cout << PINK << safe_filename << RESET << endl;
+	string final_path = uploaded_dir + safe_filename;
+	ofstream file(final_path.c_str(), ios::binary);
+	if (!file.is_open())
+	{
+		cerr << "Error: the server can't upload the file " << final_path <<endl;
+		return "";
+	}
+	file.write(part.content.data(), part.content.size());
+	file.close();
+	return final_path;
+}
+
+string	c_response::extract_boundary(const string &content_type)
+{
 	string boundary;
+
 	size_t pos = content_type.find("boundary=");
 	if (pos != string::npos)
 		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
 	else
 		throw invalid_argument("Can't find the boundary in the Content-Type value for upload a file");
-	
-	cout << PINK << boundary << RESET << endl;
-	vector<s_multipart> parsed_body = parse_multipart_data(request.get_body(), boundary);
-	// faut-il forcement avoir un upload_path de definit pour upload un fichier ?
-
+	return boundary;
 }
+
 
 vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
 {
@@ -258,17 +328,14 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		size_t	begin = boundary_pos[i] + delimiter.length();
+		size_t	begin = boundary_pos[i] + delimiter.length() + 2; // pour sauter le "\r\n" qui suit souvent le boundary 
 		size_t	end = boundary_pos[i + 1];
-		string	raw_part = body.substr(begin, end);
+		string	raw_part = body.substr(begin, end - begin);
+		if (raw_part.find_first_not_of(" \r\n") == string::npos)
+			continue;
 		s_multipart single_part = parse_single_part(raw_part);
 		parts.push_back(single_part);
 	}
-	
-	// for(vector<size_t>::iterator it = boundary_pos.begin(); it != boundary_pos.end(); it++ )
-	// {
-	// 	cout << GREEN << *it << endl;
-	// }
 	return parts;
 }
 
@@ -282,18 +349,13 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 
 	string header_section = raw_part.substr(0, separator_pos);
 	string content_section = raw_part.substr(separator_pos + 4, raw_part.size());
-	cout << ORANGE << header_section << endl;
-	cout << FUCHSIA << content_section << endl;
-	
-	// nettoyer le contenu -> "\r\n" ou boundary de fin 
+	// cout << ORANGE << header_section << endl;
+	// cout << ORANGE << content_section << endl;
 
 	// parser les header
 	parse_header_section(header_section, part);
-
-	// determiner le type
-
-	// verifier le content-type ?
-
+	part.content = content_section;
+	part.is_file = !part.filename.empty();
 	return part;
 
 
@@ -311,7 +373,7 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	if (pos_disposition != string::npos)
 	{
 		string line = extract_line(header_section, pos_disposition);
-		cout << GREEN << line << endl;
+		// cout << GREEN << line << endl;
 		part.name = extract_quotes(line, "name=");
 		// cout << GREEN << part.name << endl;
 		part.filename = extract_quotes(line, "filename=");
@@ -326,13 +388,11 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	if (pos_type != string::npos)
 	{
 		string line = extract_line(header_section, pos_type);
-		cout << GREEN << line << endl;
+		// cout << GREEN << line << endl;
 		part.content_type = extract_after_points(line);
-		cout << GREEN << part.content_type << RESET << endl;
+		// cout << GREEN << part.content_type << RESET << endl;
 	}
-		// extraire toute la ligne
-		// extraite la valeur apres Content-Type
-		// trim les espaces
+	
 }
 
 
@@ -343,7 +403,7 @@ string	c_response::extract_line(const string &header_section, const size_t &pos)
 	if (end_pos == string::npos)
 		end_pos = header_section.length(); //verifier si lenght ou size
 	
-	string line = header_section.substr(pos, end_pos);
+	string line = header_section.substr(pos, end_pos - pos);
 	return line;
 }
 
@@ -362,7 +422,7 @@ string	c_response::extract_quotes(const string &line, const string &type)
 		return ""; // fautil throw une exception pour format invalide ?
 	
 	string value = line.substr(first_quote + 1, second_quote - first_quote - 1);
-	return value;
+	return trim(value);
 }
 
 string	c_response::extract_after_points(const string &line)
@@ -372,9 +432,7 @@ string	c_response::extract_after_points(const string &line)
 		return "";
 	
 	string value = line.substr(pos + 1);
-	// value.erase(line.find_last_not_of(" "));
-	// trim les espaces
-	return value;
+	return trim(value);
 }
 
 /*******************   contact form    *******************/
@@ -621,7 +679,6 @@ void c_response::build_success_response(const string &file_path, const string ve
 {
 	if (_file_content.empty())
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
@@ -894,7 +951,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
-		cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + relative_path);
 		else

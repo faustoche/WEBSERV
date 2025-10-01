@@ -34,7 +34,6 @@ void	c_request::read_request(int socket_fd)
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		fill(buffer, buffer + sizeof(buffer), '\0');
 		// condition pour l'appel de recv ?
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
@@ -42,7 +41,6 @@ void	c_request::read_request(int socket_fd)
 		{
 			if (receivedBytes == 0) // break ou vrai erreur ?
 			{
-				cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 				cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
 				// close(this->_socket_fd);
@@ -50,7 +48,6 @@ void	c_request::read_request(int socket_fd)
 			} 
 			else
 			{
-				cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
 				this->_error = true;
 				return ;
@@ -62,10 +59,8 @@ void	c_request::read_request(int socket_fd)
 	this->parse_request(request);
 	
 	/* -----Lire le body -----*/
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 	cout << "Request : " << request << endl;
 	this->determine_body_reading_strategy(socket_fd, buffer, request);
-	cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 
 	if (!this->_error)
 		this->_request_fully_parsed = true;
@@ -370,7 +365,6 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		
 		if (total_bytes > max_body_size)
 		{
-			cout << __FILE__ << "/" << __LINE__ << endl;
 			cerr << "(Request) Error: actual body size (" << total_bytes 
 				<< ") excess announced size (" << max_body_size << ")" << endl;
 			this->_status_code = 413;
@@ -392,7 +386,6 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 	{
 		if (this->get_content_length())
 		{
-			cout << __FILE__ << "/" << __LINE__ << endl;
 			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer)); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
 		}
 		else

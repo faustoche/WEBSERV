@@ -332,7 +332,6 @@ string  c_cgi::launch_cgi(const string &body)
         }
         else
         {
-            cout << __FILE__ << "/" << __LINE__ << endl;
             char *argv[3];
             argv[0] = const_cast<char*>(this->_interpreter.c_str());
             argv[1] = const_cast<char*>(this->_script_filename.c_str());
