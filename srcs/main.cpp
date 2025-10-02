@@ -90,10 +90,8 @@ void	run_multiserver(vector<c_server> &servers)
 {
 	while (g_terminate)
 	{
-		for (size_t i = 0; i < servers.size(); ++i)
-		{
+		for (size_t i = 0; i < servers.size(); ++i)		{
 			servers[i].setup_pollfd();
-			// cout << __FILE__ << "/" << __LINE__ << endl;
 			servers[i].handle_poll_events();
 		}
 	}

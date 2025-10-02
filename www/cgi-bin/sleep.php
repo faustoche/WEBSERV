@@ -55,6 +55,8 @@ flush();
 
 // Pause de 30 secondes
 sleep(5);
+// Attente de 5 secondes
+sleep(50);
 
 // Contenu après le sleep (on remplace texte et image)
 echo '<p>✔ Done sleeping !</p>';

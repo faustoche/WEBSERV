@@ -88,6 +88,12 @@ void c_server::setup_pollfd()
 
 	for (size_t i = 0; i < to_remove.size(); i++)
 	{
+		c_cgi *cgi = find_cgi_by_client(to_remove[i]);
+		if (cgi)
+		{
+			kill(cgi->get_pid(), SIGTERM);
+			cleanup_cgi(cgi);
+		}
 		remove_client(to_remove[i]);
 	}
 }
