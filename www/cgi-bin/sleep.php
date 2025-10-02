@@ -53,8 +53,6 @@ echo '<p>ZZzzZZzzZZZZzzzzzzzzzzz</p>';
 echo '<img src="../images/sleeping_script.jpg" alt="Dog sleeping">';
 flush();
 
-// Pause de 30 secondes
-sleep(5);
 // Attente de 5 secondes
 sleep(50);
 
