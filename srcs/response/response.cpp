@@ -201,7 +201,7 @@ void	c_response::define_response_content(const c_request &request)
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
 		return ;
 	}
-	else if (method == "POST") //peut etre a bouger a la fin
+	else if (method == "POST")
 	{
 		handle_post_request(request, matching_location, version);
 		return;
@@ -241,14 +241,14 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
-	if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
+	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
 		handle_contact_form(request, version);
-	if (content_type.find("multipart/form-data") != string::npos)
+	else if (content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, version, location);
-	if (target == "/post_todo")
+	else if (target == "/post_todo")
 		handle_todo_form(request, version);
 	else
-		build_error_response(404, version, request); // est-ce la bonne erreur ?
+		build_error_response(404, version, request); // est-ce la bonne erreur ? 
 }
 
 /********************   upload file   ********************/
