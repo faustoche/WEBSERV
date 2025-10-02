@@ -31,12 +31,10 @@ void c_server::setup_pollfd()
 		/**** AJOUT DES CLIENTS ACTIFS *****/
 		int client_fd = it->first; // recoit le descripteur du client concerne
 		c_client &client = it->second; // ref vers l'objet client de la map
-		// if (client.get_state() == DISCONNECTED)
-		// 	continue;
 		time_t now = time(NULL);
 		if (now - client.get_last_modified() > TIMEOUT)
 		{
-			cout << "client.get_fd(): " << client.get_fd() << " has timed out." << endl;
+			cout << "Client " << client.get_fd() << " has timed out." << endl;
 			to_remove.push_back(client_fd);
 			continue;
 		}
@@ -79,10 +77,9 @@ void c_server::setup_pollfd()
     	cgi_pollfd.revents = 0;
 
     	if (fd == cgi->get_pipe_in())
-    	    cgi_pollfd.events = POLLOUT; // on écrit vers le CGI
+    	    cgi_pollfd.events = POLLOUT;
     	else if (fd == cgi->get_pipe_out())
-    	    cgi_pollfd.events = POLLIN;  // on lit la sortie du CGI
-
+    	    cgi_pollfd.events = POLLIN;
     	_poll_fds.push_back(cgi_pollfd);
 	}
 
@@ -341,7 +338,7 @@ void	c_server::handle_client_write(int client_fd)
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
 		{
-			cout << GREEN << "\n✅ RESPONSE FULLY SENT TO CLIENT " << client->get_fd() << RESET << endl << endl;
+			cout << GREEN << "\n✅ RESPONSE FULLY SENT TO CLIENT " << client->get_fd()  << " IN " << client->get_last_modified() - client->get_creation_time() << "s." << RESET << endl << endl;
 			cout << PINK << "*Client " << client->get_fd() << " can send a new request : POLLIN*" << RESET << endl;
 			client->set_bytes_written(0);
 			client->clear_read_buffer();

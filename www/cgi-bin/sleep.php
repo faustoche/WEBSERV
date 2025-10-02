@@ -54,7 +54,7 @@ echo '<img src="../images/sleeping_script.jpg" alt="Dog sleeping">';
 flush();
 
 // Attente de 5 secondes
-sleep(50);
+sleep(5);
 
 // Contenu après le sleep (on remplace texte et image)
 echo '<p>✔ Done sleeping !</p>';

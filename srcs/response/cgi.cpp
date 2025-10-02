@@ -193,11 +193,9 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
     this->_status_code = request.get_status_code();
     this->_loc = &loc;
     
-    /* Recherche de l'interpreteur de fichier selon le langage identifie */
     string extension = find_script_extension(target);
 
     resolve_cgi_paths(loc, request.get_target());
-    cout << "this->_relative_argv: " << this->_relative_argv << endl;
     if (!this->_relative_argv.empty())
     {
         if (this->_relative_argv.find("data") == string::npos)
@@ -211,7 +209,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
     if (this->_interpreter.empty())
         return (1);
 
-    /* Construction de l'environnement pour l'execution du script */
     set_environment(request);
 
     return (0);
@@ -240,7 +237,6 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
     this->_map_env_vars["REDIRECT_STATUS"] = "200";
-
     this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
     this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
     this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");

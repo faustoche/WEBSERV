@@ -14,8 +14,8 @@ c_client::c_client() : _fd(-1), _state(READING)
     _read_buffer.clear();
 	_write_buffer.clear();
 	_bytes_written = 0;
+    _creation_time = time(NULL);
     _last_modified = time(NULL);
-    cout << " Last modified: " << _last_modified << endl;
     
 }
 
@@ -28,6 +28,7 @@ c_client::c_client(int client_fd) : _fd(client_fd), _state(READING)
     _read_buffer.clear();
 	_write_buffer.clear();
 	_bytes_written = 0;
+    _creation_time = time(NULL);
     _last_modified = time(NULL);
 }
 
@@ -55,22 +56,6 @@ void c_server::add_client(int client_fd)
     cout << PINK << "\n*Client " << client_fd << " can send a request : POLLIN*" << RESET << endl;
 }
 
-// void c_server::remove_client(int client_fd)
-// {
-//     for (vector<struct>::it = _poll_fds.begin(); it != _poll_fds.end(); it++)
-//     {
-//         if (it)
-//     }
-//     if (_poll_fds.find(client_fd) != _poll_fds.end())
-//     {
-//         _clients.erase(client_fd);
-//         cout << PINK << "*Client " << client_fd << " erased from _poll_fds*" << RESET << endl;
-//     }
-//     else
-//         cout << client_fd << " has not been found in _clients" << endl;
-//     close(client_fd);
-// }
-
 void c_server::remove_client(int client_fd)
 {
     if (client_fd < 0)
@@ -95,19 +80,6 @@ void c_server::remove_client(int client_fd)
      close(client_fd);
     
 }
-
-// void c_server::remove_client_from_pollout(int client_fd)
-// {
-//     for (size_t i = 0; i < _poll_fds.size(); i++)
-//     {
-//         if (_poll_fds[i].fd == client_fd)
-//         {
-//             _poll_fds[i].events &= ~POLLOUT;
-//             cout << "Removed POLLOUT for client fd " << client_fd << "\n";
-//             return;
-//         }
-//     }
-// }
 
 c_client *c_server::find_client(int client_fd)
 {
