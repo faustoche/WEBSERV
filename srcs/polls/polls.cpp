@@ -252,7 +252,6 @@ void c_server::handle_client_read(int client_fd)
 	request.read_request(client_fd);
 	if (request.is_client_disconnected())
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		close(client_fd);
 		remove_client(client_fd);cout << __FILE__ << "/" << __LINE__ << endl;
 		return ;
@@ -276,8 +275,6 @@ void c_server::handle_client_read(int client_fd)
 		}
 		client->set_bytes_written(0);
 	}
-	else
-		cout <<__FILE__ << "/" << __LINE__ << endl;
 }
 
 /*
@@ -339,17 +336,6 @@ void	c_server::handle_client_write(int client_fd)
 			client->set_state(READING);
 			return ;
 		}
-		// if (client->get_response_complete() && cgi->is_finished())
-		// {	
-		// 	cout << GREEN << "\n✅ RESPONSE FULLY SENT TO CLIENT " << client->get_fd() << RESET << endl << endl;
-		// 	cout << PINK << "*Client " << client->get_fd() << " can send a new request : POLLIN*" << RESET << endl;
-		// 	client->set_bytes_written(0);
-		// 	client->clear_read_buffer();
-		// 	client->clear_write_buffer();
-		// 	client->set_response_complete(false);
-		// 	client->set_state(READING);
-		// 	return ;
-		// }
     }
 }
 
