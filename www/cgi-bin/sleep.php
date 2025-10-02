@@ -62,7 +62,8 @@ while (ob_get_level()) ob_end_flush();
 echo str_repeat(' ',1024); // force l’envoi sur certains serveurs
 flush();
 
-sleep(5); // le serveur attend 30 secondes
+// Attente de 5 secondes
+sleep(5);
 
 echo <<<HTML
 <script>

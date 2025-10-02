@@ -34,6 +34,7 @@ class c_client
 		size_t			_response_body_size;
 		bool			_response_complete;
 
+		time_t			_creation_time;
 		time_t			_last_modified;
 
 	public:
@@ -52,6 +53,7 @@ class c_client
 		const client_state &get_state() const { return (_state); }
 		bool get_response_complete() const { return _response_complete; };
 		const time_t &get_last_modified() const { return _last_modified; };
+		const time_t &get_creation_time() const { return _creation_time; };
 
 		/******* SETTERS ******* */
 		void append_to_read_buffer(const string &data) { _read_buffer += data; }
