@@ -11,6 +11,11 @@ c_client::c_client() : _fd(-1), _state(READING)
     gettimeofday(&_timestamp, 0);
     _response_body_size = 0;
     _response_complete = false;
+    _read_buffer.clear();
+	_write_buffer.clear();
+	_bytes_written = 0;
+    _last_modified = time(NULL);
+    cout << " Last modified: " << _last_modified << endl;
     
 }
 
@@ -20,6 +25,10 @@ c_client::c_client(int client_fd) : _fd(client_fd), _state(READING)
     gettimeofday(&_timestamp, 0);
     _response_body_size = 0;
     _response_complete = false;
+    _read_buffer.clear();
+	_write_buffer.clear();
+	_bytes_written = 0;
+    _last_modified = time(NULL);
 }
 
 c_client::~c_client() {}

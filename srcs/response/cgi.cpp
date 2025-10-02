@@ -91,7 +91,12 @@ void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
 {
     if (!buffer || bytes == 0)
         return ;
-
+    if (_read_buffer.size() + bytes > 10 * 1024 * 1024) 
+    {
+        std::cerr << "CGI output too large, killing process" << std::endl;
+        kill(this->get_pid(), SIGKILL); // ou close le fd
+        return;
+    }
     this->_read_buffer.append(buffer, bytes);
 }
 
@@ -189,10 +194,10 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
     this->_loc = &loc;
     
     /* Recherche de l'interpreteur de fichier selon le langage identifie */
-    // size_t pos = file_path.find(".");
     string extension = find_script_extension(target);
 
     resolve_cgi_paths(loc, request.get_target());
+    cout << "this->_relative_argv: " << this->_relative_argv << endl;
     if (!this->_relative_argv.empty())
     {
         if (this->_relative_argv.find("data") == string::npos)
