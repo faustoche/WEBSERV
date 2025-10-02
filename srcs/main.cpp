@@ -11,18 +11,6 @@ void handle_stop(int sig)
 
 void handle_sigpipe(int sig) { if(sig) {}}
 
-void	drain_socket(int sockfd)
-{
-	char tmp[1024];
-	ssize_t extra;
-
-	do
-	{
-		extra = recv(sockfd, tmp, sizeof(tmp), MSG_DONTWAIT);
-	} while (extra > 0);
-	
-}
-
 void	c_server::create_socket()
 {
 	this->_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -90,7 +78,8 @@ void	run_multiserver(vector<c_server> &servers)
 {
 	while (g_terminate)
 	{
-		for (size_t i = 0; i < servers.size(); ++i)		{
+		for (size_t i = 0; i < servers.size(); ++i)		
+		{
 			servers[i].setup_pollfd();
 			servers[i].handle_poll_events();
 		}

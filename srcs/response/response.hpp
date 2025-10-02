@@ -54,6 +54,7 @@ public:
 	const string	&get_body() { return this->_body; };
 	bool			get_is_cgi() { return this->_is_cgi; };
 	bool			get_error() { return this->_error; };
+	const int		&get_client_fd() { return this->_client_fd; };
 
 	void			clear_response();
 	void			set_error() { this->_error = true; };

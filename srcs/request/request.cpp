@@ -40,21 +40,9 @@ void	c_request::read_request(int socket_fd)
 	while (request.find("\r\n\r\n") == string::npos)
 	{
 		fill(buffer, buffer + sizeof(buffer), '\0');
-		// condition pour l'appel de recv ?
 		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
-			// if (receivedBytes == 0 && (time(NULL) - client->get_last_modified() > TIMEOUT)) // break ou vrai erreur ?
-			// {
-			// 	cout << __FILE__ << "/" << __LINE__ << endl;
-			// 	cout << "Client has timed out" << endl;
-			// 	close(this->_socket_fd);
-			// 	// remove_client(this->_socket_fd);
-			// 	// cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-			// 	// this->_error = true;
-			// 	// close(this->_socket_fd);
-			// 	return ;
-			// }
 			if (receivedBytes == 0)
 			{
 				client->set_state(IDLE);

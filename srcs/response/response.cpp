@@ -72,7 +72,6 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
-		cout << "status code: " << status_code << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -186,7 +185,8 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 
-		cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
+		// cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
+		_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
 		
 		if (cgi->init_cgi(request, *matching_location, request.get_target()))
@@ -521,12 +521,15 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
+	c_client *client = _server.find_client(this->_client_fd);
+	
 	if (_file_content.empty())
 	{
 		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
+	client->set_status_code(200);
 
 	size_t content_size = _file_content.size();
 	ostringstream oss;
@@ -538,11 +541,10 @@ void c_response::build_success_response(const string &file_path, const string ve
 	_response += "Server: webserv/1.0\r\n";
 
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += _file_content;
@@ -573,6 +575,9 @@ void c_response::build_error_response(int error_code, const string version, cons
 	// 		status = "Internal Server Error";
 	// 		break;
 	// }
+
+	c_client *client = _server.find_client(this->_client_fd);
+	client->set_status_code(error_code);
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
@@ -677,6 +682,9 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
+
+	c_client *client = _server.find_client(this->_client_fd);
+	client->set_status_code(code);
 }
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
@@ -726,6 +734,9 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	_response += "\r\n";
 	_response += content;
 	_file_content = content;
+
+	c_client *client = _server.find_client(this->_client_fd);
+	client->set_status_code(200);
 }
 
 /************ HANDLING LOCATIONS ************/

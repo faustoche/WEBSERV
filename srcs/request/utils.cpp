@@ -2,26 +2,6 @@
 
 /************ CHECK FUNCTIONS ************/
 
-// bool    is_valid_header_name(const string& key_name)
-// {
-// 	const string allowed_special_chars = "!#$%&'*+-.^_`|~";
-
-// 	if (key_name.empty())
-// 	{
-// 		cerr << "(Request) Error: empty header name." << endl;
-// 		return (false);
-// 	}
-// 	for (size_t i = 0; i < key_name.length(); i++)
-// 	{
-// 		if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
-// 		{
-// 			cerr << "(Request) Error: Invalid char in header name: " << key_name << endl;
-// 			return (false);
-// 		}
-// 	}
-// 	return (true);
-// }
-
 bool    c_request::is_valid_header_value(string& key, const string& value)
 {
 	for (size_t i = 0; i < value.length(); i++)
