@@ -95,4 +95,5 @@ private:
 	string						extract_after_points(const string &line);
 	string						extract_boundary(const string &content_type);
 	string						save_uploaded_file(const s_multipart &part, c_location *location);
+	void						buid_upload_success_response(const string &file_path, const string version, const c_request &request);
 };

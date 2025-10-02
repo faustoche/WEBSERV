@@ -94,31 +94,34 @@ string  sanitize_filename(const string &filename)
 {
     string name;
     string extension = extract_extension(filename, name);
+
     if (extension.empty())
         return "";
     if (name.empty())
         name = "file";
 
-    // enlever path traversal ?
-
     string clean_name;
     for(size_t i = 0; i < name.size(); i++)
     {
-        if (isalnum(name[i]))
-            clean_name += name[i];
-        else if (name[i] == '_' || name[i] == '-')
-            clean_name += '_';
-        else if (name[i] == ' ')
+        char c = name[i];
+        if (isalnum(static_cast<unsigned char>(c)))
+            clean_name += c;
+        else if (c == '_' || c == '-' || c == ' ')
             clean_name += '_';
         else
             clean_name += '_';
     }
+    while (clean_name.find("__") != string::npos)
+        clean_name.replace(clean_name.find("__"), 2, "_");
+    while (!clean_name.empty() && clean_name[clean_name.size() - 1] == '_')
+        clean_name.erase(clean_name.size() - 1);
     if (clean_name.size() > 200)
         clean_name = clean_name.substr(0, 200);
     clean_name = trim_underscore(clean_name);
-    // remplacer "__" par "_" ??
-    clean_name += "." + extension;
-    return clean_name;
+    if (!extension.empty())
+        return clean_name += "." + extension;
+    else
+        return clean_name;
 }
 
 
