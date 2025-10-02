@@ -1,10 +1,10 @@
 #!/usr/bin/php-cgi
 <?php
 header("Content-Type: text/html; charset=UTF-8");
-header("Connection: close");
 
 ob_implicit_flush(true);
-ob_end_flush(); 
+while (ob_get_level()) ob_end_flush();
+
 ?>
 <!doctype html>
 <html lang="fr">
@@ -12,6 +12,18 @@ ob_end_flush();
   <meta charset="utf-8" />
   <title>Sleeping</title>
   <style>
+    @font-face {
+      font-family: "ComicNeue";
+      src: url("../fonts/ComicNeue-Regular.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "ComicNeue";
+      src: url("../fonts/ComicNeue_Bold.otf") format("opentype");
+      font-weight: 700;
+      font-style: normal;
+    }
     body{
       margin:0;
       font-family: "ComicNeue", cursive, sans-serif;
@@ -26,11 +38,6 @@ ob_end_flush();
       color:yellow;
       text-shadow:2px 2px 0 #000, 0 0 10px #ff00aa;
       margin-top:2rem;
-      animation: flash 1s infinite alternate;
-    }
-    @keyframes flash{
-      from{color:yellow}
-      to{color:#ff66ff}
     }
     p{
       color:rgb(56, 36, 122);
@@ -45,20 +52,26 @@ ob_end_flush();
   </style>
 </head>
 <body>
-  <h1>★ Sleeping ★</h1>
+  <h1 id="title">★ Sleeping ★</h1>
+  <p id="message">ZZzzZZzzZZZZzzzzzzzzzzz</p>
+  <img id="image" src="https://www.helloanimaux.fr/wp-content/uploads/2022/01/chien-qui-dort.jpg" alt="Dog sleeping">
 
 <?php
-// Contenu avant le sleep
-echo '<p>ZZzzZZzzZZZZzzzzzzzzzzz</p>';
-echo '<img src="../images/sleeping_script.jpg" alt="Dog sleeping">';
+
+// Envoi immédiat du contenu initial
+echo str_repeat(' ',1024); // force l’envoi sur certains serveurs
 flush();
 
-// Attente de 5 secondes
-sleep(50);
+sleep(5); // le serveur attend 30 secondes
 
-// Contenu après le sleep (on remplace texte et image)
-echo '<p>✔ Done sleeping !</p>';
-echo '<img src="../images/awake_script.jpg" alt="Dog awake">';
+echo <<<HTML
+<script>
+  document.getElementById('title').textContent = "★ Done sleeping ★";
+  document.getElementById('message').textContent = "The script is done sleeping, finally !";
+  document.getElementById('image').src = "https://woufipedia.com/wp-content/uploads/2024/04/bulldog-9.webp";
+  document.getElementById('image').alt = "Dog awake";
+</script>
+HTML;
 ?>
 </body>
 </html>
