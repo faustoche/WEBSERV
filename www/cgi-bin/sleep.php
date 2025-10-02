@@ -11,7 +11,7 @@ echo "Sleeping...\n";
 flush();
 
 // Attente de 5 secondes
-sleep(5);
+sleep(50);
 
 echo "Done sleeping!\n";
 flush();
