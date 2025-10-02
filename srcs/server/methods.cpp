@@ -1,5 +1,36 @@
 #include "server.hpp"
 
+void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
+{
+	if (file_path.find("..") != string::npos) // empeche les suppressions dans les fichiers + loins
+	{
+		build_error_response(403, version, request);
+		return ;
+	}
+	if (!is_existing_file(file_path))
+	{
+		build_error_response(404, version, request);
+		return ;
+	}
+	/* Le dossier existe et c'est un répertoire */
+	struct stat file_stat; // je recupere les informations sur un fichier/repertoire -> je verifie que le fichier existe et qu'on peut recuperer le contenu
+	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) // on check les permissions des dossiers
+	{
+		build_error_response(403, version, request);
+		return ;
+	}
+	if (access(file_path.c_str(), W_OK) != 0)
+	{
+		build_error_response(403, version, request);
+		return ;
+	}
+	if (remove(file_path.c_str()) != 0)
+	{
+		build_error_response(500, version, request);
+		return ;
+	}
+}
+
 void c_response::load_todo_page(const string &version, const c_request &request)
 {
 	string filename = "./www/data/todo.txt";

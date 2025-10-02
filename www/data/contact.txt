@@ -20,3 +20,8 @@
 [ Thu Oct  2 10:50:50 2025 ] email=vbvcb@gmail.com; message=fsdfsd; nom=dfgsdf; 
 [ Thu Oct  2 10:51:13 2025 ] email=fsdfds@gmail.com; message=dfsdfds; nom=dsfsdf; 
 [ Thu Oct  2 10:57:02 2025 ] email=fsdfds@gmail.com; message=dasdsadsa; nom=ssdsad; 
+[ Thu Oct  2 12:46:04 2025 ] email=faustine@gmail.com; message=coucou, voici un formulaire de contact; nom=faustine; 
+[ Thu Oct  2 12:46:04 2025 ] email=faustine@gmail.com; message=coucou, voici un formulaire de contact; nom=faustine; 
+[ Thu Oct  2 12:48:34 2025 ] email=faustine@gmail.com; message=dasdasdasd; nom=sdsad; 
+[ Thu Oct  2 14:18:26 2025 ] email=fsdfds@gmail.com; message=dfdsf; nom=dsfsdx; 
+[ Thu Oct  2 15:43:28 2025 ] email=faustine@gmail.com; message=fsdfsdfsdfsd; nom=dfsdfsd; 

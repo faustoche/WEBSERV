@@ -231,10 +231,24 @@ void	c_server::handle_new_connection(int listening_socket)
 	{
 		struct sockaddr_in client_address;
 		socklen_t client_len = sizeof(client_address);
-
+		
 		int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
 		if (client_fd < 0)
 			break ;
+		if (_clients.size() > MAX_CONNECTIONS)
+		{
+			c_request  too_many_request(*this);
+			too_many_request.init_request();
+
+			c_response resp(*this, client_fd);
+			resp.build_error_response(503, "HTTP/1.1", too_many_request);
+
+			const string &raw = resp.get_response();
+			send(client_fd, raw.c_str(), raw.size(), 0); // on envois la reponse du server full
+			cout << RED << "Rejected client " << client_fd << " with 503 (server is full)" << RESET << endl;
+			close(client_fd);
+			continue ;
+		}
 		set_non_blocking(client_fd);
 		int port = get_port_from_socket(listening_socket);
 		cout << GREEN << "\n✅ NEW CONNECTION FOR CLIENT : " << client_fd << " ON PORT : " << port << RESET << endl;

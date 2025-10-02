@@ -14,6 +14,8 @@
 #include <vector>
 #include <poll.h>
 #include <dirent.h>
+#include <signal.h>
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include "response.hpp"
 #include "clients.hpp"
@@ -25,6 +27,7 @@
 /************ DEFINE ************/
 
 #define	BUFFER_SIZE 4096
+#define MAX_CONNECTIONS 255
 #define TIMEOUT 10
 using	namespace std;
 

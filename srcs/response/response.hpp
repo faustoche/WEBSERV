@@ -83,4 +83,5 @@ private:
 	void						handle_todo_form(const c_request &request, const string &version);
 	/***** DELETE method *****/
 	void						handle_delete_todo(const c_request &request, const string &version);
+	void						handle_delete_request(const c_request &request, const string &version, string file_path);
 };

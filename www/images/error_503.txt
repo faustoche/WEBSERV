@@ -1,64 +1,4 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <title>Error 503</title>
-  <style>
-    @font-face {
-			font-family: "ComicNeue";
-			src: url("../fonts/ComicNeue-Regular.otf") format("opentype");
-			font-weight: 400;
-			font-style: normal;
-		}
-
-		@font-face {
-			font-family: "ComicNeue";
-			src: url("../fonts/ComicNeue_Bold.otf") format("opentype");
-			font-weight: 700;
-			font-style: normal;
-		}
-    body{
-      margin:0;
-      font-family: "ComicNeue", cursive, sans-serif;
-      font-weight: 700;
-      background: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
-      color:#fff;
-      text-align:center;
-    }
-    h1{
-      font-family: "ComicNeue", cursive, sans-serif;
-      font-weight: 700;
-      font-size:3rem;
-      color:yellow;
-      text-shadow:2px 2px 0 #000, 0 0 10px #ff00aa;
-      margin-top:2rem;
-      animation: flash 1s infinite alternate;
-    }
-    @keyframes flash{
-      from{color:yellow}
-      to{color:#ff66ff}
-    }
-    p{
-	  color:rgb(56, 36, 122);
-      font-size:1.2rem;
-      margin:1rem 0;
-    }
-    a{
-      color:rgb(75, 201, 178);
-      font-weight:bold;
-      text-decoration:underline;
-    }
-    img{
-      margin-top:1rem;
-      border:5px ridge #ff00aa;
-      max-width:300px;
-    }
-  </style>
-</head>
-<body>
-  <h1>★ Error 503 ★</h1>
-  <p>Service Unavailable :/ </p>
-  <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxMTEhUSEhIWFRUVFRIVFRIVFRAPFRAPFRUWFhUV
+/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxMTEhUSEhIWFRUVFRIVFRIVFRAPFRAPFRUWFhUV
 FRUYHSggGBolGxYVITEhJSkrLi4uFx8zODMsNygtLisBCgoKDg0OGhAQGi0fHyUtLS0tLS0tLS0t
 LS0tLS0tLS0tLS0tLSstLS0tLS0tLS0rLS0tLS0tLS0rLS0tLS0tLf/AABEIAMABBwMBIgACEQED
 EQH/xAAbAAACAgMBAAAAAAAAAAAAAAAEBQMGAQIHAP/EADkQAAEEAgAEBQIDBwMEAwAAAAEAAgMR
@@ -178,7 +118,4 @@ LFCwhZnWLROe6jXyg2kUR+SUf6CItjS2tRY57KZwRFNXqJjEQQsNalYSIxqJ8SNDfdbNYErVgFzI
 1q/FtMzALW5iCKjZ10Jo8PRFdf0T13F3xwN5RZ001uiOvyheXal8paOPleK6BKmtjqLjrXC9C6Pb
 rVJTxLIMxDRpgPT3KHGPZTLExqpVy8mWVdVom1FbSDcaANA12C24jCHRn6IzLZTQfdRM6V8Jcsf7
 ScXas5y7EokfJUjMVNM2Cnu+qjDV5rZ5MlTaAf2ZZEFI7kWeVKgUCNYVKIlOAFNGAj2oMUBnGvss
-jCPsmsTQmEMYQ+Qaitt4YfZZVuja1YS9mw9D/9k=" alt="Chien">
-  <p><a href="/index.html">⇐ Revenir à l'accueil</a></p>
-</body>
-</html>
+jCPsmsTQmEMYQ+Qaitt4YfZZVuja1YS9mw9D/9k=
