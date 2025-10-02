@@ -544,8 +544,6 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 		build_error_response(500, version, request);
 }
 
-
-
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
 	string filename = "./www/data/contact.txt"; //location.get_upload_path();
