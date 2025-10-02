@@ -11,6 +11,7 @@
 void c_server::setup_pollfd()
 {
 	_poll_fds.clear();
+	std::vector<int> to_remove;
 
 	/**** INITIALISATION DES DONNÉES *****/
 
@@ -36,8 +37,7 @@ void c_server::setup_pollfd()
 		if (now - client.get_last_modified() > TIMEOUT)
 		{
 			cout << "client.get_fd(): " << client.get_fd() << " has timed out." << endl;
-			remove_client(client_fd);
-			// close(client.get_fd());
+			to_remove.push_back(client_fd);
 			continue;
 		}
 
@@ -68,6 +68,7 @@ void c_server::setup_pollfd()
 		_poll_fds.push_back(client_pollfd); // on push dans poll fds
 	}
 
+
 	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); ++it) 
 	{
     	int fd = it->first;
@@ -83,6 +84,11 @@ void c_server::setup_pollfd()
     	    cgi_pollfd.events = POLLIN;  // on lit la sortie du CGI
 
     	_poll_fds.push_back(cgi_pollfd);
+	}
+
+	for (size_t i = 0; i < to_remove.size(); i++)
+	{
+		remove_client(to_remove[i]);
 	}
 }
 
@@ -172,7 +178,6 @@ void c_server::handle_poll_events()
 
 			if (pfd.revents & POLLIN)
 			{
-				cout << __FILE__ << "/" << __LINE__ << endl;
 				handle_client_read(fd);
 			}
 			else if (pfd.revents & POLLOUT)

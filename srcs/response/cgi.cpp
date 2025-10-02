@@ -98,7 +98,6 @@ void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
         return;
     }
     this->_read_buffer.append(buffer, bytes);
-    std::cerr << "CGI buffer size: " << _read_buffer.size() << "\n";
 }
 
 void    c_cgi::consume_read_buffer(size_t n) 
