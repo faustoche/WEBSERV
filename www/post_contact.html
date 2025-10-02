@@ -1,13 +1,113 @@
 <!DOCTYPE html>
-<html>
-<head><title>Test POST</title></head>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire Contact</title>
+    <style>
+        @font-face {
+            font-family: "ComicNeue";
+            src: url("./fonts/ComicNeue-Regular.otf") format("opentype");
+            font-weight: 400;
+        }
+        @font-face {
+            font-family: "ComicNeue";
+            src: url("./fonts/ComicNeue_Bold.otf") format("opentype");
+            font-weight: 700;
+        }
+        body {
+            margin: 0;
+            font-family: "ComicNeue", cursive, sans-serif;
+            background: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.7);
+            padding: 2rem;
+            border: 3px solid #ff00aa;
+            border-radius: 10px;
+        }
+        h1 {
+            font-family: "ComicNeue", cursive, sans-serif;
+            font-weight: 700;
+            font-size: 3rem;
+            margin: 0;
+            margin-bottom: 20px;
+            color: yellow;
+            text-shadow: 2px 2px 0 #000, 0 0 10px #ff00aa;
+            animation: flash 1s infinite alternate;
+            text-align: center;
+        }
+        @keyframes flash {
+            from { color: yellow; }
+            to { color: #ff66ff; }
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        label {
+            font-weight: 700;
+            color: #0ff;
+        }
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            padding: 10px;
+            border: 2px solid #ff00aa;
+            background: #ffffff;
+            color: rgb(255, 0, 242);
+            font-family: "ComicNeue";
+            font-size: 1rem;
+            width: 100%;
+        }
+        button {
+            padding: 10px 20px;
+            background: #ff00aa;
+            border: 2px solid #000;
+            color: #000;
+            font-family: "ComicNeue";
+            font-weight: 700;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #ff66ff;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #0ff;
+            text-decoration: none;
+            border: 2px solid #0ff;
+            padding: 10px 20px;
+        }
+        .back-link:hover {
+            background: #0ff;
+            color: #000;
+        }
+    </style>
+</head>
 <body>
-    <h1>Test formulaire POST</h1>
-    <form method="POST" action="/post_contact">
-        <label>Nom: <input type="text" name="nom"></label><br><br>
-        <label>Email: <input type="email" name="email"></label><br><br>
-        <label>Message: <textarea name="message"></textarea></label><br><br>
-        <button type="submit">Envoyer</button>
-    </form>
+    <h1>★ CONTACT US ★</h1>
+    <div class="container">
+        <form method="POST" action="/post_contact">
+            <label>🐶 Name :
+                <input type="text" name="nom" required>
+            </label>
+            <label>⌨️ Email :
+                <input type="email" name="email" required>
+            </label>
+            <label>💌 Message :
+                <textarea name="message" rows="5" required></textarea>
+            </label>
+            <button type="submit">SEND</button>
+        </form>
+
+        <a href="/" class="back-link">← Go back to main page</a>
+    </div>
 </body>
 </html>

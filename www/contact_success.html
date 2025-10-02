@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title>TEST POST</title>
+	<title>Message reçu</title>
 	<style>
 		@font-face {
 			font-family: "ComicNeue";
@@ -85,83 +85,38 @@
 			font-family: "ComicNeue", cursive;
 			font-weight: 700;
 			display: inline-block;
-			cursor: pointer;
-			font-size: 1.1rem;
 		}
-		.btn-add{
+		.btn-pink{
+			background: #ff00aa;
+			color: #000;
+		}
+		.btn-green{
 			background: #00ff00;
 			color: #000;
 		}
-		.todo-form-container{
-			background: #ff00aa;
-			border: 3px solid #530435;
-			padding: 20px;
-			margin: 2rem auto;
-			max-width: 600px;
-			border-radius: 10px;
-			margin: auto;
-		}
-		.todo-list {
-			background: rgba(0, 0, 0, 0.7);
-			border: 3px solid #ff00aa;
-			padding: 20px;
-			margin: 2rem auto;
-			max-width: 600px;
-			min-height: 200px;
-		}
-		.todo-list h2{
-			color: #0ff;
-			font-size: 2rem;
-			margin-top: 0;
-			text-shadow: 2px 2px 0 #000;
-		}
-		.todo-form{
-			display: flex;
-			gap: 10px;
-			flex-wrap: wrap;
-			justify-content: center;
-		}
-		.todo-input{
-			flex: 1;
-			min-width: 200px;
-			padding: 12px 15px;
-			border: 3px solid #530435;
-			font-family: "ComicNeue", cursive, sans-serif;
-			font-size: 1.1rem;
-			background: #fff;
+		.btn-cyan{
+			background: #0ff;
 			color: #000;
-			font-weight: 700;
-
 		}
-		#taskInput {
-			flex: 1;
-			padding: 12px 15px;
-			border: 2px solid #e0e0e0;
-			border-radius: 0px;
-			font-size: 16px;
-		}
-		#taskInput:focus {
-			outline: none;
-			border-color: #667eea;
+		.btn-yellow{
+			background: #ff0;
+			color: #000;
 		}
 	</style>
 </head>
 <body>
 	<header>
-		<h1>★ TEST POST ★</h1>
+		<h1>★ MESSAGE RECEIVED ★</h1>
 	</header>
 	<main>
-        <p>Here is a form. Please fill it. </p>
-        <form method="POST" action="/post_contact">
-        <p>Nom: <input type="text" name="nom"></p><br><br>
-        <p>Email: <input type="email" name="email"></p><br><br>
-        <p>Message: <textarea name="message"></textarea></p><br><br>
-        <button type="submit">Envoyer</button>
-    </form>
+		<p> <strong>We have received your message. We will try to answer as soon as possible </strong></p>
+		<p class="button-container">
+      <a href="post_contact.html" class="btn btn-cyan">R U really sure u want to send another one?</a>
+      <a href="index.html" class="btn btn-yellow">Take me back to the main page</a>
+    </p>
 	</main>
 	<footer>
 		&copy; 2025 - Webserv ★ projet 42
 	</footer>
 </body>
 </html>
-

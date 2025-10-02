@@ -295,12 +295,11 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 	// creer fonciton is_valid email ?
 	if (save_contact_data(form_data))
 	{
-		string success_html = "<html><body><h1>Message enregistre !</h1>"
-							 "<p>Merci " + form_data["nom"] + "</p>"
-							 "<a href=\"/contact.html\">Nouveau message</a></body></html>";
-		_file_content = success_html;
-		build_success_response("response.html", version, request);
-		return;
+		_response = version + " 303 See Other\r\n";
+        _response += "Location: /contact_success.html\r\n";
+        _response += "Content-Length: 0\r\n";
+        _response += "\r\n";
+        return;
 	}
 	else
 		build_error_response(500, version, request);
