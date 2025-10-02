@@ -75,6 +75,23 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
+	if (method == "GET" && target == "/todo.html")
+	{
+		load_todo_page(version, request);
+		return ;
+	}
+	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
+	{
+		cout << GREEN << ">>> Traitement DELETE todo" << RESET << endl;
+		handle_delete_todo(request, version);
+		return;
+	}
+	if (method == "POST" && target == "/post_todo")
+	{
+		cout << GREEN << ">>> Traitement POST todo" << RESET << endl;
+		handle_todo_form(request, version);
+		return;
+	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		build_error_response(405, version, request);
@@ -190,29 +207,25 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "DELETE")
 	{
-		std::cout << "DELETE request for: " << file_path << std::endl;
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
-   		 std::cout << "File exists: " << is_existing_file(file_path) << std::endl;
+		if (target == "/delete_todo")
+		{
+			handle_delete_todo(request, version);
+			return;
+		}
 		if (!is_existing_file(file_path))
 		{
-			cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
-			cout << "404 - file not found" << endl;
 			build_error_response(404, version, request);
 			return ;
 		}
 		if (remove(file_path.c_str()) != 0)
 		{
-			cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 			build_error_response(500, version, request);
 			return ;
 		}
 		build_success_response(file_path, version, request);
 	}
 	else
-	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_success_response(file_path, version, request);
-	}
 }
 
 /********************    POST    ********************/
@@ -241,7 +254,8 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		handle_contact_form(request, version);
 	if (content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, version);
-
+	if (target == "/post_todo")
+		handle_todo_form(request, version);
 	 // if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 	// upload file
 	// else
@@ -282,8 +296,8 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 	if (save_contact_data(form_data))
 	{
 		string success_html = "<html><body><h1>Message enregistre !</h1>"
-                             "<p>Merci " + form_data["nom"] + "</p>"
-                             "<a href=\"/contact.html\">Nouveau message</a></body></html>";
+							 "<p>Merci " + form_data["nom"] + "</p>"
+							 "<a href=\"/contact.html\">Nouveau message</a></body></html>";
 		_file_content = success_html;
 		build_success_response("response.html", version, request);
 		return;

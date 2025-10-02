@@ -83,7 +83,7 @@ void	c_server::close_all_sockets_and_fd(void)
 		cout << ORANGE << "Socket du port " << port << " fermée!" << RESET << endl;
 	}
 	_multiple_ports.clear();
-	cout << GREEN << "✅ Socket fermées!" << RESET << endl;
+	cout << GREEN << "✅ Sockets fermées!" << RESET << endl;
 	_poll_fds.clear();
 	cout << GREEN << "✅ SERVEUR FERMÉ!" << RESET << endl;
 }
