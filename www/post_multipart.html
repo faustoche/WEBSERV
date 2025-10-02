@@ -1,15 +1,56 @@
 <!doctype html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <title>Upload de fichier</title>
+  <meta charset="utf-8" />
+  <title>Test Upload multipart/form-data</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    .box { max-width: 540px; padding: 1rem; border: 1px solid #ddd; border-radius: 6px; }
+    label { display:block; margin-bottom: 0.6rem; }
+    .info { margin-top: 0.6rem; color: #333; font-size: 0.9rem; }
+  </style>
 </head>
 <body>
-  <h1>Uploader un fichier</h1>
+  <div class="box">
+    <h1>Uploader un fichier</h1>
 
-  <form action="/upload" method="post" enctype="multipart/form-data">
-    <input type="file" name="file">
-    <button type="submit">Envoyer</button>
-  </form>
+    <!-- Modifie l'attribut action selon la route de ton serveur (ex: /upload, /post_test, /cgi-bin/upload) -->
+    <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+      <label>
+        Sélectionnez un fichier :
+        <input type="file" name="file" id="fileInput" />
+      </label>
+
+      <p>
+        <button type="submit">Envoyer</button>
+        <button type="reset">Réinitialiser</button>
+      </p>
+
+      <div class="info" id="fileInfo">Aucun fichier sélectionné.</div>
+    </form>
+  </div>
+
+  <script>
+    // Petit script optionnel pour afficher le nom du fichier sélectionné
+    (function(){
+      var input = document.getElementById('fileInput');
+      var info = document.getElementById('fileInfo');
+      input.addEventListener('change', function(e){
+        if (!input.files || input.files.length === 0) {
+          info.textContent = 'Aucun fichier sélectionné.';
+          return;
+        }
+        var f = input.files[0];
+        info.textContent = 'Fichier choisi : ' + f.name + ' (' + f.size + ' octets, type: ' + (f.type || 'inconnu') + ')';
+      }, false);
+    })();
+  </script>
+
+  <hr>
+  <p>Commande `curl` équivalente (sans navigateur) :</p>
+  <pre>
+curl -v -F "file=@/chemin/vers/ton_fichier.ext" http://localhost:8080/upload
+  </pre>
 </body>
 </html>

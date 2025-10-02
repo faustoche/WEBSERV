@@ -230,7 +230,6 @@ void	c_response::define_response_content(const c_request &request)
 
 void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
 {
-	(void)location;
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
@@ -245,30 +244,278 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
 		handle_contact_form(request, version);
 	if (content_type.find("multipart/form-data") != string::npos)
-		handle_upload_form_file(request, version);
+		handle_upload_form_file(request, version, location);
 	if (target == "/post_todo")
 		handle_todo_form(request, version);
-	 // if (content_type.find("application/x-www-form-urlencoded") != string::npos)
-	// upload file
-	// else
-	// 	create_generic_response()
-
+	else
+		build_error_response(404, version, request); // est-ce la bonne erreur ?
 }
 
-/********************   upload form   ********************/
+/********************   upload file   ********************/
+/*
+Objectif : Partage d'images
 
-void	c_response::handle_upload_form_file(const c_request &request, const string &version)
+AUTORISER :
+- Images : jpg, png, gif (2 MB max)
+- Documents : pdf, txt (5 MB max)
+
+REJETER : Vidéos, exécutables, archives
+
+Exemple config :
+allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
+max_file_size = 2 * 1024 * 1024  // 2 MB
+*/
+
+void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
 	(void)version;
-	(void)request;
-	cout << __FILE__ << "/" << __LINE__ << endl;
-	// string content_type = request.get_header_value("Content-Type");
-	// string boundary;
-	// size_t start = content_type.find("boundary=");
-	
-	// cout << PINK << content_type << RESET << endl;
-	
+	string body = request.get_body();
+	string content_type = request.get_header_value("Content-Type");
 
+	// PARSING
+	string boundary = extract_boundary(content_type);
+	// cout << PINK << boundary << RESET << endl;
+	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
+
+	// TRAITEMENT de chaque partie
+	string 			description;
+	vector<string>	uploaded_files;
+	for(size_t i = 0; i < parts.size(); i++)
+	{
+		s_multipart &part = parts[i];
+		if (part.is_file)
+		{
+			string saved_path = save_uploaded_file(part, location);
+			if (!saved_path.empty())
+			{
+				uploaded_files.push_back(saved_path);
+				_file_content = load_file_content(saved_path);
+				cout << "Uploaded file: " << part.filename
+				<< " (" << part.content.size() << " bytes)" << endl;
+			}
+		}
+		else // seulement du texte
+		{
+			if(part.name == "description")
+				description = part.content;
+			cout << "Textual field: " << part.name << " = " << part.content << endl;
+		}
+	}
+	if (uploaded_files.size() > 0)
+	{
+		for (size_t i = 0; i < uploaded_files.size(); i++)
+			buid_upload_success_response(uploaded_files[i], version, request);
+	}
+	else
+		build_error_response(400, version, request);
+	// creer liste de fichiers sauvegardes ?
+}
+
+bool	file_exists(const std::string &path)
+{
+	struct stat buffer;
+	return (stat(path.c_str(), &buffer) == 0);
+}
+
+bool	directory_exists(const string &path)
+{
+	struct stat buffer;
+	return (stat(path.c_str(), &buffer) == 0 && S_ISDIR(buffer.st_mode));
+}
+
+bool	create_directory(const string &path)
+{
+	return (mkdir(path.c_str(), 0755) == 0);
+}
+
+string	get_unique_filename(const string &directory, string &filename)
+{
+	string full_path = directory + filename;
+	if (!file_exists(full_path))
+		return filename;
+	
+	size_t dot_pos = filename.find_last_of('.');
+	string name = filename.substr(0, dot_pos);
+	string extension = filename.substr(dot_pos);
+
+	int counter = 1;
+	string new_filename;
+
+	while (true)
+	{
+		ostringstream oss;
+		oss << counter;
+		new_filename = name + "_" + oss.str() + extension;
+		full_path = directory + new_filename;
+
+		if (!file_exists(full_path))
+			return new_filename;
+		counter++;
+		if (counter > 1000)
+		{
+			ostringstream oss_t;
+			oss_t << time(0);
+			return name + "_" + oss_t.str() + extension;
+		}
+	}
+}
+
+
+string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
+{
+	string	uploaded_dir = location->get_upload_path();
+	if (uploaded_dir.empty())
+		uploaded_dir = "./www/uploads/";
+	if (!directory_exists(uploaded_dir))
+	{
+		if (!create_directory("./www/uploads/"))
+			return "";
+	}
+	string safe_filename = sanitize_filename(part.filename);
+	if (safe_filename.empty())
+		return "";
+
+	
+	string final_path = uploaded_dir + safe_filename;
+	if (file_exists(final_path))
+	{
+		safe_filename = get_unique_filename(uploaded_dir, safe_filename);
+		final_path = uploaded_dir + safe_filename;
+	}
+
+	ofstream file(final_path.c_str(), ios::binary);
+	if (!file.is_open())
+	{
+		cerr << "Error: the server can't upload the file " << final_path <<endl;
+		return "";
+	}
+	file.write(part.content.data(), part.content.size());
+	file.close();
+	return final_path;
+}
+
+string	c_response::extract_boundary(const string &content_type)
+{
+	string boundary;
+
+	size_t pos = content_type.find("boundary=");
+	if (pos != string::npos)
+		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
+	else
+		throw invalid_argument("Can't find the boundary in the Content-Type value for upload a file");
+	return boundary;
+}
+
+
+vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
+{
+	string			delimiter = "--" + boundary;
+	size_t			pos = 0;
+	vector<size_t>	boundary_pos;
+
+	while((pos = body.find(delimiter, pos)) != string::npos)
+	{
+		boundary_pos.push_back(pos);
+		pos += delimiter.size();
+	}
+
+	vector<s_multipart>	parts;
+	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
+	{
+		size_t	begin = boundary_pos[i] + delimiter.length() + 2; // pour sauter le "\r\n" qui suit souvent le boundary 
+		size_t	end = boundary_pos[i + 1];
+		string	raw_part = body.substr(begin, end - begin);
+		if (raw_part.find_first_not_of(" \r\n") == string::npos)
+			continue;
+		s_multipart single_part = parse_single_part(raw_part);
+		parts.push_back(single_part);
+	}
+	return parts;
+}
+
+s_multipart const	c_response::parse_single_part(const string &raw_part)
+{
+	s_multipart	part;
+	size_t		separator_pos = raw_part.find("\r\n\r\n");
+
+	if (separator_pos == string::npos)
+		return part;
+
+	string header_section = raw_part.substr(0, separator_pos);
+	string content_section = raw_part.substr(separator_pos + 4, raw_part.size());
+	// cout << ORANGE << header_section << endl;
+	// cout << ORANGE << content_section << endl;
+
+	// parser les header
+	parse_header_section(header_section, part);
+	part.content = content_section;
+	part.is_file = !part.filename.empty();
+	return part;
+}
+
+void	c_response::parse_header_section(const string &header_section, s_multipart &part)
+{
+	// Headers possibles :
+    // - Content-Disposition: form-data; name="xxx"; filename="yyy"
+    // - Content-Type: image/jpeg
+
+	// Parsing Content-Disposition
+	size_t	pos_disposition = header_section.find("Content-Disposition");
+	if (pos_disposition != string::npos)
+	{
+		string line = extract_line(header_section, pos_disposition);
+		part.name = extract_quotes(line, "name=");
+		part.filename = extract_quotes(line, "filename=");
+	}
+
+	// Parsing Content-Type
+	size_t	pos_type = header_section.find("Content-Type");
+	if (pos_type != string::npos)
+	{
+		string line = extract_line(header_section, pos_type);
+		part.content_type = extract_after_points(line);
+	}
+	
+}
+
+
+string	c_response::extract_line(const string &header_section, const size_t &pos)
+{
+	size_t	end_pos = header_section.find("\r\n", pos);
+
+	if (end_pos == string::npos)
+		end_pos = header_section.length(); //verifier si lenght ou size
+	
+	string line = header_section.substr(pos, end_pos - pos);
+	return line;
+}
+
+string	c_response::extract_quotes(const string &line, const string &type)
+{
+	size_t key_pos = line.find(type);
+	if (key_pos == string::npos)
+		return "";
+	
+	size_t first_quote = line.find('"', key_pos);
+	if (first_quote == string::npos)
+		return ""; // fautil throw une exception pour format invalide ?
+	size_t second_quote = line.find('"', first_quote + 1);
+
+	if (second_quote == string::npos)
+		return ""; // fautil throw une exception pour format invalide ?
+	
+	string value = line.substr(first_quote + 1, second_quote - first_quote - 1);
+	return trim(value);
+}
+
+string	c_response::extract_after_points(const string &line)
+{
+	size_t pos = line.find(':');
+	if (pos == string::npos)
+		return "";
+	
+	string value = line.substr(pos + 1);
+	return trim(value);
 }
 
 /*******************   contact form    *******************/
@@ -508,6 +755,34 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 		return ;
 	string content_cgi = cgi.launch_cgi(request_body);
 
+}
+
+void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
+{
+	_response = version + " 201 Created\r\n";
+	_response += "Content-Type: text/html\r\n";
+	
+
+	string connection;
+	try {
+		connection = request.get_header_value("Connection");
+	} catch (...) {
+		connection = "keep-alive";
+	}
+
+	_response += "Connection: " + connection + "\r\n";
+	_response += "Server: webserv/1.0\r\n";
+
+	string body = "<html><body><h1>Upload Successful</h1>"
+                  "<p>File saved as: " + file_path + "</p></body></html>";
+
+	ostringstream oss;
+	oss << body.size();
+	_response += "Content-Length: " + oss.str() + "\r\n";
+	_response += "\r\n";
+	_response += body;
+
+	_file_content.clear();
 }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
@@ -796,7 +1071,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
-		cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + relative_path);
 		else
