@@ -187,7 +187,6 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (this->_is_cgi)
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		if (request.get_path().find(".") == string::npos)
 		{
 			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
@@ -199,7 +198,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 
-		// cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
 		_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
 		
@@ -209,7 +207,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 			return ;
 		}
-		
 		build_cgi_response(*cgi, request);
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
@@ -766,7 +763,6 @@ string c_response::read_error_pages(int error_code)
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
-
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 
@@ -835,7 +831,6 @@ void c_response::build_success_response(const string &file_path, const string ve
 	
 	if (_file_content.empty())
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(404, version, request);
 		return ;
 	}

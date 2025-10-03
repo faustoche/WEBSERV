@@ -55,7 +55,7 @@ void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
     	chunk = int_to_hex(chunk_size) + "\r\n" +
     	        buffer + "\r\n";
 
-    	client->get_write_buffer().append(chunk, chunk.size());
+    	client->get_write_buffer().append(chunk);
 	}
 }
 

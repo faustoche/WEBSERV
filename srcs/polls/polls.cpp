@@ -359,6 +359,7 @@ void	c_server::handle_client_write(int client_fd)
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
 		{
+			cout << "response\n" << client->get_write_buffer() << endl;
 			int duration = client->get_last_modified() - client->get_creation_time();
 			log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
 						+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
@@ -449,7 +450,6 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 		std::string chunk = int_to_hex(0) + "\r\n\r\n";
 		client->get_write_buffer().append(chunk, chunk.size());
 	}
-
 	client->set_state(SENDING);
 
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
