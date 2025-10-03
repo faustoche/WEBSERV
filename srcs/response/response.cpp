@@ -2,10 +2,12 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_response::c_response(c_server& server, int client_fd) : _server(server), _client_fd(client_fd)
+c_response::c_response(c_server& server, c_client &client) : _server(server), _client(client)
 {
 	this->_is_cgi = false;
 	this->_error = false;
+	this->_client_fd = _client.get_fd();
+	// this->_client = _server.find_client(_client_fd);
 }
 
 c_response::~c_response()
@@ -521,7 +523,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
-	c_client *client = _server.find_client(this->_client_fd);
+	// c_client *client = _server.find_client(this->_client_fd);
 	
 	if (_file_content.empty())
 	{
@@ -529,7 +531,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 		build_error_response(404, version, request);
 		return ;
 	}
-	client->set_status_code(200);
+	_client.set_status_code(200);
 
 	size_t content_size = _file_content.size();
 	ostringstream oss;
@@ -576,8 +578,8 @@ void c_response::build_error_response(int error_code, const string version, cons
 	// 		break;
 	// }
 
-	c_client *client = _server.find_client(this->_client_fd);
-	client->set_status_code(error_code);
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(error_code);
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
@@ -683,8 +685,8 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "\r\n";
 	_response += content;
 
-	c_client *client = _server.find_client(this->_client_fd);
-	client->set_status_code(code);
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(code);
 }
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
@@ -735,8 +737,8 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	_response += content;
 	_file_content = content;
 
-	c_client *client = _server.find_client(this->_client_fd);
-	client->set_status_code(200);
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(200);
 }
 
 /************ HANDLING LOCATIONS ************/
@@ -836,7 +838,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
-		cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
+		// cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + relative_path);
 		else

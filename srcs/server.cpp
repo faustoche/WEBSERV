@@ -183,8 +183,8 @@ void	c_server::log_access(c_client *client)
 	char buf[64];
 	strftime(buf, sizeof(buf), "%d/%b/%Y:%H:%M:%S %z", localtime(&now));
 
-	log << client->get_ip() << " - - ["
-		<< buf << "] \""
+	log << client->get_ip() << " - ["
+		<< buf << "]"
 		<< " \"" << client->get_last_request() << " \" "
 		<< client->get_status_code() << " " << client->get_bytes_written() << endl;
 }

@@ -48,8 +48,6 @@ void    c_server::add_fd(int fd, short events)
 
     _poll_fds.push_back(tmp_poll_fd);
     log_message("[DEBUG] fd " + int_to_string(fd) + " is now monitored by _poll_fds");
-    // cout << "fd " << fd << " is now monitored by _poll_fds" << endl;
-    // _clients[fd] = c_client(fd);
 }
 
 void c_server::add_client(int client_fd, string client_ip)
@@ -58,7 +56,6 @@ void c_server::add_client(int client_fd, string client_ip)
     set_non_blocking(client_fd);
     add_fd(client_fd, POLLIN);
     log_message("[DEBUG] Client " + int_to_string(client_fd) + " can send a request : POLLIN");
-    // cout << PINK << "\n*Client " << client_fd << " can send a request : POLLIN*" << RESET << endl;
 }
 
 void c_server::remove_client(int client_fd)
@@ -72,7 +69,6 @@ void c_server::remove_client(int client_fd)
         {
             _poll_fds.erase(it);
             log_message("[DEBUG] fd " + int_to_string(client_fd) + " is no longer monitored by _poll_fds");
-            // cout << "fd " << client_fd << " is no longer monitored by _poll_fds" << endl;
             break;
         }
     }
@@ -82,7 +78,6 @@ void c_server::remove_client(int client_fd)
     {
         _clients.erase(it);
         log_message("[DEBUG] fd " + int_to_string(client_fd) + " erased from _clients");
-        // cout << "Client with fd " << client_fd << " erased from _clients" << endl;
     }
      close(client_fd);
     

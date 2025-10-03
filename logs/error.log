@@ -1,18 +1,11 @@
-[02/Oct/2025:17:16:24 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
-[02/Oct/2025:17:16:24 +0200] [DEBUG] Client 5 can send a request : POLLIN
-[02/Oct/2025:17:16:24 +0200] [DEBUG] PROCESS CGI IDENTIFIED FOR FD 5
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 7 is now monitored by _poll_fds
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 8 is now monitored by _poll_fds
-[02/Oct/2025:17:16:24 +0200] [DEBUG] Client 5 is processing request
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 7 is no longer monitored by _poll_fds
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 7 erased from active_cgi
-[02/Oct/2025:17:16:24 +0200] [DEBUG] CGI process 863318 terminated exited with code: 0
-[02/Oct/2025:17:16:24 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[02/Oct/2025:17:16:24 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 0s
-[02/Oct/2025:17:16:24 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 8 is no longer monitored by _poll_fds
-[02/Oct/2025:17:16:24 +0200] [DEBUG] fd 8 erased from active_cgi
-[02/Oct/2025:17:16:24 +0200] [DEBUG] CGI with PID 863318 cleaned !
-[02/Oct/2025:17:16:44 +0200] [DEBUG] Client 5 has timed out
-[02/Oct/2025:17:16:44 +0200] [DEBUG] fd 5 erased from _clients
+[03/Oct/2025:12:39:29 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
+[03/Oct/2025:12:39:29 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
+[03/Oct/2025:12:39:29 +0200] [DEBUG] Client 5 can send a request : POLLIN
+[03/Oct/2025:12:39:30 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[03/Oct/2025:12:39:30 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 1s
+[03/Oct/2025:12:39:30 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[03/Oct/2025:12:39:31 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[03/Oct/2025:12:39:31 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 2s
+[03/Oct/2025:12:39:31 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[03/Oct/2025:12:39:51 +0200] [DEBUG] Client 5 has timed out
+[03/Oct/2025:12:39:51 +0200] [DEBUG] fd 5 erased from _clients
