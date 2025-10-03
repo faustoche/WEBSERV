@@ -58,6 +58,7 @@
             color: rgb(255, 0, 242);
             font-family: "ComicNeue";
             font-size: 1rem;
+            font-weight: 600;
         }
         button {
             padding: 10px 20px;
@@ -65,7 +66,8 @@
             border: 2px solid #000;
             color: #000;
             font-family: "ComicNeue";
-            font-weight: 700;
+            font-weight: 900;
+            font-size: 1rem;
             cursor: pointer;
         }
         button:hover {
@@ -83,14 +85,15 @@
         .task-text {
             color: #0ff;
             flex: 1;
+            font-weight: 700;
         }
         .delete-btn {
-            background: #f00;
-            color: #fff;
+            background: rgb(255, 238, 0);
+            color: #000;
             padding: 5px 15px;
         }
         .delete-btn:hover {
-            background: #ff4444;
+            background: #b3ff00;
         }
         .back-link {
             display: inline-block;
@@ -103,6 +106,7 @@
         .back-link:hover {
             background: #0ff;
             color: #000;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -119,25 +123,23 @@
             {{TASKS_HTML}}
         </div>
 
-        <a href="/" class="back-link">← Retour à la page d'accueil</a>
+        <a href="/" class="back-link">← Go back to the main page</a>
     </div>
 
     <script>
         function deleteTask(taskText) {
-            // Passer le paramètre dans l'URL car DELETE ne supporte pas toujours le body
             fetch('/delete_todo?task=' + encodeURIComponent(taskText), {
                 method: 'DELETE'
             })
-            .then(response => response.text())  // Attendre la réponse complète
+            .then(response => response.text())
             .then(html => {
-                // Remplacer le contenu de la page avec la réponse HTML
                 document.open();
                 document.write(html);
                 document.close();
             })
             .catch(error => {
-                console.error('Erreur:', error);
-                alert('Erreur lors de la suppression');
+                console.error('Error:', error);
+                alert('Error while deleting a task');
             });
         }
     </script>

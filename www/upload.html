@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File management</title>
+    <style>
+        @font-face {
+            font-family: "ComicNeue";
+            src: url("./fonts/ComicNeue-Regular.otf") format("opentype");
+            font-weight: 400;
+        }
+        @font-face {
+            font-family: "ComicNeue";
+            src: url("./fonts/ComicNeue_Bold.otf") format("opentype");
+            font-weight: 700;
+        }
+        body {
+            margin: 0;
+            font-family: "ComicNeue", cursive, sans-serif;
+            background: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.7);
+            padding: 2rem;
+            border: 3px solid #ff00aa;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-family: "ComicNeue", cursive, sans-serif;
+            font-weight: 700;
+            font-size: 3rem;
+            margin: 0;
+            margin-bottom: 20px;
+            color: yellow;
+            text-shadow: 2px 2px 0 #000, 0 0 10px #ff00aa;
+            animation: flash 1s infinite alternate;
+            text-align: center;
+        }
+        h2 {
+            font-family: "ComicNeue", cursive, sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin: 0 0 1rem 0;
+            color: rgb(44, 221, 0);
+            text-shadow: 1px 1px 0 #000;
+        }
+        @keyframes flash {
+            from { color: yellow; }
+            to { color: #ff66ff; }
+        }
+        .upload-form {
+            margin-bottom: 2rem;
+        }
+        label { 
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #0ff;
+            font-weight: 700;
+        }
+
+        #fileInput {
+            display: none;
+        }
+        .custom-file-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #fffb00;
+            color: #000;
+            border: 2px solid #000;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .custom-file-label:hover {
+            background: #ffd000;
+        }
+        .file-name {
+            margin-left: 10px;
+            font-style: italic;
+            color: #0ff;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+        button {
+            padding: 10px 32.5px;
+            background: #ff00aa;
+            border: 2px solid #000;
+            color: #000;
+            font-family: "ComicNeue";
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #ff66ff;
+        }
+        .file-item {
+            background: rgba(255, 0, 170, 0.2);
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #ff00aa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-info {
+            color: #0ff;
+            flex: 1;
+        }
+        .file-name-list {
+            font-weight: 700;
+            font-size: 1.1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-size {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        .delete-btn {
+            background: rgb(43, 255, 0);
+            color: #000;
+            padding: 8px 15px;
+            border: 2px solid #000;
+            font-family: "ComicNeue";
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background: #c8ff00;
+        }
+        .empty-message {
+            text-align: center;
+            color: #ff00aa;
+            font-style: italic;
+            padding: 2rem;
+        }
+        .info-text {
+            color: #0ff;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #0ff;
+            text-decoration: none;
+            border: 2px solid #0ff;
+            padding: 10px 20px;
+            font-weight: 700;
+        }
+        .back-link:hover {
+            background: #0ff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <h1>★ FILE MANAGEMENT ★</h1>
+    
+    <div class="container">
+        <h2>📨 UPLOAD</h2>
+        
+        <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+            <label>Choose a file :</label>
+            
+            <!-- INput personnalisé pour que ce soit en anglais sinon c'est tiré directement du navigateur -->
+            <label for="fileInput" class="custom-file-label">BROWSE</label>
+            <span class="file-name">No file chosen</span>
+            <input type="file" name="file" id="fileInput" required>
+            
+            <div class="button-group">
+                <button type="submit">SEND</button>
+            </div>
+        </form>
+        
+        <a href="/" class="back-link">← Go back to the main page</a>
+    </div>
+
+    <div class="container">
+        <h2>🗃️ UPLOADED FILES</h2>
+        
+        <div id="file-list">
+            {{FILES_HTML}}
+        </div>
+    </div>
+
+    <script>
+        function deleteFile(filename) {
+            if (!confirm('Delete ' + filename + ' ?')) {
+                return;
+            }
+            fetch('/delete_upload?file=' + encodeURIComponent(filename), {
+                method: 'DELETE'
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.open();
+                document.write(html);
+                document.close();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error while deleting a task');
+            });
+        }
+        const fileInput = document.getElementById("fileInput");
+        const fileNameSpan = document.querySelector(".file-name");
+
+        fileInput.addEventListener("change", () => {
+            if (fileInput.files.length > 0) {
+                fileNameSpan.textContent = fileInput.files[0].name;
+            } else {
+                fileNameSpan.textContent = "No file chosen";
+            }
+        });
+    </script>
+</body>
+</html>

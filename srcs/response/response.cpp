@@ -93,6 +93,16 @@ void	c_response::define_response_content(const c_request &request)
 		handle_todo_form(request, version);
 		return;
 	}
+	if (method == "GET" && target == "/upload.html")
+    {
+        load_upload_page(version, request);
+        return ;
+    }
+    if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
+    {
+        handle_delete_upload(request, version);
+        return;
+    }
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		build_error_response(405, version, request);
@@ -304,7 +314,10 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	if (uploaded_files.size() > 0)
 	{
 		for (size_t i = 0; i < uploaded_files.size(); i++)
-			buid_upload_success_response(uploaded_files[i], version, request);
+		{
+			load_upload_page(version, request);
+			//buid_upload_success_response(uploaded_files[i], version, request);
+		}
 	}
 	else
 		build_error_response(400, version, request);
@@ -757,12 +770,14 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 
 }
 
+/* COde 303 avec redirection */
+
 void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
 {
-	_response = version + " 201 Created\r\n";
-	_response += "Content-Type: text/html\r\n";
+	(void)file_path;
+	_response = version + " 303 See other\r\n";
+	_response += "Location: /upload_success.html\r\n";
 	
-
 	string connection;
 	try {
 		connection = request.get_header_value("Connection");
@@ -772,18 +787,41 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 
 	_response += "Connection: " + connection + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
-
-	string body = "<html><body><h1>Upload Successful</h1>"
-                  "<p>File saved as: " + file_path + "</p></body></html>";
-
-	ostringstream oss;
-	oss << body.size();
-	_response += "Content-Length: " + oss.str() + "\r\n";
+	_response += "Content-Length: 0\r\n";
 	_response += "\r\n";
-	_response += body;
 
 	_file_content.clear();
 }
+
+/* Code 201 - créée */
+
+// void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
+// {
+// 	(void)file_path;
+// 	_response = version + " 201 Created\r\n";
+// 	_response += "Content-Type: text/html\r\n";
+	
+
+// 	string connection;
+// 	try {
+// 		connection = request.get_header_value("Connection");
+// 	} catch (...) {
+// 		connection = "keep-alive";
+// 	}
+
+// 	_response += "Connection: " + connection + "\r\n";
+// 	_response += "Server: webserv/1.0\r\n";
+
+// 	string body = "Location: /upload_success.html\r\n";
+
+// 	ostringstream oss;
+// 	oss << body.size();
+// 	_response += "Content-Length: " + oss.str() + "\r\n";
+// 	_response += "\r\n";
+// 	_response += body;
+
+// 	_file_content.clear();
+// }
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {

@@ -103,4 +103,6 @@ private:
 	/***** DELETE method *****/
 	void						handle_delete_todo(const c_request &request, const string &version);
 	void						handle_delete_request(const c_request &request, const string &version, string file_path);
+	void						load_upload_page(const string &version, const c_request &request);
+	void						handle_delete_upload(const c_request &request, const string &version);
 };
