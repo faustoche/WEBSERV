@@ -2,10 +2,12 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_response::c_response(c_server& server, int client_fd) : _server(server), _client_fd(client_fd)
+c_response::c_response(c_server& server, c_client &client) : _server(server), _client(client)
 {
 	this->_is_cgi = false;
 	this->_error = false;
+	this->_client_fd = _client.get_fd();
+	// this->_client = _server.find_client(_client_fd);
 }
 
 c_response::~c_response()
@@ -72,7 +74,6 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
-		cout << "status code: " << status_code << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -196,7 +197,8 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 
-		cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
+		// cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
+		_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
 		
 		if (cgi->init_cgi(request, *matching_location, request.get_target()))
@@ -825,12 +827,15 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
+	// c_client *client = _server.find_client(this->_client_fd);
+	
 	if (_file_content.empty())
 	{
 		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
+	_client.set_status_code(200);
 
 	size_t content_size = _file_content.size();
 	ostringstream oss;
@@ -842,11 +847,10 @@ void c_response::build_success_response(const string &file_path, const string ve
 	_response += "Server: webserv/1.0\r\n";
 
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += _file_content;
@@ -857,6 +861,29 @@ void c_response::build_error_response(int error_code, const string version, cons
 {
 	string status;
 	string error_content;
+
+	// Définir le message de statut
+	// switch (error_code)
+	// {
+	// 	case 400:
+	// 		status = "Bad Request";
+	// 		break;
+	// 	case 404:
+	// 		status = "Not Found";
+	// 		break;
+	// 	case 405:
+	// 		status = "Method Not Allowed";
+	// 		break;
+	// 	case 505:
+	// 		status = "HTTP Version Not Supported";
+	// 		break;
+	// 	default:
+	// 		status = "Internal Server Error";
+	// 		break;
+	// }
+
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(error_code);
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
@@ -961,6 +988,9 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
+
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(code);
 }
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
@@ -1010,6 +1040,9 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	_response += "\r\n";
 	_response += content;
 	_file_content = content;
+
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(200);
 }
 
 /************ HANDLING LOCATIONS ************/
@@ -1109,6 +1142,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
+		// cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + relative_path);
 		else

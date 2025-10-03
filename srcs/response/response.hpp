@@ -19,6 +19,7 @@ using namespace std;
 
 class	c_request;
 class	c_server;
+class	c_client;
 class	c_cgi;
 class	c_location;
 
@@ -45,6 +46,7 @@ private:
 	int					_status;
 	bool				_is_cgi;
 	bool				_error;
+	c_client			&_client;
 
 public:
 
@@ -54,7 +56,7 @@ public:
 	const string &get_file_content() const { return (_file_content); }
 
 	/****** AC *****/
-	c_response(c_server& server, int client_fd);
+	c_response(c_server& server, c_client &client);
 	~c_response();
 	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
 	const string 	&get_header_value(const string& key) const;
@@ -63,6 +65,7 @@ public:
 	const string	&get_body() { return this->_body; };
 	bool			get_is_cgi() { return this->_is_cgi; };
 	bool			get_error() { return this->_error; };
+	const int		&get_client_fd() { return this->_client_fd; };
 
 	void			clear_response();
 	void			set_error() { this->_error = true; };

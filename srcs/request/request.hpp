@@ -25,6 +25,7 @@ using namespace std;
 #define MAX_BODY_SIZE 1048576
 
 class	c_server;
+class   c_client;
 
 /************ CLASS ************/
 
@@ -32,12 +33,12 @@ class c_request
 {
     public:
         // c_request();
-        c_request(c_server& server);
+        c_request(c_server& server, c_client &client);
         // c_request(char* ip_str);
 
         ~c_request();
     
-        void    read_request(int socket_fd);
+        void    read_request();
         int     parse_request(const string& str);
         int     parse_start_line(string& str);
         int     parse_headers(string& str);
@@ -90,6 +91,7 @@ class c_request
         string              _body;
         // string              _buffered_data;
         map<string, string> _headers;
+        c_client            &_client;
 
 		int                 _status_code;
 		int                 _port;

@@ -2,26 +2,6 @@
 
 /************ CHECK FUNCTIONS ************/
 
-// bool    is_valid_header_name(const string& key_name)
-// {
-// 	const string allowed_special_chars = "!#$%&'*+-.^_`|~";
-
-// 	if (key_name.empty())
-// 	{
-// 		cerr << "(Request) Error: empty header name." << endl;
-// 		return (false);
-// 	}
-// 	for (size_t i = 0; i < key_name.length(); i++)
-// 	{
-// 		if (!isalnum(key_name[i]) && allowed_special_chars.find(key_name[i]) == string::npos)
-// 		{
-// 			cerr << "(Request) Error: Invalid char in header name: " << key_name << endl;
-// 			return (false);
-// 		}
-// 	}
-// 	return (true);
-// }
-
 bool    c_request::is_valid_header_value(string& key, const string& value)
 {
 	for (size_t i = 0; i < value.length(); i++)
@@ -62,13 +42,15 @@ void c_request::check_required_headers()
 
     if (this->_method == "POST" && (has_content_length || has_transfer_encoding))
 	{
-		cout << "Warning: Request has body!\n" << endl;
+		// cout << "Warning: Request has body!\n" << endl;
+		_server.log_message("[DEBUG] Request has a body");
         this->_has_body = true;
 	}
 
 	if (this->_headers.count("Host") != 1)
 	{
-		cerr << "(Request) Error: Header host" << endl;
+		// cerr << "(Request) Error: Header host" << endl;
+		_server.log_message("[ERROR] invalid header Host");
 		this->_error = true;
 		this->_status_code = 400;
 	}
@@ -79,13 +61,15 @@ void c_request::check_required_headers()
 		{
 			this->_error = true;
 			this->_status_code = 400;
-			cerr << "(Request) Error: Missing header about body size" << endl;
+			_server.log_message("[ERROR] Missing header indicating body size");
+			// cerr << "(Request) Error: Missing header about body size" << endl;
 		}
 		if (has_content_length && has_transfer_encoding)
 		{
 			this->_error = true;
 			this->_status_code = 400;
-			cerr << "(Request) Error: only one header required about body size" << endl;
+			_server.log_message("[ERROR] Misleading header body size");
+			// cerr << "(Request) Error: only one header required about body size" << endl;
 		}
 	}     
 }
@@ -154,6 +138,8 @@ void	c_request::init_request()
 	this->_content_length = 0;
 	this->_chunk_line_count = 0;
 	this->_client_max_body_size = 0;
+	this->_socket_fd = _client.get_fd();
+	// this->_client = NULL;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
 		it->second = "";
