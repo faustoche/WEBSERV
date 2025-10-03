@@ -61,6 +61,7 @@ bool	is_regular_file(const string& path)
 
 void	c_response::define_response_content(const c_request &request)
 {
+	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -72,6 +73,7 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		cout << "status code: " << status_code << endl;
 		build_error_response(status_code, version, request);
 		return ;
@@ -108,7 +110,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -131,7 +133,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -153,7 +155,8 @@ void	c_response::define_response_content(const c_request &request)
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
-	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
@@ -172,7 +175,7 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
-
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (this->_is_cgi)
 	{
 		if (request.get_path().find(".") == string::npos)
@@ -203,6 +206,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		handle_post_request(request, matching_location, version);
 		return;
 	}
@@ -217,7 +221,10 @@ void	c_response::define_response_content(const c_request &request)
 		build_success_response(file_path, version, request);
 	}
 	else
+	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_success_response(file_path, version, request);
+	}
 }
 
 /********************    POST    ********************/
@@ -239,6 +246,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	// 		<< "Content-Type: [" << content_type << "]" << endl
 	// 		<< "Target: [" << request.get_target() << "]" << endl;
 
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (target == "/test_post")
 		handle_test_form(request, version);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
@@ -268,7 +276,7 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	(void)version;
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 
@@ -307,7 +315,10 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			buid_upload_success_response(uploaded_files[i], version, request);
 	}
 	else
+	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
+	}
 	// creer liste de fichiers sauvegardes ?
 }
 
@@ -422,7 +433,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		size_t	begin = boundary_pos[i] + delimiter.length() + 2; // pour sauter le "\r\n" qui suit souvent le boundary 
+		size_t	begin = boundary_pos[i] + delimiter.length();
 		size_t	end = boundary_pos[i + 1];
 		string	raw_part = body.substr(begin, end - begin);
 		if (raw_part.find_first_not_of(" \r\n") == string::npos)
@@ -442,7 +453,12 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 		return part;
 
 	string header_section = raw_part.substr(0, separator_pos);
-	string content_section = raw_part.substr(separator_pos + 4, raw_part.size());
+	string content_section = raw_part.substr(separator_pos + 4);
+	if (content_section.size() >= 2)
+	{
+		if (content_section.compare(content_section.size() - 2, 2, "\r\n") == 0)
+			content_section.erase(content_section.size() - 2);
+	}
 	// cout << ORANGE << header_section << endl;
 	// cout << ORANGE << content_section << endl;
 
@@ -547,7 +563,7 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
 	string filename = "./www/data/contact.txt"; //location.get_upload_path();
-	ofstream file(filename.c_str(), ios::app);
+	ofstream file(filename.c_str(), ios::binary);
 
 	if (!file.is_open())
 	{
@@ -678,7 +694,7 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
-	
+	cout << YELLOW << file_path << RESET << endl;
 	if (!file.is_open()) {
 		return ("");
 	}
