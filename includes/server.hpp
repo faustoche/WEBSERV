@@ -88,7 +88,7 @@ class c_server
 		void		handle_client_write(int client_fd);
 		void		handle_cgi_write(c_cgi* cgi);
 		void		handle_cgi_read(c_cgi* cgi);
-		void		transfer_by_bytes(c_cgi *cgi, const string& buffer);
+		void		transfer_by_bytes(c_cgi *cgi, const string& buffer, size_t bytes);
 		void 		transfer_with_chunks(c_cgi *cgi, const string& buffer);
 		void		process_client_request(int client_fd);
 		void		fill_cgi_response_headers(string headers, c_cgi *cgi);

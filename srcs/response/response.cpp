@@ -84,7 +84,8 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
-		cout << GREEN << ">>> Traitement DELETE todo" << RESET << endl;
+		// cout << GREEN << ">>> Traitement DELETE todo" << RESET << endl;
+		_server.log_message("[DEBUG] DELETE todo");
 		handle_delete_todo(request, version);
 		return;
 	}
@@ -186,6 +187,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (this->_is_cgi)
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		if (request.get_path().find(".") == string::npos)
 		{
 			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
@@ -302,8 +304,10 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			{
 				uploaded_files.push_back(saved_path);
 				_file_content = load_file_content(saved_path);
-				cout << "Uploaded file: " << part.filename
-				<< " (" << part.content.size() << " bytes)" << endl;
+				_server.log_message("[INFO] ✅ UPLOADED FILE : " + part.filename 
+									+ " (" + int_to_string(part.content.size()) + " bytes)");
+				// cout << "Uploaded file: " << part.filename
+				// << " (" << part.content.size() << " bytes)" << endl;
 			}
 		}
 		else // seulement du texte

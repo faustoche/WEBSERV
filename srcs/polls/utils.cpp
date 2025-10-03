@@ -30,12 +30,12 @@ size_t	c_server::extract_content_length(string headers)
 }
 
 
-void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer)
+void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer, size_t bytes)
 {
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client)
 	{
-	    client->get_write_buffer().append(buffer);
+	    client->get_write_buffer().append(buffer, bytes);
 		client->append_response_body_size(buffer.size());
 
 		if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
@@ -55,7 +55,7 @@ void	c_server::transfer_with_chunks(c_cgi *cgi, const string& buffer)
     	chunk = int_to_hex(chunk_size) + "\r\n" +
     	        buffer + "\r\n";
 
-    	client->get_write_buffer().append(chunk);
+    	client->get_write_buffer().append(chunk, chunk.size());
 	}
 }
 
@@ -84,11 +84,11 @@ void	c_server::fill_cgi_response_body(string body_part, c_cgi *cgi)
 {
 	if (cgi->get_content_length() == 0)
 	{
-		// Si un '\0' final a ete ajoute par la lecture, on l'enleve
-		if (!body_part.empty() && body_part[body_part.size() - 1] == '\0')
-			body_part.erase(body_part.size() - 1);
+		// // Si un '\0' final a ete ajoute par la lecture, on l'enleve
+		// if (!body_part.empty() && body_part[body_part.size() - 1] == '\0')
+		// 	body_part.erase(body_part.size() - 1);
 		transfer_with_chunks(cgi, body_part);
 	}
 	else
-		transfer_by_bytes(cgi, body_part);
+		transfer_by_bytes(cgi, body_part, body_part.size());
 }

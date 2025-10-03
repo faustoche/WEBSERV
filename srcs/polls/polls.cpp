@@ -34,7 +34,6 @@ void c_server::setup_pollfd()
 		time_t now = time(NULL);
 		if (now - client.get_last_modified() > TIMEOUT)
 		{
-			// cout << "Client " << client.get_fd() << " has timed out." << endl;
 			log_message("[DEBUG] Client " + int_to_string(client.get_fd()) + " has timed out");
 			to_remove.push_back(client_fd);
 			continue;
@@ -228,27 +227,32 @@ void	c_server::handle_new_connection(int listening_socket)
 		int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
 		if (client_fd < 0)
 			break ;
-		if (_clients.size() > MAX_CONNECTIONS)
-		{
-			c_request  too_many_request(*this);
-			too_many_request.init_request();
-
-			c_response resp(*this, client_fd);
-			resp.build_error_response(503, "HTTP/1.1", too_many_request);
-
-			const string &raw = resp.get_response();
-			send(client_fd, raw.c_str(), raw.size(), 0); // on envois la reponse du server full
-			cout << RED << "Rejected client " << client_fd << " with 503 (server is full)" << RESET << endl;
-			close(client_fd);
-			continue ;
-		}
 
 		char client_ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
 
+		if (_clients.size() > MAX_CONNECTIONS)
+		{
+			c_client client(client_fd, client_ip);
+			c_request  too_many_request(*this, client);
+			too_many_request.init_request();
+
+			c_response resp(*this, client);
+			resp.build_error_response(503, "HTTP/1.1", too_many_request);
+
+			const string &raw = resp.get_response();
+			send(client_fd, raw.c_str(), raw.size(), 0); // on envois la reponse du server full
+			log_message("[ERROR] Rejected client " + int_to_string(client_fd) 
+						+ " with 503 (server is full)");
+			// cout << RED << "Rejected client " << client_fd << " with 503 (server is full)" << RESET << endl;
+			close(client_fd);
+			continue ;
+		}
+
 		set_non_blocking(client_fd);
 		int port = get_port_from_socket(listening_socket);
-		log_message("[INFO] ✅ NEW CONNECTION FOR CLIENT : " + int_to_string(client_fd) + " ON PORT : " + int_to_string(port));
+		log_message("[INFO] ✅ NEW CONNECTION FOR CLIENT : " 
+					+ int_to_string(client_fd) + " ON PORT : " + int_to_string(port));
 
 		new_fds.push_back(make_pair(client_fd, string(client_ip)));
 	}
@@ -290,13 +294,15 @@ void c_server::handle_client_read(int client_fd)
 		if (response.get_is_cgi())
 		{
 			client->set_state(PROCESSING);
-			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is processing request");
+			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
+						+ " is processing request");
 		}
 		else
 		{
 			client->get_write_buffer() = response.get_response();
 			client->set_state(SENDING);
-			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
+			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
+						+ " is ready to receive the end of the response's body : POLLOUT");
 		}
 		client->set_bytes_written(0);
 	}
@@ -345,7 +351,8 @@ void	c_server::handle_client_write(int client_fd)
         c_cgi *cgi = find_cgi_by_client(client_fd);
 		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
-			log_message("[DEBUG] CGI " + int_to_string(cgi->get_pipe_out()) + " linked to client " + int_to_string(client_fd) + " is not finished...");
+			log_message("[DEBUG] CGI " + int_to_string(cgi->get_pipe_out()) 
+						+ " linked to client " + int_to_string(client_fd) + " is not finished...");
 			return ;
 		}
 
@@ -353,9 +360,14 @@ void	c_server::handle_client_write(int client_fd)
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
 		{
 			int duration = client->get_last_modified() - client->get_creation_time();
-			log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " + int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
+			log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
+						+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
+
 			log_access(client);
-			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " can send a new request : POLLIN");
+
+			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
+						+ " can send a new request : POLLIN");
+
 			client->set_bytes_written(0);
 			client->clear_read_buffer();
 			client->clear_write_buffer();
@@ -370,9 +382,9 @@ void	c_server::handle_client_write(int client_fd)
 void	c_server::handle_cgi_read(c_cgi *cgi)
 {
 	char	buffer[BUFFER_SIZE];
-	ssize_t	bytes_read = read(cgi->get_pipe_out(), buffer, sizeof(buffer) - 1);
+	ssize_t	bytes_read = read(cgi->get_pipe_out(), buffer, BUFFER_SIZE);
 
-	buffer[bytes_read] = '\0';
+	// buffer[bytes_read] = '\0';
 	cgi->append_read_buffer(buffer, bytes_read);
 
 	c_client *client = find_client(cgi->get_client_fd());
@@ -421,25 +433,27 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 		fill_cgi_response_body(cgi->get_read_buffer(), cgi);
 	}
 
-	while (client &&  (bytes_read = read(fd, buffer, sizeof(buffer) - 1)) > 0)
+	while (client &&  (bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
 	{
 		if (cgi->get_content_length() == 0)
 			transfer_with_chunks(cgi, buffer);
 		else
 		{
-			buffer[bytes_read] = '\0';
-			transfer_by_bytes(cgi, buffer);
+			// buffer[bytes_read] = '\0';
+			transfer_by_bytes(cgi, buffer, bytes_read);
 		}
 	}
 
 	if (cgi->get_content_length() == 0 && !client->get_response_complete())
 	{
 		std::string chunk = int_to_hex(0) + "\r\n\r\n";
-		client->get_write_buffer().append(chunk);
+		client->get_write_buffer().append(chunk, chunk.size());
 	}
 
 	client->set_state(SENDING);
-	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
+
+	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
+				+ " is ready to receive the end of the response's body : POLLOUT");
 
 	cgi->consume_read_buffer(cgi->get_read_buffer().size());
 
@@ -489,7 +503,8 @@ void c_server::check_terminated_cgi_processes()
         	if (WIFEXITED(status))
         	{
         	    int exit_code = WEXITSTATUS(status);
-				log_message("[DEBUG] CGI process " + int_to_string(pid) + " terminated exited with code: " + int_to_string(exit_code));
+				log_message("[DEBUG] CGI process " + int_to_string(pid) 
+							+ " terminated exited with code: " + int_to_string(exit_code));
         	    terminated_cgi->set_exit_status(exit_code);
 				terminated_cgi->set_finished(true);
         	}
@@ -510,15 +525,14 @@ void c_server::cleanup_cgi(c_cgi* cgi)
         remove_client(cgi->get_pipe_in());
 		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_in()) + " erased from active_cgi");
 		cgi->mark_stdin_closed();
-		
     }
+
     if (cgi->get_pipe_out() > 0) 
 	{
 		 _active_cgi.erase(cgi->get_pipe_out());
         remove_client(cgi->get_pipe_out());
 		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_out()) + " erased from active_cgi");
-		cgi->mark_stdout_closed();
-		
+		cgi->mark_stdout_closed();	
     }
 
     // 2. Attendre la fin du process enfant (si pas déjà récupéré)
