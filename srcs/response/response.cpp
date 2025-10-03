@@ -384,11 +384,14 @@ string	get_unique_filename(const string &directory, string &filename)
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
 	string	uploaded_dir = location->get_upload_path();
+	
+	// si pas d'upload path donne dans le .conf on en donne un par defaut
 	if (uploaded_dir.empty())
-		uploaded_dir = "./www/uploads/";
+		uploaded_dir = "./www/data/";
 	if (!directory_exists(uploaded_dir))
 	{
-		if (!create_directory("./www/uploads/"))
+		// si le dossier d'upload n'existe pas on cree un dossier
+		if (!create_directory("./www/data/"))
 			return "";
 	}
 	string safe_filename = sanitize_filename(part.filename);
