@@ -115,6 +115,8 @@
         .file-info {
             color: #0ff;
             flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .file-name-list {
             font-weight: 700;
@@ -125,18 +127,16 @@
         .file-size {
             font-size: 0.9rem;
             opacity: 0.8;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .delete-btn {
-            background: rgb(43, 255, 0);
+            background: rgb(255, 238, 0);
             color: #000;
-            padding: 8px 15px;
-            border: 2px solid #000;
-            font-family: "ComicNeue";
-            font-weight: 700;
-            cursor: pointer;
+            padding: 5px 15px;
         }
         .delete-btn:hover {
-            background: #c8ff00;
+            background: #b3ff00;
         }
         .empty-message {
             text-align: center;
@@ -151,16 +151,18 @@
         }
         .back-link {
             display: inline-block;
+            background: rgb(21, 255, 0);
             margin-top: 1rem;
-            color: #0ff;
+            color:rgb(0, 0, 0);
             text-decoration: none;
-            border: 2px solid #0ff;
+            border: 2px solid rgb(21, 255, 0);
             padding: 10px 20px;
             font-weight: 700;
         }
         .back-link:hover {
-            background: #0ff;
-            color: #000;
+            background: rgb(252, 248, 17);
+            border: 2px solid rgb(252, 248, 17);
+            color: #000000;
         }
     </style>
 </head>
@@ -183,9 +185,8 @@
             </div>
         </form>
         
-        <a href="/" class="back-link">← Go back to the main page</a>
     </div>
-
+    
     <div class="container">
         <h2>🗃️ UPLOADED FILES</h2>
         
@@ -193,6 +194,7 @@
             {{FILES_HTML}}
         </div>
     </div>
+    <a href="/" class="back-link">← Go back to the main page</a>
 
     <script>
         function deleteFile(filename) {

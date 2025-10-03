@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGI</title>
+    <style>
+        @font-face {
+            font-family: "ComicNeue";
+            src: url("./fonts/ComicNeue-Regular.otf") format("opentype");
+            font-weight: 400;
+        }
+        @font-face {
+            font-family: "ComicNeue";
+            src: url("./fonts/ComicNeue_Bold.otf") format("opentype");
+            font-weight: 700;
+        }
+        body {
+            margin: 0;
+            font-family: "ComicNeue", cursive, sans-serif;
+            background: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+            color: #fff;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.7);
+            padding: 2rem;
+            border: 3px solid #ff00aa;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        h1 {
+            font-family: "ComicNeue", cursive, sans-serif;
+            font-weight: 700;
+            font-size: 3rem;
+            margin: 0;
+            margin-bottom: 20px;
+            color: yellow;
+            text-shadow: 2px 2px 0 #000, 0 0 10px #ff00aa;
+            animation: flash 1s infinite alternate;
+            text-align: center;
+        }
+        h2 {
+            font-family: "ComicNeue", cursive, sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin: 0 0 1rem 0;
+            color: rgb(44, 221, 0);
+            text-shadow: 1px 1px 0 #000;
+            text-align: center;
+        }
+        @keyframes flash {
+            from { color: yellow; }
+            to { color: #ff66ff; }
+        }
+        .upload-form {
+            margin-bottom: 2rem;
+        }
+        label { 
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #0ff;
+            font-weight: 700;
+        }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .menubtn {
+            padding: 10px 32.5px;
+            background: #ff00aa;
+            border: 2px solid #000;
+            color: #000;
+            font-family: "ComicNeue", cursive, sans-serif;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .menubtn:hover {
+            background: #ff66ff;
+        }
+        .dropdown-child {
+            display: none;
+            background-color: rgba(0,0,0,0.9);
+            min-width: 200px;
+            position: absolute;
+            z-index: 1;
+            border: 2px solid #ff00aa;
+        }
+        .dropdown-child a {
+            color: #0ff;
+            padding: 15px 20px;
+            text-decoration: none;
+            display: block;
+            font-weight: 700;
+            border-bottom: 1px solid #ff00aa;
+        }
+        .dropdown-child a:last-child {
+            border-bottom: none;
+        }
+        .dropdown-child a:hover {
+            background-color: rgba(255,0,170,0.3);
+            color: #ff66ff;
+        }
+        .dropdown:hover .dropdown-child {
+            display: block;
+        }
+        .back-link {
+            display: inline-block;
+            background: rgb(21, 255, 0);
+            margin-top: 1rem;
+            color:rgb(0, 0, 0);
+            text-decoration: none;
+            border: 2px solid rgb(21, 255, 0);
+            padding: 10px 20px;
+            font-weight: 700;
+        }
+        .back-link:hover {
+            background: rgb(252, 248, 17);
+            border: 2px solid rgb(252, 248, 17);
+            color: #000000;
+        }
+    </style>
+</head>
+<body>
+    <h1>★ WANNA TRY CGI? ★</h1>
+    
+    <div class="container">
+        <h2>Here are some available options.</h2>
+        <div class="dropdown">
+            <button class="menubtn">Choose whatever you want</button>
+            <div class="dropdown-child">
+                <a href="./cgi-bin/html.php">html.php</a>
+                <a href="./cgi-bin/html.py">html.py</a>
+                <a href="./cgi-bin/index.py">index.py</a>
+                <a href="./cgi-bin/showfile.py/data/chiens.html">showfile.py</a>
+                <a href="./cgi-bin/sleep.php">sleep.php</a>
+                <a href="./cgi-bin/test.py">test.py</a>
+                <a href="./cgi-bin/time.php">time.php</a>
+            </div>
+        </div>
+
+
+    </div>
+    <a href="/" class="back-link">← Go back to the main page</a>
+</body>
+</html>

@@ -1,5 +1,12 @@
 #include "server.hpp"
 
+/*
+* Checking if we can delete files without any problem.
+* Unable further files
+* Does the file exist? Do we have access? Does removing the file worked?
+* DOes the directory exist? Do we have access? -> checking permissions with stat
+*/
+
 void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
 {
 	if (file_path.find("..") != string::npos) // empeche les suppressions dans les fichiers + loins
@@ -12,9 +19,9 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 		build_error_response(404, version, request);
 		return ;
 	}
-	/* Le dossier existe et c'est un répertoire */
-	struct stat file_stat; // je recupere les informations sur un fichier/repertoire -> je verifie que le fichier existe et qu'on peut recuperer le contenu
-	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) // on check les permissions des dossiers
+
+	struct stat file_stat;
+	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode))
 	{
 		build_error_response(403, version, request);
 		return ;
@@ -30,8 +37,6 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 		return ;
 	}
 }
-
-/* GESTION DE LA TODO */
 
 void c_response::load_todo_page(const string &version, const c_request &request)
 {
@@ -82,7 +87,7 @@ void c_response::handle_todo_form(const c_request &request, const string &versio
 	}
 	file << task << endl;
 	file.close();
-	load_todo_page(version, request); // pour recharger la page avec les taches 
+	load_todo_page(version, request);
 }
 
 void c_response::handle_delete_todo(const c_request &request, const string &version)
@@ -92,7 +97,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	size_t pos = target.find("?task=");
 	if (pos != string::npos)
 	{
-		task_to_delete = target.substr(pos + 6); // pour passer le ?task
+		task_to_delete = target.substr(pos + 6);
 		task_to_delete = url_decode(task_to_delete);
 	}
 	else
@@ -124,7 +129,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	}
 	infile.close();
 	if (!found)
-		cout << YELLOW << "Be careful: task cannot be found in the file!" << RESET << endl;
+		cout << YELLOW << "Error: task cannot be found!" << RESET << endl;
 	
 	ofstream outfile(filename.c_str(), ios::trunc);
 	if (!outfile.is_open())
