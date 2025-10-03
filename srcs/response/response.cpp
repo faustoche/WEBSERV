@@ -266,7 +266,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 /********************   upload file   ********************/
 /*
-Objectif : Partage d'images
+Objectif : Partage d'images, de fichier txt, pdf sur les chiens
 
 AUTORISER :
 - Images : jpg, png, gif (2 MB max)
@@ -286,7 +286,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 
 	// PARSING
 	string boundary = extract_boundary(content_type);
-	// cout << PINK << boundary << RESET << endl;
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
 
 	// TRAITEMENT de chaque partie
@@ -304,8 +303,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 				_file_content = load_file_content(saved_path);
 				_server.log_message("[INFO] ✅ UPLOADED FILE : " + part.filename 
 									+ " (" + int_to_string(part.content.size()) + " bytes)");
-				// cout << "Uploaded file: " << part.filename
-				// << " (" << part.content.size() << " bytes)" << endl;
 			}
 			else
 			{
@@ -332,7 +329,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	{
 		build_error_response(400, version, request);
 	}
-	// creer liste de fichiers sauvegardes ?
 }
 
 bool	file_exists(const std::string &path)
@@ -459,9 +455,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 		// end doit pointer juste avant le prochain boundary
 		// on ne doit pas inclure le \r\n qui precede le boundary
 		size_t	end = boundary_pos[i + 1];
-
-		// if (body.compare(begin, 2, "\r\n") == 0)
-		// 	begin += 2;
 		if (end >= 2 && body[end - 2] == '\r' && body[end - 1] == '\n')
 			end -= 2;
 		else if (end >= 1 && body[end - 1] == '\n')
@@ -469,14 +462,14 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 		
 		if (begin >= end)
 			continue;
-		// if (end >= 2 && body.compare(end - 2, 2, "\r\n") == 0)
-		// 	end -= 2;
+
 		string	raw_part = body.substr(begin, end - begin);
 
 		if (raw_part.find(closing_delimier) != string::npos)
 			continue;
 		if (raw_part.find_first_not_of(" \r\n") == string::npos)
 			continue;
+
 		s_multipart single_part = parse_single_part(raw_part);
 		parts.push_back(single_part);
 	}
@@ -492,16 +485,7 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 
 	string header_section = raw_part.substr(0, separator_pos);
 	string content_section = raw_part.substr(separator_pos + 4);
-	// if (content_section.size() >= 2 && 
-	// 	content_section.compare(content_section.size() - 2, 2, "\r\n") == 0)
-	// {
-	// 		content_section.erase(content_section.size() - 2);
-	// }
-	// else if (!content_section.empty() &&
-	// 	(content_section[content_section.size() -1] == '\n') || content_section.back() == '\r')
-	// {
-	// 	content_section.erase(content_section.size() - 1);
-	// }
+
 	while (!content_section.empty() && (content_section[content_section.size() -1] == '\r'))
 		content_section.erase(content_section.size() - 1, 1);
 	while (!content_section.empty() && (content_section[content_section.size() -1] == '\n'))
@@ -520,19 +504,13 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	{
 		content_section.erase(pos);
 	}
-	// cout << ORANGE << header_section << endl;
-	// cout << ORANGE << content_section << endl;
-
-	
-    // printf("\n" << RESET);
-
 
 	// parser les header
 	parse_header_section(header_section, part);
 	part.content = content_section;
 	part.is_file = !part.filename.empty();
 
-	// print des octets finaux
+	// DEBUG: print des octets finaux
 	// 	for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
     // printf("%02X ", (unsigned char)content_section[j]);
 	// }
@@ -585,11 +563,11 @@ string	c_response::extract_quotes(const string &line, const string &type)
 	
 	size_t first_quote = line.find('"', key_pos);
 	if (first_quote == string::npos)
-		return ""; // fautil throw une exception pour format invalide ?
+		return ""; // CODE DERREUR A METTRE A JOUR
 	size_t second_quote = line.find('"', first_quote + 1);
 
 	if (second_quote == string::npos)
-		return ""; // fautil throw une exception pour format invalide ?
+		return ""; // CODE DERREUR A METTRE A JOUR
 	
 	string value = line.substr(first_quote + 1, second_quote - first_quote - 1);
 	return trim(value);
@@ -599,7 +577,7 @@ string	c_response::extract_after_points(const string &line)
 {
 	size_t pos = line.find(':');
 	if (pos == string::npos)
-		return "";
+		return ""; // CODE DERREUR A METTRE A JOUR
 	
 	string value = line.substr(pos + 1);
 	return trim(value);
