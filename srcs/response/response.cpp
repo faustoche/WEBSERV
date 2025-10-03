@@ -241,10 +241,10 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	// cout << "=== DEBUG POST ===" << endl
-	// 		<< "Body recu: [" << body << "]" << endl
-	// 		<< "Content-Type: [" << content_type << "]" << endl
-	// 		<< "Target: [" << request.get_target() << "]" << endl;
+	cout << "=== DEBUG POST ===" << endl
+			<< "Body recu: [" << body << "]" << endl
+			<< "Content-Type: [" << content_type << "]" << endl
+			<< "Target: [" << request.get_target() << "]" << endl;
 
 	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (target == "/test_post")
@@ -400,6 +400,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 		cerr << "Error: the server can't upload the file " << final_path <<endl;
 		return "";
 	}
+	// cout << PINK << part.content << RESET << endl;
 	file.write(part.content.data(), part.content.size());
 	file.close();
 	return final_path;
@@ -421,6 +422,7 @@ string	c_response::extract_boundary(const string &content_type)
 vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
 {
 	string			delimiter = "--" + boundary;
+	string			closing_delimier = delimiter + "--";
 	size_t			pos = 0;
 	vector<size_t>	boundary_pos;
 
@@ -434,8 +436,32 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
 		size_t	begin = boundary_pos[i] + delimiter.length();
+		
+		// sauter le \r\n ou \n apres le boundary
+		if (begin < body.size() && body[begin] == '\r')
+			begin++;
+		if (begin < body.size() && body[begin] == '\n')
+			begin++;
+
+		// end doit pointer juste avant le prochain boundary
+		// on ne doit pas inclure le \r\n qui precede le boundary
 		size_t	end = boundary_pos[i + 1];
+
+		// if (body.compare(begin, 2, "\r\n") == 0)
+		// 	begin += 2;
+		if (end >= 2 && body[end - 2] == '\r' && body[end - 1] == '\n')
+			end -= 2;
+		else if (end >= 1 && body[end - 1] == '\n')
+			end -= 1;
+		
+		if (begin >= end)
+			continue;
+		// if (end >= 2 && body.compare(end - 2, 2, "\r\n") == 0)
+		// 	end -= 2;
 		string	raw_part = body.substr(begin, end - begin);
+
+		if (raw_part.find(closing_delimier) != string::npos)
+			continue;
 		if (raw_part.find_first_not_of(" \r\n") == string::npos)
 			continue;
 		s_multipart single_part = parse_single_part(raw_part);
@@ -448,24 +474,59 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
-
 	if (separator_pos == string::npos)
 		return part;
 
 	string header_section = raw_part.substr(0, separator_pos);
 	string content_section = raw_part.substr(separator_pos + 4);
-	if (content_section.size() >= 2)
+	// if (content_section.size() >= 2 && 
+	// 	content_section.compare(content_section.size() - 2, 2, "\r\n") == 0)
+	// {
+	// 		content_section.erase(content_section.size() - 2);
+	// }
+	// else if (!content_section.empty() &&
+	// 	(content_section[content_section.size() -1] == '\n') || content_section.back() == '\r')
+	// {
+	// 	content_section.erase(content_section.size() - 1);
+	// }
+	while (!content_section.empty() && (content_section[content_section.size() -1] == '\r'))
+		content_section.erase(content_section.size() - 1, 1);
+	while (!content_section.empty() && (content_section[content_section.size() -1] == '\n'))
+		content_section.erase(content_section.size() - 1, 1);
+
+	// DEBUG: Afficher les derniers octets AVANT tout traitement
+    cout << YELLOW << "Derniers octets bruts: ";
+    for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
+         j < content_section.size(); j++) {
+        printf("%02X ", (unsigned char)content_section[j]);
+    }
+
+
+	size_t pos = content_section.rfind("\r\n--");
+	if ( pos != string::npos)
 	{
-		if (content_section.compare(content_section.size() - 2, 2, "\r\n") == 0)
-			content_section.erase(content_section.size() - 2);
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+		content_section.erase(pos);
 	}
 	// cout << ORANGE << header_section << endl;
 	// cout << ORANGE << content_section << endl;
+
+	
+    // printf("\n" << RESET);
+
 
 	// parser les header
 	parse_header_section(header_section, part);
 	part.content = content_section;
 	part.is_file = !part.filename.empty();
+
+	// print des octets finaux
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+		for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
+    printf("%02X ", (unsigned char)content_section[j]);
+	}
+	printf("\n");
+
 	return part;
 }
 
@@ -491,7 +552,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 	}
-	
 }
 
 

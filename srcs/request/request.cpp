@@ -39,9 +39,9 @@ void	c_request::read_request(int socket_fd)
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
-		fill(buffer, buffer + sizeof(buffer), '\0');
+		fill(buffer, buffer + BUFFER_SIZE, '\0');
 		// condition pour l'appel de recv ?
-		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
+		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE - 1, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
 			// if (receivedBytes == 0 && (time(NULL) - client->get_last_modified() > TIMEOUT)) // break ou vrai erreur ?
@@ -317,8 +317,8 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 		this->fill_body_with_chunks(body_part);
 	while (!this->_request_fully_parsed && !this->_error)
 	{
-		fill(buffer, buffer + sizeof(buffer), '\0');
-		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
+		// fill(buffer, buffer + BUFFER_SIZE, '\0');
+		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (string(buffer) == "\0\r\n\r\n")
 			break;
     	if (receivedBytes <= 0) 
@@ -365,8 +365,8 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 	while (total_bytes < max_body_size)
 	{	
-		fill(buffer, buffer + buffer_size, '\0');
-		receivedBytes = recv(socket_fd, buffer, buffer_size -1, 0); // faut-il conditionner l'appel a recv
+		// fill(buffer, buffer + buffer_size, '\0');
+		receivedBytes = recv(socket_fd, buffer, buffer_size, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{
     		if (receivedBytes == 0) // faut-il vraiment return et mettre _error a true ?
@@ -391,7 +391,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 				return;
 			}
 		}
-		buffer[receivedBytes] = '\0';
+		// buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
 		
 		if (total_bytes > max_body_size)
@@ -409,7 +409,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		if (total_bytes == max_body_size)
 			break;
 	}
-	fill(buffer, buffer + sizeof(buffer), '\0');
+	// fill(buffer, buffer + BUFFER_SIZE, '\0');
 }
 
 
@@ -419,7 +419,7 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 	{
 		if (this->get_content_length())
 		{
-			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer)); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
+			this->read_body_with_length(socket_fd, buffer, request, BUFFER_SIZE); // BUFFER_SIZE correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
 		}
 		else
 			this->read_body_with_chunks(socket_fd, buffer, request);
