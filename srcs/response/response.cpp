@@ -121,7 +121,6 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -144,7 +143,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -166,7 +164,6 @@ void	c_response::define_response_content(const c_request &request)
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
@@ -186,10 +183,8 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (this->_is_cgi)
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		if (request.get_path().find(".") == string::npos)
 		{
 			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
@@ -219,7 +214,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		handle_post_request(request, matching_location, version);
 		return;
 	}
@@ -235,7 +229,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_success_response(file_path, version, request);
 	}
 }
@@ -254,12 +247,11 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	cout << "=== DEBUG POST ===" << endl
-			<< "Body recu: [" << body << "]" << endl
-			<< "Content-Type: [" << content_type << "]" << endl
-			<< "Target: [" << request.get_target() << "]" << endl;
+	// cout << "=== DEBUG POST ===" << endl
+	// 		<< "Body recu: [" << body << "]" << endl
+	// 		<< "Content-Type: [" << content_type << "]" << endl
+	// 		<< "Target: [" << request.get_target() << "]" << endl;
 
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (target == "/test_post")
 		handle_test_form(request, version);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
@@ -289,7 +281,6 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 
@@ -316,6 +307,11 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 				// cout << "Uploaded file: " << part.filename
 				// << " (" << part.content.size() << " bytes)" << endl;
 			}
+			else
+			{
+				build_error_response(get_status(), version, request);
+				return ;
+			}
 		}
 		else // seulement du texte
 		{
@@ -334,7 +330,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
 	// creer liste de fichiers sauvegardes ?
@@ -513,17 +508,16 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 		content_section.erase(content_section.size() - 1, 1);
 
 	// DEBUG: Afficher les derniers octets AVANT tout traitement
-    cout << YELLOW << "Derniers octets bruts: ";
-    for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
-         j < content_section.size(); j++) {
-        printf("%02X ", (unsigned char)content_section[j]);
-    }
+    // cout << YELLOW << "Derniers octets bruts: ";
+    // for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
+    //      j < content_section.size(); j++) {
+    //     printf("%02X ", (unsigned char)content_section[j]);
+    // }
 
 
 	size_t pos = content_section.rfind("\r\n--");
 	if ( pos != string::npos)
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		content_section.erase(pos);
 	}
 	// cout << ORANGE << header_section << endl;
@@ -539,11 +533,10 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	part.is_file = !part.filename.empty();
 
 	// print des octets finaux
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
-		for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
-    printf("%02X ", (unsigned char)content_section[j]);
-	}
-	printf("\n");
+	// 	for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
+    // printf("%02X ", (unsigned char)content_section[j]);
+	// }
+	// printf("\n");
 
 	return part;
 }
@@ -663,6 +656,62 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	return true;
 }
 
+string  c_response::extract_extension(const string &filename, string &name)
+{
+    size_t point_pos = filename.find_last_of(".");
+    if (point_pos == string::npos)
+        return "";
+    if (point_pos == 0)
+        return "";
+    string extension = filename.substr(point_pos + 1);
+    name = filename.substr(0, point_pos);
+    if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
+        && extension != "pdf" && extension != "txt")
+    {
+        cout << "Error: extension not allowded (." << extension << ")" << endl;
+        this->set_status(415);
+        // revoir comment gerer l'erreur (peut etre juste ecrire que le telechargement n'a pas reussi)
+        // est-ce que si l'extension ets vide on en met une par defaut ?
+        return "";
+    }
+    return extension;
+}
+
+
+string  c_response::sanitize_filename(const string &filename)
+{
+    string name;
+    string extension = extract_extension(filename, name);
+
+    if (extension.empty())
+        return "";
+    if (name.empty())
+        name = "file";
+
+    string clean_name;
+    for(size_t i = 0; i < name.size(); i++)
+    {
+        char c = name[i];
+        if (isalnum(static_cast<unsigned char>(c)))
+            clean_name += c;
+        else if (c == '_' || c == '-' || c == ' ')
+            clean_name += '_';
+        else
+            clean_name += '_';
+    }
+    while (clean_name.find("__") != string::npos)
+        clean_name.replace(clean_name.find("__"), 2, "_");
+    while (!clean_name.empty() && clean_name[clean_name.size() - 1] == '_')
+        clean_name.erase(clean_name.size() - 1);
+    if (clean_name.size() > 200)
+        clean_name = clean_name.substr(0, 200);
+    clean_name = trim_underscore(clean_name);
+    if (!extension.empty())
+        return clean_name += "." + extension;
+    else
+        return clean_name;
+}
+
 /********************    test form    ********************/
 
 void	c_response::handle_test_form(const c_request &request, const string &version)
@@ -772,7 +821,7 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
-	cout << YELLOW << file_path << RESET << endl;
+	// cout << YELLOW << file_path << RESET << endl;
 	if (!file.is_open()) {
 		return ("");
 	}
@@ -908,10 +957,10 @@ void c_response::build_success_response(const string &file_path, const string ve
 	
 	if (_file_content.empty())
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
+	cout << PINK << __LINE__ << RESET << endl;
 	_client.set_status_code(200);
 
 	size_t content_size = _file_content.size();
