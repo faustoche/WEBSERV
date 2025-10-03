@@ -1,5 +1,12 @@
 #include "server.hpp"
 
+/*
+* Checking if we can delete files without any problem.
+* Unable further files
+* Does the file exist? Do we have access? Does removing the file worked?
+* DOes the directory exist? Do we have access? -> checking permissions with stat
+*/
+
 void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
 {
 	if (file_path.find("..") != string::npos) // empeche les suppressions dans les fichiers + loins
@@ -12,9 +19,9 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 		build_error_response(404, version, request);
 		return ;
 	}
-	/* Le dossier existe et c'est un répertoire */
-	struct stat file_stat; // je recupere les informations sur un fichier/repertoire -> je verifie que le fichier existe et qu'on peut recuperer le contenu
-	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode)) // on check les permissions des dossiers
+
+	struct stat file_stat;
+	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode))
 	{
 		build_error_response(403, version, request);
 		return ;
@@ -30,8 +37,6 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 		return ;
 	}
 }
-
-/* GESTION DE LA TODO */
 
 void c_response::load_todo_page(const string &version, const c_request &request)
 {
@@ -82,7 +87,7 @@ void c_response::handle_todo_form(const c_request &request, const string &versio
 	}
 	file << task << endl;
 	file.close();
-	load_todo_page(version, request); // pour recharger la page avec les taches 
+	load_todo_page(version, request);
 }
 
 void c_response::handle_delete_todo(const c_request &request, const string &version)
@@ -92,7 +97,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	size_t pos = target.find("?task=");
 	if (pos != string::npos)
 	{
-		task_to_delete = target.substr(pos + 6); // pour passer le ?task
+		task_to_delete = target.substr(pos + 6);
 		task_to_delete = url_decode(task_to_delete);
 	}
 	else
@@ -124,7 +129,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	}
 	infile.close();
 	if (!found)
-		cout << YELLOW << "Be careful: task cannot be found in the file!" << RESET << endl;
+		cout << YELLOW << "Error: task cannot be found!" << RESET << endl;
 	
 	ofstream outfile(filename.c_str(), ios::trunc);
 	if (!outfile.is_open())
@@ -137,80 +142,4 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 		outfile << tasks[i] << endl;
 	outfile.close();
 	load_todo_page(version, request);
-}
-
-/* GESTION DES UPLOADS */
-
-void c_response::load_upload_page(const string &version, const c_request &request)
-{
-    string html_template = load_file_content("./www/upload.html");
-    string files_html;
-
-    string upload_dir = "./www/data/";
-    DIR *dir = opendir(upload_dir.c_str());
-    if (dir)
-    {
-        struct dirent *entry;
-        while ((entry = readdir(dir)) != NULL)
-        {
-            string filename = entry->d_name;
-            if (filename == "." || filename == "..")
-                continue;
-
-            files_html += "<div class=\"file-item\">";
-            files_html += "<div class=\"file-info\">";
-            files_html += "<span class=\"file-name-list\">" + filename + "</span>";
-            files_html += "</div>";
-            files_html += "<button class=\"delete-btn\" onclick=\"deleteFile('" + filename + "')\">DELETE</button>";
-            files_html += "</div>\n";
-        }
-        closedir(dir);
-    }
-    else
-    {
-        files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
-    }
-    size_t pos = html_template.find("{{FILES_HTML}}");
-    if (pos != string::npos)
-        html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
-
-    _file_content = html_template;
-    build_success_response("upload.html", version, request);
-}
-
-void c_response::handle_delete_upload(const c_request &request, const string &version)
-{
-    string target = request.get_target();
-    string file_to_delete;
-    size_t pos = target.find("?file=");
-    
-    if (pos != string::npos)
-    {
-        file_to_delete = target.substr(pos + 6); // passer "?file=" + 6
-        file_to_delete = url_decode(file_to_delete);
-    }
-    else
-    {
-        build_error_response(400, version, request);
-        return ;
-    }
-
-    string filename = "./www/data/" + file_to_delete;
-    
-    // pas desuppression de fichiers en dehors du dossier
-    if (file_to_delete.find("..") != string::npos || file_to_delete.find("todo.txt") != string::npos)
-    {
-        build_error_response(403, version, request);
-        return ;
-    }
-    
-    if (remove(filename.c_str()) != 0)
-    {
-        cout << YELLOW << "Warning: file not found or cannot be deleted: " << filename << RESET << endl;
-        build_error_response(500, version, request);
-        return ;
-    }
-    
-    cout << GREEN << "File deleted: " << filename << RESET << endl;
-    load_upload_page(version, request); // charger page avec liste mise à jour
 }

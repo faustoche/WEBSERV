@@ -18,19 +18,20 @@ void c_server::setup_pollfd()
 	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		struct pollfd server_pollfd;
-		server_pollfd.fd = it->first; // ici socket_fd où on itere 
+		server_pollfd.fd = it->first;
 		server_pollfd.events = POLLIN;
 		server_pollfd.revents = 0;
 		_poll_fds.push_back(server_pollfd);
 	}
 
-
 	/**** AJOUT DES CLIENTS *****/
+
 	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		/**** AJOUT DES CLIENTS ACTIFS *****/
-		int client_fd = it->first; // recoit le descripteur du client concerne
-		c_client &client = it->second; // ref vers l'objet client de la map
+
+		int client_fd = it->first;
+		c_client &client = it->second;
 		time_t now = time(NULL);
 		if (now - client.get_last_modified() > TIMEOUT)
 		{
@@ -41,11 +42,11 @@ void c_server::setup_pollfd()
 
 		/***** POLLFD LOCAL POUR LE CLIENT *****/
 		struct pollfd client_pollfd;
-		client_pollfd.fd = client_fd; // fd devient le descripteur client
+		client_pollfd.fd = client_fd;
 		client_pollfd.revents = 0;
 
 		/***** SWITCH POUR AJUSTER SELON L'ÉTAT *****/
-		// est-ce que je dois égqlment actualiser revent ou ça se fait automatiquement?
+
 		switch (client.get_state())
 		{
 			case READING:
@@ -55,7 +56,7 @@ void c_server::setup_pollfd()
 				client_pollfd.events = 0;
 				break;
 			case SENDING:
-				client_pollfd.events = POLLOUT; // ou 0? a tester 
+				client_pollfd.events = POLLOUT;
 				break;
 			case IDLE:
 				client_pollfd.events = 0;
@@ -63,9 +64,8 @@ void c_server::setup_pollfd()
 				continue ;
 		}
 
-		_poll_fds.push_back(client_pollfd); // on push dans poll fds
+		_poll_fds.push_back(client_pollfd);
 	}
-
 
 	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); ++it) 
 	{
@@ -108,7 +108,6 @@ void c_server::handle_poll_events()
 {
 	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
-	// cout << "coucou" << endl;
 	
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
 	if (num_events < 0)
@@ -241,14 +240,14 @@ void	c_server::handle_new_connection(int listening_socket)
 			resp.build_error_response(503, "HTTP/1.1", too_many_request);
 
 			const string &raw = resp.get_response();
-			send(client_fd, raw.c_str(), raw.size(), 0); // on envois la reponse du server full
+			send(client_fd, raw.c_str(), raw.size(), 0);
 			cout << RED << "Rejected client " << client_fd << " with 503 (server is full)" << RESET << endl;
 			close(client_fd);
 			continue ;
 		}
 		set_non_blocking(client_fd);
 		int port = get_port_from_socket(listening_socket);
-		cout << GREEN << "\n✅ NEW CONNECTION FOR CLIENT : " << client_fd << " ON PORT : " << port << RESET << endl;
+		cout << GREEN << "\n✅ New connection for client : " << client_fd << " ON PORT : " << port << RESET << endl;
 		c_client new_client(client_fd);
 		new_client.set_state(READING);
 		_clients[client_fd] = new_client;
@@ -278,7 +277,7 @@ void c_server::handle_client_read(int client_fd)
 	if (request.is_client_disconnected())
 	{
 		close(client_fd);
-		remove_client(client_fd);cout << __FILE__ << "/" << __LINE__ << endl;
+		remove_client(client_fd);
 		return ;
 	}
 	/* */

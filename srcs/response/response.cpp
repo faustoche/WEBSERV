@@ -749,7 +749,7 @@ string c_response::read_error_pages(int error_code)
 		return (content.str());
 	}
 	ostringstream fallback;
-	fallback << "<html><body><h1>" << error_code << " - testetsError</h1></body></html>";
+	fallback << "<html><body><h1>" << error_code << " - Error</h1></body></html>";
 	return (fallback.str());
 }
 
@@ -853,6 +853,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 }
 
 /* Build basic error response for some cases. */
+
 void c_response::build_error_response(int error_code, const string version, const c_request &request)
 {
 	string status;
@@ -874,7 +875,6 @@ void c_response::build_error_response(int error_code, const string version, cons
 		if (error_content.empty())
 		{
 			cerr << RED << "Error: Could not load error page: " << error_path << RESET << endl;
-			cerr << RED << "Check if file exists and is readable!" << RESET << endl;
 			ostringstream fallback;
 			fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 			error_content = fallback.str();
@@ -938,7 +938,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 			break ;
 	}
 
-	// contenu en html histoire d'avoir un message 
+	// ici modifier car on devrait plutot reorienté direct vers la bonne page?
 	string content = "<html><body><h1>" + int_to_string(code) + " - " + status + "</h1>"
 					"<p>The document has moved <a href=\"" + location + "\">here</a>.</p>"
 					"</body></html>";
@@ -946,7 +946,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	ostringstream oss;
 	oss << content.length();
 	_response = version + " " + int_to_string(code) + " " + status + "\r\n";
-	_response += "Location: " + location + "\r\n"; // indique ou se trouve la nouvelle ressource
+	_response += "Location: " + location + "\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -967,20 +967,16 @@ void	c_response::build_redirect_response(int code, const string &location, const
 
 void c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
 {
-	// genere du début de la page HTML
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
 	
-	// ouvrir le répertoire
 	DIR *dir = opendir(dir_path.c_str());
 	if (dir != NULL) 
 	{
 		struct dirent *entry;
-		// lire chaque fichier/dossier
 		while ((entry = readdir(dir)) != NULL) 
 		{
 			string name = entry->d_name;
-			// ignore le répertoire courant "."
 			if (name == ".") 
 				continue ;
 			content += "<li><a href=\"" + name + "\">" + name + "</a></li>";
@@ -1021,15 +1017,11 @@ c_location	*c_server::find_matching_location(const string &request_path)
 	c_location *best_match = NULL;
 	size_t best_match_length = 0;
 
-	// parcourir toutes les locations de la map
 	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
 	{
 		const string &location_path = it->first;
-		// est-ce que le chemin de la requete comment par le chemin de la location?
 		if (request_path.find(location_path) == 0)
 		{
-			// check loction type repertoire qui terminent par /
-			// est-ce que le caracetere suivant est / ou bien on est a la fin ?
 			if (location_path.length() > 0 && location_path[location_path.length() - 1] == '/')
 			{
 				if (request_path.length() == location_path.length() || 
@@ -1037,7 +1029,6 @@ c_location	*c_server::find_matching_location(const string &request_path)
 					 request_path[location_path.length()] == '/') ||
 					request_path.length() > location_path.length())
 				{
-					// on choisi la correspondance la plus long 
 					if (location_path.length() > best_match_length)
 					{
 						best_match = &(it->second);

@@ -63,14 +63,13 @@ class c_server
 	public:
 		int	get_size_pollfd() const { return _poll_fds.size(); };
 
-		void 		set_active_cgi(int key_fd, c_cgi* cgi);
-		void 		add_fd(int fd, short events);
-		void 		remove_client_from_pollout(int client_fd);
-		const int &get_socket_fd() const { return (_socket_fd); };
-		const struct sockaddr_in &get_socket_addr() const { return (_socket_address); };
+		void 							set_active_cgi(int key_fd, c_cgi* cgi);
+		void 							add_fd(int fd, short events);
+		void 							remove_client_from_pollout(int client_fd);
+		const int						&get_socket_fd() const { return (_socket_fd); };
+		const struct sockaddr_in		&get_socket_addr() const { return (_socket_address); };
 		const map<string, c_location>	&get_location_map() const { return _location_map; };
 
-			// À TESTER POUR LES MULTIPLES PORTS
 		void		create_socket_for_each_port(const std::vector<int>& ports);
 		int			get_port_from_socket(int socket_fd);
 		bool		is_listening_socket(int fd);

@@ -58,8 +58,7 @@ void c_server::bind_and_listen()
 	}
 }
 
-/* Appliquer un fd en mode non bloquant les fonctions de base ne bloque plus le chemin si l'operation ne peux pas etre faite tout de suite
-ca echoue directement et permet de lancer correctement la boucle de poll()
+/* 
 * On check les flags du fd socket: rdonly, wronly, rdwr, append, sync, nonblock
 * FCNTL = file controle - > fonction générique pour manipuler des fd
 * Si un fd est ouvert en écriture/lecture avec append, alors flags aura O_RDWR et O_APPEND
@@ -67,24 +66,18 @@ ca echoue directement et permet de lancer correctement la boucle de poll()
 
 void c_server::set_non_blocking(int fd)
 {
-	/* F_GETFL: récupère les file status (les options/flags du fd) */
 	int flags = fcntl(fd, F_GETFL, 0); // 
 	if (flags < 0)
 	{
 		cerr << "Error: F_GETFL - " << errno << endl;
 		return ;
 	}
-
-	/* F_SETFL: permet de changer les flags -> ici on ajoute NONBLOCK */
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
 	{
 		cerr << "Error: F_SETFL - " << errno << endl;
 		return ;
 	}
 }
-
-/* MAIN TEST POUR LES CONNEXIONS MULTIPLES */
-
 
 void	run_multiserver(vector<c_server> &servers)
 {
@@ -97,7 +90,7 @@ void	run_multiserver(vector<c_server> &servers)
 	}
 }
 
-int main(int argc, char **argv) //main du parsing
+int main(int argc, char **argv)
 {
 	signal(SIGINT, handle_stop);
 	signal(SIGTERM, handle_stop);
