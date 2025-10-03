@@ -63,6 +63,7 @@ bool	is_regular_file(const string& path)
 
 void	c_response::define_response_content(const c_request &request)
 {
+	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -120,7 +121,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -143,7 +144,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -165,7 +166,8 @@ void	c_response::define_response_content(const c_request &request)
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
-	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
@@ -184,7 +186,7 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
-
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (this->_is_cgi)
 	{
 		if (request.get_path().find(".") == string::npos)
@@ -214,6 +216,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		handle_post_request(request, matching_location, version);
 		return;
 	}
@@ -228,7 +231,10 @@ void	c_response::define_response_content(const c_request &request)
 		build_success_response(file_path, version, request);
 	}
 	else
+	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_success_response(file_path, version, request);
+	}
 }
 
 /********************    POST    ********************/
@@ -245,11 +251,12 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	// cout << "=== DEBUG POST ===" << endl
-	// 		<< "Body recu: [" << body << "]" << endl
-	// 		<< "Content-Type: [" << content_type << "]" << endl
-	// 		<< "Target: [" << request.get_target() << "]" << endl;
+	cout << "=== DEBUG POST ===" << endl
+			<< "Body recu: [" << body << "]" << endl
+			<< "Content-Type: [" << content_type << "]" << endl
+			<< "Target: [" << request.get_target() << "]" << endl;
 
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (target == "/test_post")
 		handle_test_form(request, version);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
@@ -279,7 +286,7 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	(void)version;
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 
@@ -323,7 +330,10 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		}
 	}
 	else
+	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
+	}
 	// creer liste de fichiers sauvegardes ?
 }
 
@@ -405,6 +415,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 		cerr << "Error: the server can't upload the file " << final_path <<endl;
 		return "";
 	}
+	// cout << PINK << part.content << RESET << endl;
 	file.write(part.content.data(), part.content.size());
 	file.close();
 	return final_path;
@@ -426,6 +437,7 @@ string	c_response::extract_boundary(const string &content_type)
 vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
 {
 	string			delimiter = "--" + boundary;
+	string			closing_delimier = delimiter + "--";
 	size_t			pos = 0;
 	vector<size_t>	boundary_pos;
 
@@ -438,9 +450,33 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		size_t	begin = boundary_pos[i] + delimiter.length() + 2; // pour sauter le "\r\n" qui suit souvent le boundary 
+		size_t	begin = boundary_pos[i] + delimiter.length();
+		
+		// sauter le \r\n ou \n apres le boundary
+		if (begin < body.size() && body[begin] == '\r')
+			begin++;
+		if (begin < body.size() && body[begin] == '\n')
+			begin++;
+
+		// end doit pointer juste avant le prochain boundary
+		// on ne doit pas inclure le \r\n qui precede le boundary
 		size_t	end = boundary_pos[i + 1];
+
+		// if (body.compare(begin, 2, "\r\n") == 0)
+		// 	begin += 2;
+		if (end >= 2 && body[end - 2] == '\r' && body[end - 1] == '\n')
+			end -= 2;
+		else if (end >= 1 && body[end - 1] == '\n')
+			end -= 1;
+		
+		if (begin >= end)
+			continue;
+		// if (end >= 2 && body.compare(end - 2, 2, "\r\n") == 0)
+		// 	end -= 2;
 		string	raw_part = body.substr(begin, end - begin);
+
+		if (raw_part.find(closing_delimier) != string::npos)
+			continue;
 		if (raw_part.find_first_not_of(" \r\n") == string::npos)
 			continue;
 		s_multipart single_part = parse_single_part(raw_part);
@@ -453,19 +489,59 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
-
 	if (separator_pos == string::npos)
 		return part;
 
 	string header_section = raw_part.substr(0, separator_pos);
-	string content_section = raw_part.substr(separator_pos + 4, raw_part.size());
+	string content_section = raw_part.substr(separator_pos + 4);
+	// if (content_section.size() >= 2 && 
+	// 	content_section.compare(content_section.size() - 2, 2, "\r\n") == 0)
+	// {
+	// 		content_section.erase(content_section.size() - 2);
+	// }
+	// else if (!content_section.empty() &&
+	// 	(content_section[content_section.size() -1] == '\n') || content_section.back() == '\r')
+	// {
+	// 	content_section.erase(content_section.size() - 1);
+	// }
+	while (!content_section.empty() && (content_section[content_section.size() -1] == '\r'))
+		content_section.erase(content_section.size() - 1, 1);
+	while (!content_section.empty() && (content_section[content_section.size() -1] == '\n'))
+		content_section.erase(content_section.size() - 1, 1);
+
+	// DEBUG: Afficher les derniers octets AVANT tout traitement
+    cout << YELLOW << "Derniers octets bruts: ";
+    for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
+         j < content_section.size(); j++) {
+        printf("%02X ", (unsigned char)content_section[j]);
+    }
+
+
+	size_t pos = content_section.rfind("\r\n--");
+	if ( pos != string::npos)
+	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+		content_section.erase(pos);
+	}
 	// cout << ORANGE << header_section << endl;
 	// cout << ORANGE << content_section << endl;
+
+	
+    // printf("\n" << RESET);
+
 
 	// parser les header
 	parse_header_section(header_section, part);
 	part.content = content_section;
 	part.is_file = !part.filename.empty();
+
+	// print des octets finaux
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+		for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
+    printf("%02X ", (unsigned char)content_section[j]);
+	}
+	printf("\n");
+
 	return part;
 }
 
@@ -491,7 +567,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 	}
-	
 }
 
 
@@ -560,12 +635,10 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 		build_error_response(500, version, request);
 }
 
-
-
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
 	string filename = "./www/data/contact.txt"; //location.get_upload_path();
-	ofstream file(filename.c_str(), ios::app);
+	ofstream file(filename.c_str(), ios::binary);
 
 	if (!file.is_open())
 	{
@@ -696,7 +769,7 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
-	
+	cout << YELLOW << file_path << RESET << endl;
 	if (!file.is_open()) {
 		return ("");
 	}
@@ -752,7 +825,7 @@ string c_response::read_error_pages(int error_code)
 		return (content.str());
 	}
 	ostringstream fallback;
-	fallback << "<html><body><h1>" << error_code << " - testetsError</h1></body></html>";
+	fallback << "<html><body><h1>" << error_code << " - Error</h1></body></html>";
 	return (fallback.str());
 }
 
@@ -856,6 +929,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 }
 
 /* Build basic error response for some cases. */
+
 void c_response::build_error_response(int error_code, const string version, const c_request &request)
 {
 	string status;
@@ -900,7 +974,6 @@ void c_response::build_error_response(int error_code, const string version, cons
 		if (error_content.empty())
 		{
 			cerr << RED << "Error: Could not load error page: " << error_path << RESET << endl;
-			cerr << RED << "Check if file exists and is readable!" << RESET << endl;
 			ostringstream fallback;
 			fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 			error_content = fallback.str();
@@ -964,7 +1037,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 			break ;
 	}
 
-	// contenu en html histoire d'avoir un message 
+	// ici modifier car on devrait plutot reorienté direct vers la bonne page?
 	string content = "<html><body><h1>" + int_to_string(code) + " - " + status + "</h1>"
 					"<p>The document has moved <a href=\"" + location + "\">here</a>.</p>"
 					"</body></html>";
@@ -972,7 +1045,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	ostringstream oss;
 	oss << content.length();
 	_response = version + " " + int_to_string(code) + " " + status + "\r\n";
-	_response += "Location: " + location + "\r\n"; // indique ou se trouve la nouvelle ressource
+	_response += "Location: " + location + "\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -996,20 +1069,16 @@ void	c_response::build_redirect_response(int code, const string &location, const
 
 void c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
 {
-	// genere du début de la page HTML
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
 	
-	// ouvrir le répertoire
 	DIR *dir = opendir(dir_path.c_str());
 	if (dir != NULL) 
 	{
 		struct dirent *entry;
-		// lire chaque fichier/dossier
 		while ((entry = readdir(dir)) != NULL) 
 		{
 			string name = entry->d_name;
-			// ignore le répertoire courant "."
 			if (name == ".") 
 				continue ;
 			content += "<li><a href=\"" + name + "\">" + name + "</a></li>";
@@ -1053,15 +1122,11 @@ c_location	*c_server::find_matching_location(const string &request_path)
 	c_location *best_match = NULL;
 	size_t best_match_length = 0;
 
-	// parcourir toutes les locations de la map
 	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
 	{
 		const string &location_path = it->first;
-		// est-ce que le chemin de la requete comment par le chemin de la location?
 		if (request_path.find(location_path) == 0)
 		{
-			// check loction type repertoire qui terminent par /
-			// est-ce que le caracetere suivant est / ou bien on est a la fin ?
 			if (location_path.length() > 0 && location_path[location_path.length() - 1] == '/')
 			{
 				if (request_path.length() == location_path.length() || 
@@ -1069,7 +1134,6 @@ c_location	*c_server::find_matching_location(const string &request_path)
 					 request_path[location_path.length()] == '/') ||
 					request_path.length() > location_path.length())
 				{
-					// on choisi la correspondance la plus long 
 					if (location_path.length() > best_match_length)
 					{
 						best_match = &(it->second);

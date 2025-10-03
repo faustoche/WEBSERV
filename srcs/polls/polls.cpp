@@ -18,19 +18,20 @@ void c_server::setup_pollfd()
 	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		struct pollfd server_pollfd;
-		server_pollfd.fd = it->first; // ici socket_fd où on itere 
+		server_pollfd.fd = it->first;
 		server_pollfd.events = POLLIN;
 		server_pollfd.revents = 0;
 		_poll_fds.push_back(server_pollfd);
 	}
 
-
 	/**** AJOUT DES CLIENTS *****/
+
 	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		/**** AJOUT DES CLIENTS ACTIFS *****/
-		int client_fd = it->first; // recoit le descripteur du client concerne
-		c_client &client = it->second; // ref vers l'objet client de la map
+
+		int client_fd = it->first;
+		c_client &client = it->second;
 		time_t now = time(NULL);
 		if (now - client.get_last_modified() > TIMEOUT)
 		{
@@ -41,11 +42,11 @@ void c_server::setup_pollfd()
 
 		/***** POLLFD LOCAL POUR LE CLIENT *****/
 		struct pollfd client_pollfd;
-		client_pollfd.fd = client_fd; // fd devient le descripteur client
+		client_pollfd.fd = client_fd;
 		client_pollfd.revents = 0;
 
 		/***** SWITCH POUR AJUSTER SELON L'ÉTAT *****/
-		// est-ce que je dois égqlment actualiser revent ou ça se fait automatiquement?
+
 		switch (client.get_state())
 		{
 			case READING:
@@ -55,7 +56,7 @@ void c_server::setup_pollfd()
 				client_pollfd.events = 0;
 				break;
 			case SENDING:
-				client_pollfd.events = POLLOUT; // ou 0? a tester 
+				client_pollfd.events = POLLOUT;
 				break;
 			case IDLE:
 				client_pollfd.events = 0;
@@ -63,7 +64,7 @@ void c_server::setup_pollfd()
 				continue ;
 		}
 
-		_poll_fds.push_back(client_pollfd); // on push dans poll fds
+		_poll_fds.push_back(client_pollfd);
 	}
 
 	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); ++it) 
