@@ -321,6 +321,7 @@ void c_server::handle_client_read(int client_fd)
 */
 void	c_server::handle_client_write(int client_fd)
 {
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	c_client *client = find_client(client_fd);
 	if (client == NULL)
 	{
@@ -349,6 +350,7 @@ void	c_server::handle_client_write(int client_fd)
 
     if (client->get_bytes_written() >= write_buffer.length())
     {
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
         c_cgi *cgi = find_cgi_by_client(client_fd);
 		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
@@ -360,6 +362,7 @@ void	c_server::handle_client_write(int client_fd)
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
 		{
+			cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 			int duration = client->get_last_modified() - client->get_creation_time();
 			log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
 						+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
@@ -427,6 +430,7 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	char buffer[BUFFER_SIZE];
 	ssize_t bytes_read;
 
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	c_client *client = find_client(cgi->get_client_fd());
 	if (client && !cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
 	{
@@ -454,6 +458,7 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 
 	cgi->consume_read_buffer(cgi->get_read_buffer().size());
 
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	client->set_response_complete(true);
 	client->set_status_code(200);
 }

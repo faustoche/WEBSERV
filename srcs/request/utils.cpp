@@ -139,6 +139,7 @@ void	c_request::init_request()
 	this->_chunk_line_count = 0;
 	this->_client_max_body_size = 0;
 	this->_socket_fd = _client.get_fd();
+	this->_ip_client = _client.get_ip();
 	// this->_client = NULL;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)

@@ -61,9 +61,10 @@ bool	is_regular_file(const string& path)
 	return (S_ISREG(path_stat.st_mode));
 }
 
-void	c_response::define_response_content(const c_request &request)
+void	c_response::define_response_content(c_request &request)
 {
-	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+	request.print_full_request();
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -75,6 +76,7 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -121,7 +123,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+	
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -202,11 +204,18 @@ void	c_response::define_response_content(const c_request &request)
 		
 		if (cgi->init_cgi(request, *matching_location, request.get_target()))
 		{
+			_server.cleanup_cgi(cgi);
+			this->_is_cgi = false;
 			set_error();
-			build_error_response(404, version, request);
+			cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+			cout << "file_path: " << file_path << endl;
+			build_error_response(cgi->get_status_code(), version, request);
+			cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 			return ;
 		}
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_cgi_response(*cgi, request);
+		
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
 		return ;
@@ -240,7 +249,7 @@ void	c_response::define_response_content(const c_request &request)
 	separateur entre les differentes parties du body
  */
 
-void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
+void	c_response::handle_post_request(c_request &request, c_location *location, const string &version)
 {
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
@@ -278,7 +287,7 @@ allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
 max_file_size = 2 * 1024 * 1024  // 2 MB
 */
 
-void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
+void	c_response::handle_upload_form_file(c_request &request, const string &version, c_location *location)
 {
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
@@ -502,7 +511,7 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 		content_section.erase(content_section.size() - 1, 1);
 
 	// DEBUG: Afficher les derniers octets AVANT tout traitement
-    cout << YELLOW << "Derniers octets bruts: ";
+    // cout << YELLOW << "Derniers octets bruts: ";
     for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
          j < content_section.size(); j++) {
         printf("%02X ", (unsigned char)content_section[j]);
@@ -603,7 +612,7 @@ string	c_response::extract_after_points(const string &line)
 
 /*******************   contact form    *******************/
 
-void	c_response::handle_contact_form(const c_request &request, const string &version)
+void	c_response::handle_contact_form(c_request &request, const string &version)
 {
 	(void)version;
 	string body = request.get_body();
@@ -654,7 +663,7 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 
 /********************    test form    ********************/
 
-void	c_response::handle_test_form(const c_request &request, const string &version)
+void	c_response::handle_test_form(c_request &request, const string &version)
 {
 	map<string, string> form_data = parse_form_data(request.get_body());
 	// cout << GREEN << "=== DONNEES PARSEES ===" << endl;
@@ -663,7 +672,7 @@ void	c_response::handle_test_form(const c_request &request, const string &versio
 	create_form_response(form_data, request, version);
 }
 
-void	c_response::create_form_response(const map<string, string> &form, const c_request &request, const string &version)
+void	c_response::create_form_response(const map<string, string> &form, c_request &request, const string &version)
 {
 	string html = "<!DOCTYPE html>\n<html><head><title>Formulaire recu</title></head>\n<body>\n";
 	html += "<h1>Donnees recues :</h1>\n<ul>\n";
@@ -825,31 +834,33 @@ string c_response::read_error_pages(int error_code)
 
 /* Build the successfull request response */
 
-void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
+void	c_response::build_cgi_response(c_cgi & cgi, c_request &request)
 {
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (cgi.get_interpreter().empty())
 		return ;
+
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	string content_cgi = cgi.launch_cgi(request_body);
 
 }
 
 /* COde 303 avec redirection */
 
-void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
+void	c_response::buid_upload_success_response(const string &file_path, const string version, c_request &request)
 {
 	(void)file_path;
 	_response = version + " 303 See other\r\n";
 	_response += "Location: /upload_success.html\r\n";
 	
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
 
 	_response += "Connection: " + connection + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -889,7 +900,7 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 // 	_file_content.clear();
 // }
 
-void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
+void c_response::build_success_response(const string &file_path, const string version, c_request &request)
 {
 	// c_client *client = _server.find_client(this->_client_fd);
 	
@@ -921,32 +932,10 @@ void c_response::build_success_response(const string &file_path, const string ve
 
 /* Build basic error response for some cases. */
 
-void c_response::build_error_response(int error_code, const string version, const c_request &request)
+void c_response::build_error_response(int error_code, const string version, c_request &request)
 {
 	string status;
 	string error_content;
-
-	// Définir le message de statut
-	// switch (error_code)
-	// {
-	// 	case 400:
-	// 		status = "Bad Request";
-	// 		break;
-	// 	case 404:
-	// 		status = "Not Found";
-	// 		break;
-	// 	case 405:
-	// 		status = "Method Not Allowed";
-	// 		break;
-	// 	case 505:
-	// 		status = "HTTP Version Not Supported";
-	// 		break;
-	// 	default:
-	// 		status = "Internal Server Error";
-	// 		break;
-	// }
-
-	// c_client *client = _server.find_client(this->_client_fd);
 	_client.set_status_code(error_code);
 
 	map<int, string> const &err_pages = _server.get_err_pages();
@@ -954,6 +943,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 	if (it != err_pages.end())
 	{
 		string error_path = it->second;
+		
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
@@ -961,6 +951,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 				root = "./www";
 			error_path = root + error_path;
 		}
+		
 		error_content = load_file_content(error_path);
 		if (error_content.empty())
 		{
@@ -991,12 +982,10 @@ void c_response::build_error_response(int error_code, const string version, cons
 	_response += "Server: webserv/1.0\r\n";
 
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
-		cerr << "Error: No Header: Connection is kept alive by default" << endl;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += error_content;
@@ -1005,7 +994,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 
 /* Build the response in case of redirection's error with the locations. */
 
-void	c_response::build_redirect_response(int code, const string &location, const string &version, const c_request &request)
+void	c_response::build_redirect_response(int code, const string &location, const string &version, c_request &request)
 {
 	string status;
 	switch (code)
@@ -1041,13 +1030,11 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection = "keep-alive";
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
-		cerr << "Error: No Header: Connection is kept alive by default" << endl;
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
@@ -1058,7 +1045,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
 
-void c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
+void c_response::build_directory_listing_response(const string &dir_path, const string &version, c_request &request)
 {
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
@@ -1088,19 +1075,16 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection = "keep-alive";
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
-		cerr << "Error: No Header: Connection is kept alive by default" << endl;
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
 	_file_content = content;
 
-	// c_client *client = _server.find_client(this->_client_fd);
 	_client.set_status_code(200);
 }
 

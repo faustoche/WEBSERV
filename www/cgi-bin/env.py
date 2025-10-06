@@ -50,6 +50,10 @@ print("""
       border:5px ridge #ff00aa;
       max-width:300px;
     }
+    ul {
+      text-align: left;
+    }
+      
   </style>
 </head>
 <body>
@@ -57,9 +61,7 @@ print("""
   <img id="image" src="https://images.ctfassets.net/denf86kkcx7r/2Ghp9VQgpJxmXD14Bb3mva/43352c7e00f45cf55c464ef46f8d44ac/quelle-est-esperance-vie-chiens-13?fm=webp&w=913" alt="Dog sleeping">
 
   <div class="container">
-    <h1>Bonjour depuis Python CGI !</h1>
-
-    <h2>Variables d'environnement CGI</h2>
+    <h1>Environment variables !</h1>
     <ul>
 """)
 
@@ -70,7 +72,17 @@ for key in [
     "SCRIPT_FILENAME", 
     "PATH_INFO", 
     "QUERY_STRING", 
-    "REMOTE_ADDR", 
+    "REMOTE_ADDR",
+    "CONTENT-LENGT",
+    "CONTENT_TYPE",
+    "SERVER_PROTOCOL",
+    "GATEWAY_INTERFACE",
+    "REDIRECT_STATUS",
+    "HTTP_ACCEPT",
+    "HTTP_USER_AGENT",
+    "HTTP_ACCEPT_LANGUAGE",
+    "HTTP_COOKIE",
+    "HTTP_REFERER"
     ]:
     value = os.environ.get(key, "")
     if value:

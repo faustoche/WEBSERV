@@ -20,6 +20,7 @@ void	c_request::read_request()
 	int		receivedBytes;
 	string	request;
 	
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
 

@@ -50,7 +50,7 @@ private:
 
 public:
 
-	void define_response_content(const c_request &request);
+	void define_response_content(c_request &request);
 	// void define_response_content(c_request &request, c_server &server, int client_fd);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }
@@ -69,31 +69,31 @@ public:
 
 	void			clear_response();
 	void			set_error() { this->_error = true; };
-	void			build_error_response(int error_code, const string version, const c_request &request);
+	void			build_error_response(int error_code, const string version, c_request &request);
 
 private:
 	string	read_error_pages(int error_code);
-	void	build_success_response(const string &file_path, const string version, const c_request &request);
-	void    build_cgi_response(c_cgi & cgi, const c_request &request);
+	void	build_success_response(const string &file_path, const string version, c_request &request);
+	void    build_cgi_response(c_cgi & cgi, c_request &request);
 	// void	build_error_response(int error_code, const string version, const c_request &request);
-	void	build_redirect_response(int code, const string &location, const string &version, const c_request &request);
-	void	build_directory_listing_response(const string &dir_path, const string &version, const c_request &request);
+	void	build_redirect_response(int code, const string &location, const string &version, c_request &request);
+	void	build_directory_listing_response(const string &dir_path, const string &version, c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
 
 	/***** POST method *****/
-	void						handle_post_request(const c_request &request, c_location *location, const string &version);
+	void						handle_post_request(c_request &request, c_location *location, const string &version);
 	map<string, string> const	parse_form_data(const string &body);
 	string const				url_decode(const string &body);
-	void						create_form_response(const map<string, string> &form, const c_request &request, const string &version);
-	void						handle_test_form(const c_request &request, const string &version);
-	void						handle_contact_form(const c_request &request, const string &version);
+	void						create_form_response(const map<string, string> &form, c_request &request, const string &version);
+	void						handle_test_form(c_request &request, const string &version);
+	void						handle_contact_form(c_request &request, const string &version);
 	bool						save_contact_data(const map<string, string> &data);
-	void						error_form_response(const string &msg, const c_request &request);
-	void						handle_upload_form_file(const c_request &request, const string &version);
-	void 						load_todo_page(const string &version, const c_request &request);
-	void						handle_todo_form(const c_request &request, const string &version);
-	void						handle_upload_form_file(const c_request &request, const string &version, c_location *location);
+	void						error_form_response(const string &msg, c_request &request);
+	void						handle_upload_form_file(c_request &request, const string &version);
+	void 						load_todo_page(const string &version, c_request &request);
+	void						handle_todo_form(c_request &request, const string &version);
+	void						handle_upload_form_file(c_request &request, const string &version, c_location *location);
 	vector<s_multipart> const	parse_multipart_data(const string &body, const string &boundary); // return une reference ?
 	s_multipart const			parse_single_part(const string &raw_part);
 	void						parse_header_section(const string &header_section, s_multipart &part);
@@ -102,10 +102,10 @@ private:
 	string						extract_after_points(const string &line);
 	string						extract_boundary(const string &content_type);
 	string						save_uploaded_file(const s_multipart &part, c_location *location);
-	void						buid_upload_success_response(const string &file_path, const string version, const c_request &request);
+	void						buid_upload_success_response(const string &file_path, const string version, c_request &request);
 	/***** DELETE method *****/
-	void						handle_delete_todo(const c_request &request, const string &version);
-	void						handle_delete_request(const c_request &request, const string &version, string file_path);
-	void						load_upload_page(const string &version, const c_request &request);
-	void						handle_delete_upload(const c_request &request, const string &version);
+	void						handle_delete_todo(c_request &request, const string &version);
+	void						handle_delete_request(c_request &request, const string &version, string file_path);
+	void						load_upload_page(const string &version, c_request &request);
+	void						handle_delete_upload(c_request &request, const string &version);
 };
