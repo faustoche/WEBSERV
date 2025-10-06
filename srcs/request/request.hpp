@@ -52,6 +52,7 @@ class c_request
         void    check_required_headers();
         void    check_port();
         bool    is_valid_header_value(string& key, const string& value);
+        bool    is_limited() const { return _client_max_body_size > 0; };
         
 
         // string  ft_trim(const string& str);

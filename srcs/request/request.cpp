@@ -16,7 +16,6 @@ c_request::~c_request()
 
 void	c_request::read_request()
 {
-	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
 	string	request;
@@ -54,6 +53,8 @@ void	c_request::read_request()
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
 	{
 		this->set_client_max_body_size(matching_location->get_body_size());
+		cout << RED << matching_location->get_body_size() << RESET << endl;
+		cout << RED << matching_location->get_alias() << RESET << endl;
 	}
 	
 	/* -----Lire le body -----*/
@@ -215,9 +216,8 @@ int c_request::parse_headers(string& headers)
 int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 {
     this->_body.append(buffer, len);
-	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size)
+	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size && is_limited())
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		this->_status_code = 413;
 		this->_error = true;
 		return (1);
@@ -321,9 +321,19 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 	size_t 	body_start = request.find("\r\n\r\n") + 4;
 	string 	body_part = request.substr(body_start);
 
-	size_t 	max_body_size = this->_content_length;
+	size_t 	expected_length = this->_content_length;
 	int		receivedBytes;
 	size_t	total_bytes = 0;
+
+	if (expected_length > this->_client_max_body_size  && is_limited())
+	{
+		_server.log_message("[ERROR] expected length (" 
+							+ int_to_string(expected_length) 
+							+ ") excesses announced client max body size (" + int_to_string(_client_max_body_size) + ")");
+		this->_status_code = 413;
+		this->_error = true;
+		return ;
+	}
 
 	if (!body_part.empty())
 	{
@@ -331,11 +341,11 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 			return ;
 		total_bytes += body_part.size();
 
-		if (total_bytes >= max_body_size)
+		if (total_bytes >= expected_length)
 			return;
 	}
 
-	while (total_bytes < max_body_size)
+	while (total_bytes < expected_length)
 	{	
 		// fill(buffer, buffer + buffer_size, '\0');
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0); // faut-il conditionner l'appel a recv
@@ -344,11 +354,11 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
     		if (receivedBytes == 0) // faut-il vraiment return et mettre _error a true ?
 			{
 				// verifier si on a recu tout ce qu'on attendait
-				if (total_bytes == max_body_size)
+				if (total_bytes == expected_length)
 					return ;
 				// Connexion fermee avant d'avoir tout recu
 				_server.log_message("[ERROR] Incomplete body. Expected: " 
-									+ int_to_string(max_body_size) + " Received: " + int_to_string(total_bytes));
+									+ int_to_string(expected_length) + " Received: " + int_to_string(total_bytes));
 				this->_error = true;
 				return;
 			}
@@ -367,12 +377,11 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		// buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
 		
-		if (total_bytes > max_body_size)
+		if (total_bytes > expected_length && is_limited())
 		{
 			_server.log_message("[ERROR] actual body size (" 
 								+ int_to_string(total_bytes) 
-								+ ") excesses announced size (" + int_to_string(max_body_size) + ")");
-			cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+								+ ") excesses announced size (" + int_to_string(expected_length) + ")");
 			this->_status_code = 413;
 			this->_error = true;
 			return ;
@@ -381,7 +390,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
     	if (this->fill_body_with_bytes(buffer, receivedBytes))
 			return ;
 
-		if (total_bytes == max_body_size)
+		if (total_bytes == expected_length)
 			break;
 	}
 	// fill(buffer, buffer + sizeof(buffer), '\0');

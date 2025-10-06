@@ -64,7 +64,6 @@ bool	is_regular_file(const string& path)
 
 void	c_response::define_response_content(const c_request &request)
 {
-	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -73,10 +72,12 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
+	cout << YELLOW << "method = " << method << endl;
+	cout << "max body size = " << request.get_client_max_body_size() << endl;
+	cout << "status code = " << status_code << RESET << endl;
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -216,6 +217,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		handle_post_request(request, matching_location, version);
 		return;
 	}
@@ -255,7 +257,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	// 		<< "Target: [" << request.get_target() << "]" << endl;
 	if (request.get_error() || request.get_status_code() != 200)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
@@ -289,51 +291,50 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
-	cout << request.get_status_code() << endl;
-
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 	
 	// cout << YELLOW << body << RESET << endl;
+	cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 
 	// PARSING
 	string boundary = extract_boundary(content_type);
-	if (boundary.empty())
+	if (boundary.empty() || get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
-		build_error_response(400, version, request);
-		return ;
-	}
-	if (get_status() >= 400)
-	{
-		build_error_response(get_status(), version, request);
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
+		build_error_response(get_status() >= 400 ? get_status() : 400, version, request);
 		return ;
 	}
 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
-
+	// cout << body << endl;
 	if (get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status(), version, request);
 		return ;
 	}
 
+	// if (parts.empty()) // pour fichiers lourds parfois rentre parfois non
+	// {
+		// cout << PINK << __LINE__ << " / " << __FILE__ << endl;
+		// build_error_response(400, version, request);
+		// return ;
+	// }
 
 
 	// TRAITEMENT de chaque partie
-	string 			description;
+	// string 			description;
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
 			string saved_path = save_uploaded_file(part, location);
 			if (get_status() >= 400)
 			{
+				cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 				build_error_response(get_status(), version, request);
 				return;
 			}
@@ -358,8 +359,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__  << " status = " << get_status() << RESET << endl;
-		// build_error_response(400, version, request);
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
 }
@@ -460,7 +460,6 @@ string	c_response::extract_boundary(const string &content_type)
 		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
 	else
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		set_status(400); // parsing multipart echoue
 		return "";
 	}
@@ -486,6 +485,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	{
 		if (get_status() >= 400)
 			break;
+
 		size_t	begin = boundary_pos[i] + delimiter.length();
 		
 		// sauter le \r\n ou \n apres le boundary
@@ -513,8 +513,10 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 			continue;
 
 		s_multipart single_part = parse_single_part(raw_part);
+
 		if (get_status() >= 400)
 			break;
+		
 		parts.push_back(single_part);
 	}
 	return parts;
@@ -523,13 +525,13 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
+
 	if (get_status() >= 400)
 		return part;
 
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
 	if (separator_pos == string::npos)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		set_status(400); // en-tete manquant, parsing multipart echoue
 		return part;
 	}
@@ -576,14 +578,14 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_disposition);
 		if (line.empty())
 		{
-			cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+			cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 			set_status(400); // en-tete manquant, parsing multipart echoue
 			return;
 		}
 		part.name = extract_quotes(line, "name=");
 		if (part.name.empty())
 		{
-			cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+			cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 			set_status(400); // en-tete manquant, parsing multipart echoue
 			return;
 		}
@@ -591,6 +593,7 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	}
 	else
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		set_status(400);
 		return;
 	}
@@ -602,7 +605,10 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 		if (part.content_type.empty())
+		{
+			cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 			set_status(400);
+		}
 	}
 }
 
@@ -699,7 +705,6 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 
 string  c_response::extract_extension(const string &filename, string &name)
 {
-	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
     size_t point_pos = filename.find_last_of(".");
     if (point_pos == string::npos)
         return "";
@@ -710,11 +715,9 @@ string  c_response::extract_extension(const string &filename, string &name)
     if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
         && extension != "pdf" && extension != "txt")
     {
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
         cout << "Error: extension not allowded (." << extension << ")" << endl;
         return "";
     }
-	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
     return extension;
 }
 
@@ -725,7 +728,6 @@ string  c_response::sanitize_filename(const string &filename)
     string extension = extract_extension(filename, name);
     if (extension.empty())
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		set_status(415); // unsupported media type
         return "";
 	}
@@ -1312,7 +1314,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
-		// cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + relative_path);
 		else
