@@ -1,0 +1,15 @@
+[06/Oct/2025:11:03:20 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
+[06/Oct/2025:11:03:20 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
+[06/Oct/2025:11:03:20 +0200] [DEBUG] Client 5 can send a request : POLLIN
+[06/Oct/2025:11:03:20 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[06/Oct/2025:11:03:20 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 0s
+[06/Oct/2025:11:03:20 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[06/Oct/2025:11:03:22 +0200] [DEBUG] PROCESS CGI IDENTIFIED FOR FD 5
+[06/Oct/2025:11:03:22 +0200] [DEBUG] fd 7 is now monitored by _poll_fds
+[06/Oct/2025:11:03:22 +0200] [DEBUG] fd 8 is now monitored by _poll_fds
+[06/Oct/2025:11:03:22 +0200] [DEBUG] Client 5 is processing request
+[06/Oct/2025:11:03:22 +0200] [DEBUG] fd 7 is no longer monitored by _poll_fds
+[06/Oct/2025:11:03:22 +0200] [DEBUG] fd 7 erased from active_cgi
+[06/Oct/2025:11:03:22 +0200] [DEBUG] CGI 8 linked to client 5 is not finished...
+[06/Oct/2025:11:03:22 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[06/Oct/2025:11:03:22 +0200] [DEBUG] CGI process 1074834 terminated exited with code: 0

@@ -245,7 +245,6 @@ void	c_server::handle_new_connection(int listening_socket)
 			send(client_fd, raw.c_str(), raw.size(), 0); // on envois la reponse du server full
 			log_message("[ERROR] Rejected client " + int_to_string(client_fd) 
 						+ " with 503 (server is full)");
-			// cout << RED << "Rejected client " << client_fd << " with 503 (server is full)" << RESET << endl;
 			close(client_fd);
 			continue ;
 		}
@@ -285,10 +284,11 @@ void c_server::handle_client_read(int client_fd)
 		remove_client(client_fd);
 		return ;
 	}
-	/* */
+
 	if (client->get_state() != IDLE)
 	{
 		// request.print_full_request();
+		client->set_creation_time();
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);
 		response.define_response_content(request);
@@ -385,40 +385,40 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 	char	buffer[BUFFER_SIZE];
 	ssize_t	bytes_read = read(cgi->get_pipe_out(), buffer, BUFFER_SIZE);
 
-	// buffer[bytes_read] = '\0';
 	cgi->append_read_buffer(buffer, bytes_read);
 
 	c_client *client = find_client(cgi->get_client_fd());
 	if (!client)
 		return ;
 
-	if (bytes_read > 0)
-	{
-		if (!cgi->headers_parsed())
-		{
-			size_t pos = cgi->get_read_buffer().find("\r\n\r\n");
-			if (pos != string ::npos)
-			{
-				string headers = cgi->get_read_buffer().substr(0, pos);
-				fill_cgi_response_headers(headers, cgi);
-				pos += 4;
+	if (bytes_read <= 0)
+		return ;
 
-				string initial_body = cgi->get_read_buffer().substr(pos);
-				if (!initial_body.empty())
-					fill_cgi_response_body(initial_body, cgi);
-				client->set_state(SENDING);
-				cgi->consume_read_buffer(cgi->get_read_buffer().size());
-			}
-			else
-				return ;
-		}
-		else
+	if (!cgi->headers_parsed())
+	{
+		size_t pos = cgi->get_read_buffer().find("\r\n\r\n");
+		if (pos != string ::npos)
 		{
-			fill_cgi_response_body(buffer, cgi);
+			string read_buffer = cgi->get_read_buffer();
+			string headers = read_buffer.substr(0, pos);
+			fill_cgi_response_headers(headers, cgi);
+			pos += 4;
+			// Si il reste des choses a lire apres le fin des headers
+			if (read_buffer.size() > pos)
+				fill_cgi_response_body(read_buffer.data() + pos, read_buffer.size() - pos, cgi);
 			client->set_state(SENDING);
 			cgi->consume_read_buffer(cgi->get_read_buffer().size());
 		}
+		else
+			return ;
 	}
+	else
+	{
+		fill_cgi_response_body(buffer, bytes_read, cgi);
+		client->set_state(SENDING);
+		cgi->consume_read_buffer(cgi->get_read_buffer().size());
+	}
+	
 }	
 
 // Le CGI a ferme son pipe_out, on envoie tout ce qui a ete lu au client
@@ -431,26 +431,22 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	if (client && !cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
 	{
 		fill_cgi_response_headers("", cgi);
-		fill_cgi_response_body(cgi->get_read_buffer(), cgi);
+		fill_cgi_response_body(cgi->get_read_buffer().data(), cgi->get_read_buffer().size(), cgi);
 	}
 
 	while (client &&  (bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
 	{
 		if (cgi->get_content_length() == 0)
-			transfer_with_chunks(cgi, buffer);
+			transfer_with_chunks(buffer, bytes_read, cgi);
 		else
-		{
-			// buffer[bytes_read] = '\0';
 			transfer_by_bytes(cgi, buffer, bytes_read);
-		}
 	}
 
 	if (cgi->get_content_length() == 0 && !client->get_response_complete())
 	{
 		std::string chunk = int_to_hex(0) + "\r\n\r\n";
-		client->get_write_buffer().append(chunk, chunk.size());
+		client->get_write_buffer().append(chunk);
 	}
-
 	client->set_state(SENDING);
 
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 

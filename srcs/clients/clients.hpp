@@ -67,6 +67,7 @@ class c_client
 		void set_bytes_written(size_t bytes) { (_bytes_written = bytes); }
 		void set_response_complete(bool state) { _response_complete = state; };
 		void set_last_modified() { _last_modified = time(NULL); };
+		void set_creation_time() { _creation_time = time(NULL); };
 		void set_last_request(string start_line) { _last_request = start_line; };
 		void set_status_code(int status_code) { _status_code = status_code; };
 		void append_response_body_size(size_t bytes) { _response_body_size += bytes; };
