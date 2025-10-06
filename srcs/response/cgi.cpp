@@ -38,7 +38,6 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_vec_env_vars = other._vec_env_vars;
     this->_content_length = other._content_length;
     this->_body_size = other._body_size;
-    // this->_socket_fd = other._socket_fd;
     this->_status_code = other._status_code;
     this->_loc = other._loc;
     this->_script_name = other._script_name;
@@ -69,7 +68,6 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_map_env_vars = rhs._map_env_vars;
         this->_vec_env_vars = rhs._vec_env_vars;
         this->_body_size = rhs._body_size;
-        // this->_socket_fd = rhs._socket_fd;
         this->_status_code = rhs._status_code;
         this->_loc = rhs._loc;
         this->_script_name = rhs._script_name;
@@ -87,7 +85,7 @@ c_cgi::~c_cgi()
 {
 }
 
-void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
+void    c_cgi::append_read_buffer(const char* buffer, ssize_t bytes)
 {
     if (!buffer || bytes == 0)
         return ;
@@ -98,6 +96,7 @@ void    c_cgi::append_read_buffer( const char* buffer, ssize_t bytes)
         return;
     }
     this->_read_buffer.append(buffer, bytes);
+
 }
 
 void    c_cgi::consume_read_buffer(size_t n) 

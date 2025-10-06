@@ -121,7 +121,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -144,7 +144,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -166,7 +165,6 @@ void	c_response::define_response_content(const c_request &request)
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
@@ -186,7 +184,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (this->_is_cgi)
 	{
 		if (request.get_path().find(".") == string::npos)
@@ -216,7 +213,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		handle_post_request(request, matching_location, version);
 		return;
 	}
@@ -232,7 +228,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_success_response(file_path, version, request);
 	}
 }
@@ -256,7 +251,6 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 			<< "Content-Type: [" << content_type << "]" << endl
 			<< "Target: [" << request.get_target() << "]" << endl;
 
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (target == "/test_post")
 		handle_test_form(request, version);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
@@ -286,7 +280,6 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 
@@ -331,7 +324,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
 	// creer liste de fichiers sauvegardes ?
@@ -769,7 +761,6 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
-	cout << YELLOW << file_path << RESET << endl;
 	if (!file.is_open()) {
 		return ("");
 	}
