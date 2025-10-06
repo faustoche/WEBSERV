@@ -16,5 +16,5 @@ includes/colors.hpp
 *.DS_Store
 
 # logs
-.log
-logs/
+logs/*
+!logs/.gitkeep
