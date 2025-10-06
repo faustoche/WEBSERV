@@ -7,6 +7,7 @@ c_response::c_response(c_server& server, c_client &client) : _server(server), _c
 	this->_is_cgi = false;
 	this->_error = false;
 	this->_client_fd = _client.get_fd();
+	this->_status = 200;
 	// this->_client = _server.find_client(_client_fd);
 }
 
@@ -75,6 +76,7 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -251,6 +253,12 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	// 		<< "Body recu: [" << body << "]" << endl
 	// 		<< "Content-Type: [" << content_type << "]" << endl
 	// 		<< "Target: [" << request.get_target() << "]" << endl;
+	if (request.get_error() || request.get_status_code() != 200)
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		build_error_response(request.get_status_code(), version, request);
+		return ;
+	}
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
@@ -281,40 +289,63 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
+	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+	cout << request.get_status_code() << endl;
+
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
+	
+	// cout << YELLOW << body << RESET << endl;
 
 	// PARSING
 	string boundary = extract_boundary(content_type);
+	if (boundary.empty())
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		build_error_response(400, version, request);
+		return ;
+	}
+	if (get_status() >= 400)
+	{
+		build_error_response(get_status(), version, request);
+		return ;
+	}
+
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
+
+	if (get_status() >= 400)
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		build_error_response(get_status(), version, request);
+		return ;
+	}
+
+
 
 	// TRAITEMENT de chaque partie
 	string 			description;
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
 			string saved_path = save_uploaded_file(part, location);
-			if (!saved_path.empty())
-			{
-				uploaded_files.push_back(saved_path);
-				_file_content = load_file_content(saved_path);
-				_server.log_message("[INFO] ✅ UPLOADED FILE : " + part.filename 
-									+ " (" + int_to_string(part.content.size()) + " bytes)");
-			}
-			else
+			if (get_status() >= 400)
 			{
 				build_error_response(get_status(), version, request);
+				return;
+			}
+			if (saved_path.empty())
+			{
+				build_error_response(500, version, request);
 				return ;
 			}
-		}
-		else // seulement du texte
-		{
-			if(part.name == "description")
-				description = part.content;
-			cout << "Textual field: " << part.name << " = " << part.content << endl;
+			uploaded_files.push_back(saved_path);
+			_file_content = load_file_content(saved_path);
+			_server.log_message("[INFO] ✅ UPLOADED FILE : " + part.filename 
+									+ " (" + int_to_string(part.content.size()) + " bytes)");
 		}
 	}
 	if (uploaded_files.size() > 0)
@@ -327,6 +358,8 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__  << " status = " << get_status() << RESET << endl;
+		// build_error_response(400, version, request);
 		build_error_response(400, version, request);
 	}
 }
@@ -426,7 +459,11 @@ string	c_response::extract_boundary(const string &content_type)
 	if (pos != string::npos)
 		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
 	else
-		throw invalid_argument("Can't find the boundary in the Content-Type value for upload a file");
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		set_status(400); // parsing multipart echoue
+		return "";
+	}
 	return boundary;
 }
 
@@ -447,6 +484,8 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
+		if (get_status() >= 400)
+			break;
 		size_t	begin = boundary_pos[i] + delimiter.length();
 		
 		// sauter le \r\n ou \n apres le boundary
@@ -474,6 +513,8 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 			continue;
 
 		s_multipart single_part = parse_single_part(raw_part);
+		if (get_status() >= 400)
+			break;
 		parts.push_back(single_part);
 	}
 	return parts;
@@ -482,9 +523,16 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
+	if (get_status() >= 400)
+		return part;
+
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
 	if (separator_pos == string::npos)
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		set_status(400); // en-tete manquant, parsing multipart echoue
 		return part;
+	}
 
 	string header_section = raw_part.substr(0, separator_pos);
 	string content_section = raw_part.substr(separator_pos + 4);
@@ -494,14 +542,6 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	while (!content_section.empty() && (content_section[content_section.size() -1] == '\n'))
 		content_section.erase(content_section.size() - 1, 1);
 
-	// DEBUG: Afficher les derniers octets AVANT tout traitement
-    // cout << YELLOW << "Derniers octets bruts: ";
-    // for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
-    //      j < content_section.size(); j++) {
-    //     printf("%02X ", (unsigned char)content_section[j]);
-    // }
-
-
 	size_t pos = content_section.rfind("\r\n--");
 	if ( pos != string::npos)
 	{
@@ -510,20 +550,21 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 
 	// parser les header
 	parse_header_section(header_section, part);
+
+	if (get_status() >= 400)
+		return part;
+
 	part.content = content_section;
 	part.is_file = !part.filename.empty();
-
-	// DEBUG: print des octets finaux
-	// 	for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
-    // printf("%02X ", (unsigned char)content_section[j]);
-	// }
-	// printf("\n");
 
 	return part;
 }
 
 void	c_response::parse_header_section(const string &header_section, s_multipart &part)
 {
+	if (get_status() >= 400)
+		return;
+
 	// Headers possibles :
     // - Content-Disposition: form-data; name="xxx"; filename="yyy"
     // - Content-Type: image/jpeg
@@ -533,8 +574,25 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	if (pos_disposition != string::npos)
 	{
 		string line = extract_line(header_section, pos_disposition);
+		if (line.empty())
+		{
+			cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+			set_status(400); // en-tete manquant, parsing multipart echoue
+			return;
+		}
 		part.name = extract_quotes(line, "name=");
+		if (part.name.empty())
+		{
+			cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+			set_status(400); // en-tete manquant, parsing multipart echoue
+			return;
+		}
 		part.filename = extract_quotes(line, "filename=");
+	}
+	else
+	{
+		set_status(400);
+		return;
 	}
 
 	// Parsing Content-Type
@@ -543,6 +601,8 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	{
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
+		if (part.content_type.empty())
+			set_status(400);
 	}
 }
 
@@ -566,11 +626,11 @@ string	c_response::extract_quotes(const string &line, const string &type)
 	
 	size_t first_quote = line.find('"', key_pos);
 	if (first_quote == string::npos)
-		return ""; // CODE DERREUR A METTRE A JOUR
+		return "";
 	size_t second_quote = line.find('"', first_quote + 1);
 
 	if (second_quote == string::npos)
-		return ""; // CODE DERREUR A METTRE A JOUR
+		return "";
 	
 	string value = line.substr(first_quote + 1, second_quote - first_quote - 1);
 	return trim(value);
@@ -580,7 +640,7 @@ string	c_response::extract_after_points(const string &line)
 {
 	size_t pos = line.find(':');
 	if (pos == string::npos)
-		return ""; // CODE DERREUR A METTRE A JOUR
+		return "";
 	
 	string value = line.substr(pos + 1);
 	return trim(value);
@@ -609,7 +669,7 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
         return;
 	}
 	else
-		build_error_response(500, version, request);
+		build_error_response(500, version, request); // erreur lors de la sauvegarde du fichier
 }
 
 bool	c_response::save_contact_data(const map<string, string> &data)
@@ -639,6 +699,7 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 
 string  c_response::extract_extension(const string &filename, string &name)
 {
+	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
     size_t point_pos = filename.find_last_of(".");
     if (point_pos == string::npos)
         return "";
@@ -649,12 +710,11 @@ string  c_response::extract_extension(const string &filename, string &name)
     if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
         && extension != "pdf" && extension != "txt")
     {
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
         cout << "Error: extension not allowded (." << extension << ")" << endl;
-        this->set_status(415);
-        // revoir comment gerer l'erreur (peut etre juste ecrire que le telechargement n'a pas reussi)
-        // est-ce que si l'extension ets vide on en met une par defaut ?
         return "";
     }
+	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
     return extension;
 }
 
@@ -663,9 +723,12 @@ string  c_response::sanitize_filename(const string &filename)
 {
     string name;
     string extension = extract_extension(filename, name);
-
     if (extension.empty())
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
+		set_status(415); // unsupported media type
         return "";
+	}
     if (name.empty())
         name = "file";
 
@@ -941,7 +1004,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 		build_error_response(404, version, request);
 		return ;
 	}
-	cout << PINK << __LINE__ << RESET << endl;
+	
 	_client.set_status_code(200);
 
 	size_t content_size = _file_content.size();

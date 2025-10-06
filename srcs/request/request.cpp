@@ -16,6 +16,7 @@ c_request::~c_request()
 
 void	c_request::read_request()
 {
+	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
 	string	request;
@@ -216,6 +217,7 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
     this->_body.append(buffer, len);
 	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 		this->_status_code = 413;
 		this->_error = true;
 		return (1);
@@ -370,6 +372,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 			_server.log_message("[ERROR] actual body size (" 
 								+ int_to_string(total_bytes) 
 								+ ") excesses announced size (" + int_to_string(max_body_size) + ")");
+			cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
 			this->_status_code = 413;
 			this->_error = true;
 			return ;
