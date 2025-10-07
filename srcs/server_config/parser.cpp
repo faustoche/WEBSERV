@@ -454,6 +454,7 @@ void                c_parser::parse_listen_directive(c_server & server)
     }
     if (port == ERANGE || port < 0 || port > 65535)
         throw invalid_argument("Invalid port [0-65535]: " + get_value());
+
     server.add_port(static_cast<int>(port));
     server.set_ip(str_ip);
 
@@ -549,6 +550,8 @@ c_server            c_parser::parse_server_block()
     }
     expected_token_type(TOKEN_RBRACE);
     advance_token();
+    if (server.get_ports().empty())
+        throw invalid_argument("No listening ports defined");
 
     // if (!server.is_valid())
     //     throw invalid_argument("Invalid server configuration: " + server.get_validation_error());

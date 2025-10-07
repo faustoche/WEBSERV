@@ -14,7 +14,6 @@ void c_server::setup_pollfd()
 	std::vector<int> to_remove;
 
 	/**** INITIALISATION DES DONNÉES *****/
-
 	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		struct pollfd server_pollfd;
@@ -111,7 +110,6 @@ void c_server::handle_poll_events()
 {
 	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
-	
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
 	if (num_events < 0)
 	{
@@ -126,10 +124,7 @@ void c_server::handle_poll_events()
 	{
 		/*struct*/ pollfd pfd = _poll_fds[i];
 		if (pfd.revents == 0)
-		{
 			continue ;
-		}
-
 		if (is_listening_socket(pfd.fd))
 		{
 			if (pfd.revents & POLLIN)
@@ -175,7 +170,7 @@ void c_server::handle_poll_events()
 				continue;
 			if (pfd.revents & 0 && time(NULL) - client->get_last_modified() > TIMEOUT)
 			{
-				log_message("[WARN] Client " + int_to_string(fd) + " has timed out");
+				log_message("[WARNING] Client " + int_to_string(fd) + " has timed out");
 				remove_client(fd);
 			}
 

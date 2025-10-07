@@ -49,6 +49,21 @@ while (ob_get_level()) ob_end_flush();
       border:5px ridge #ff00aa;
       max-width:300px;
     }
+    .back-link {
+            display: inline-block;
+            background: rgb(21, 255, 0);
+            margin-top: 1rem;
+            color:rgb(0, 0, 0);
+            text-decoration: none;
+            border: 2px solid rgb(21, 255, 0);
+            padding: 10px 20px;
+            font-weight: 700;
+        }
+        .back-link:hover {
+            background: rgb(252, 248, 17);
+            border: 2px solid rgb(252, 248, 17);
+            color: #000000;
+        }
   </style>
 </head>
 <body>
@@ -74,5 +89,7 @@ echo <<<HTML
 </script>
 HTML;
 ?>
+<p> </p>
+<a href="/cgi.html" class="back-link">← Go back to the CGI page</a>
 </body>
 </html>

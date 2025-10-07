@@ -213,7 +213,7 @@ void c_response::handle_delete_upload(const c_request &request, const string &ve
     {
 		_server.log_message("[ERROR] file not found or cannot be deleted: " + filename);
         // cout << YELLOW << "Warning: file not found or cannot be deleted: " << filename << RESET << endl;
-        build_error_response(500, version, request);
+        build_error_response(404, version, request);
         return ;
     }
     
