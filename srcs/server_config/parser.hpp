@@ -126,6 +126,10 @@ void            c_parser::parse_body_size(C & servloc)
     }
 
     size_t limit = convert_to_octet(str, suffix, i);
+
+    if (limit == 0)
+        throw invalid_argument("invalid argument for max_body_size, it can't be unlimited value => " + str);
+
     servloc.set_body_size(limit);
 }
 

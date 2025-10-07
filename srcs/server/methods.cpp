@@ -151,7 +151,7 @@ void c_response::load_upload_page(const string &version, const c_request &reques
     string html_template = load_file_content("./www/upload.html");
     string files_html;
 
-    string upload_dir = "./www/data/";
+    string upload_dir = "./www/upload/";
     DIR *dir = opendir(upload_dir.c_str());
     if (dir)
     {
@@ -200,7 +200,7 @@ void c_response::handle_delete_upload(const c_request &request, const string &ve
         return ;
     }
 
-    string filename = "./www/data/" + file_to_delete;
+    string filename = "./www/upload/" + file_to_delete;
     
     // pas desuppression de fichiers en dehors du dossier
     if (file_to_delete.find("..") != string::npos || file_to_delete.find("todo.txt") != string::npos)

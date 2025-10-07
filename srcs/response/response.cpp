@@ -422,11 +422,11 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	
 	// si pas d'upload path donne dans le .conf on en donne un par defaut
 	if (uploaded_dir.empty())
-		uploaded_dir = "./www/data/";
+		uploaded_dir = "./www/upload/";
 	if (!directory_exists(uploaded_dir))
 	{
 		// si le dossier d'upload n'existe pas on cree un dossier
-		if (!create_directory("./www/data/"))
+		if (!create_directory("./www/upload/"))
 			return "";
 	}
 	string safe_filename = sanitize_filename(part.filename, location);
@@ -686,8 +686,8 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
-	string filename = "./www/data/contact.txt"; //location->get_upload_path();
-	ofstream file(filename.c_str(), ios::binary);
+	string filename = "./www/data/contact.txt"; 
+	ofstream file(filename.c_str(), ios::binary | ios::app);
 
 	if (!file.is_open())
 	{

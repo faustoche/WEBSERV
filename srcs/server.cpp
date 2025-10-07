@@ -9,7 +9,7 @@ c_server::c_server()
 	// _port = 80;
 	_root = "."; // dossier courrant --> comparer utilisation avec default_root
 	// ne pas definir d'index par defaut
-	_body_size = 0; // kilo octet converti en octet ---> ou 0 ?
+	_body_size = 1048576; // 1Mo en octet
 	// _err_pages = /* generer une page html simple si non configure */
 }
 c_server::~c_server()

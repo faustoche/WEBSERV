@@ -7,7 +7,7 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
 {
     _url_key = "";
     _upload_path = "";
-    _location_body_size = 0;
+    _location_body_size = 1048576; // 1Mo en octet
     _location_root = "";
     // _location_path = "";
     _auto_index = false;
