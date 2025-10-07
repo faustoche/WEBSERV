@@ -63,8 +63,6 @@ bool	is_regular_file(const string& path)
 
 void	c_response::define_response_content(c_request &request)
 {
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
-	request.print_full_request();
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -73,11 +71,9 @@ void	c_response::define_response_content(c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	cout << YELLOW << __LINE__ << " / " << __FILE__  << " method: " << method << endl;
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -111,13 +107,11 @@ void	c_response::define_response_content(c_request &request)
     }
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
-		cout << __FILE__ << "/" << __LINE__ << " method: " << method << endl;
 		build_error_response(405, version, request);
 		return ;
 	}
 	if (version != "HTTP/1.1")
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		build_error_response(505, version, request);
 		return ;
 	}
@@ -151,7 +145,6 @@ void	c_response::define_response_content(c_request &request)
 	/***************/
 	if (!_server.is_method_allowed(matching_location, method))
 	{
-		cout << "matching_location_>url_key: " << matching_location->get_url_key() << " method: " << method << endl;
 		build_error_response(405, version, request);
 		return ;	
 	}
@@ -211,13 +204,9 @@ void	c_response::define_response_content(c_request &request)
 			_server.cleanup_cgi(cgi);
 			this->_is_cgi = false;
 			set_error();
-			cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
-			cout << "file_path: " << file_path << endl;
 			build_error_response(cgi->get_status_code(), version, request);
-			cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 			return ;
 		}
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		build_cgi_response(*cgi, request);
 		
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
@@ -840,15 +829,12 @@ string c_response::read_error_pages(int error_code)
 
 void	c_response::build_cgi_response(c_cgi & cgi, c_request &request)
 {
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	if (cgi.get_interpreter().empty())
 		return ;
 
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	string content_cgi = cgi.launch_cgi(request_body);
 
 }

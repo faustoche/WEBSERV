@@ -108,6 +108,7 @@ class c_server
 		size_t		extract_content_length(string headers);
 		void		check_terminated_cgi_processes();
 		void 		handle_cgi_final_read(int fd, c_cgi* cgi);
+		void 		handle_fully_sent_response(c_client *client);
 
 		void		close_all_sockets_and_fd(void);
 

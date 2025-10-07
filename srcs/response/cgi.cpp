@@ -229,7 +229,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
     resolve_cgi_paths(loc, request.get_target());
     if (!this->_relative_argv.empty())
     {
-        cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
         if (chdir("www/cgi-bin/") == 0)
         {
             ifstream file_checker(this->_relative_argv.c_str());
@@ -252,7 +251,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
         }
         if (this->_relative_argv.find("data") == string::npos)
         {
-            cout << old_dir << endl;
             if (chdir(old_dir.c_str()) != 0)
                 perror("chdir()");
             this->_status_code = 403;
@@ -261,7 +259,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
             return (1);
         }
     }
-    cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
     if (extension.size() > 0)
         this->_interpreter = loc.extract_interpreter(extension);
     if (this->_interpreter.empty())
@@ -316,7 +313,6 @@ string make_absolute(const string &path)
 
 string  c_cgi::launch_cgi(const string &body)
 {
-    cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
     int server_to_cgi[2];
     int cgi_to_server[2];
 
@@ -388,7 +384,6 @@ string  c_cgi::launch_cgi(const string &body)
         }
         else
         {
-            cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
             char *argv[3];
             argv[0] = const_cast<char*>(this->_interpreter.c_str());
             argv[1] = const_cast<char*>(this->_script_filename.c_str());
@@ -400,7 +395,6 @@ string  c_cgi::launch_cgi(const string &body)
         exit(1);
     }
 
-    cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
     /**** Processus parent ****/
     close(server_to_cgi[0]);
     close(cgi_to_server[1]);
