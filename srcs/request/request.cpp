@@ -20,19 +20,20 @@ void	c_request::read_request()
 	int		receivedBytes;
 	string	request;
 	
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
 
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
+		// cout << "fin des headers non trouvee:\n" << request  << "!" << endl;
 		// fill(buffer, buffer + sizeof(buffer), '\0');
 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
 			if (receivedBytes == 0)
 			{
+				cout << "hello" << endl;
 				_client.set_state(IDLE);
 				return ;
 			}
@@ -48,7 +49,9 @@ void	c_request::read_request()
 		}
 		// buffer[receivedBytes] = '\0';
 		request.append(buffer, receivedBytes);
+		cout << "fin des headers non trouvee:\n" << request  << " !" << endl << endl;
 	}
+	cout << "fin des headers trouvee:\n" << request  << "!" << endl;
 	this->parse_request(request);
 	c_location *matching_location = _server.find_matching_location(this->get_target());
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
@@ -87,6 +90,7 @@ int c_request::parse_request(const string& raw_request)
 
 	
 	this->parse_start_line(line);
+	cout  << "start_line = " << this->get_method() << " " << this->get_target() << " " << this->get_version() << endl;
 	
 	/*---- ETAPE 2: headers -----*/
 	while (getline(stream, line, '\n'))
@@ -126,9 +130,11 @@ int c_request::parse_start_line(string& start_line)
 		this->_error = true;
 		return (0);
 	}
-	this->_method = start_line.substr(start, space_pos - start);;
+	this->_method = start_line.substr(start, space_pos - start);
+	cout << __FILE__ << "/" << __LINE__ << " method: " << this->_method << endl;
 	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 	{
+		cout << __FILE__ << "/" << __LINE__ << " method: " << this->_method << endl;
 		this->_status_code = 405;
 		this->_error = true;
 		return (0);
@@ -163,6 +169,7 @@ int c_request::parse_start_line(string& start_line)
 	/*- ---- Version ----- */
 	start = space_pos + 1;
 	this->_version = start_line.substr(start);
+	cout << "version : " << this->_version << " !" << endl;
 	if (this->_version.empty())
 	{
 		
@@ -171,6 +178,7 @@ int c_request::parse_start_line(string& start_line)
 	}
 	if (this->_version != "HTTP/1.1")
 	{
+		cout << "version : " << this->_version << " !" << endl;
 		this->_status_code = 505;
 		return (0);
 	}

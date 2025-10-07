@@ -92,6 +92,7 @@ void    c_request::check_port()
 
 void	c_request::print_full_request() const
 {
+	cout << "print full request" << endl;
 	if (this->_request_fully_parsed)
 	{
 		cout << "*********** START-LINE ************" << endl;

@@ -73,6 +73,7 @@ void	c_response::define_response_content(c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
+	cout << YELLOW << __LINE__ << " / " << __FILE__  << " method: " << method << endl;
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
@@ -110,11 +111,13 @@ void	c_response::define_response_content(c_request &request)
     }
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
+		cout << __FILE__ << "/" << __LINE__ << " method: " << method << endl;
 		build_error_response(405, version, request);
 		return ;
 	}
 	if (version != "HTTP/1.1")
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		build_error_response(505, version, request);
 		return ;
 	}
@@ -148,6 +151,7 @@ void	c_response::define_response_content(c_request &request)
 	/***************/
 	if (!_server.is_method_allowed(matching_location, method))
 	{
+		cout << "matching_location_>url_key: " << matching_location->get_url_key() << " method: " << method << endl;
 		build_error_response(405, version, request);
 		return ;	
 	}
@@ -962,7 +966,7 @@ void c_response::build_error_response(int error_code, const string version, c_re
 		}
 		else
 		{
-			cout << GREEN << "Successfully loaded error page (" << error_content.length() << " bytes)" << RESET << endl;
+			cout << GREEN << "Successfully loaded error page " << error_path << " (" << error_content.length() << " bytes)" << RESET << endl;
 		}
 	}
 	else
@@ -1070,7 +1074,8 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	ostringstream oss;
 	oss << content.length();
 
-	_response = version + " 200 OK\r\n";
+ 	(void)version;
+	_response = "HTTP/1.1 200 OK\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
