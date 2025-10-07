@@ -716,11 +716,12 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 	if (location->get_allowed_extensions().empty() || 
 		find(location->get_allowed_extensions().begin(), location->get_allowed_extensions().end(), extension) != location->get_allowed_extensions().end())
 	{
+		cout << PINK << "COUCOU" << RESET << endl;
 		return extension;
 	}
 	else 
 	{
-		cout << "Error: extension not allowded (." << extension << ")" << endl;
+		cout << "Error: extension not allowded (" << extension << ")" << endl;
         return "";
 	}
     // if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
