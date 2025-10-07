@@ -62,7 +62,7 @@ bool	is_regular_file(const string& path)
 	return (S_ISREG(path_stat.st_mode));
 }
 
-void	c_response::define_response_content(c_request &request)
+void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
 	_file_content.clear();
@@ -249,7 +249,7 @@ void	c_response::define_response_content(c_request &request)
 	separateur entre les differentes parties du body
  */
 
-void	c_response::handle_post_request(c_request &request, c_location *location, const string &version)
+void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
 {
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
@@ -293,7 +293,7 @@ allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
 max_file_size = 2 * 1024 * 1024  // 2 MB
 */
 
-void	c_response::handle_upload_form_file(c_request &request, const string &version, c_location *location)
+void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
 	string body = request.get_body();
 	if (body.empty())
@@ -664,7 +664,7 @@ string	c_response::extract_after_points(const string &line)
 
 /*******************   contact form    *******************/
 
-void	c_response::handle_contact_form(c_request &request, const string &version)
+void	c_response::handle_contact_form(const c_request &request, const string &version)
 {
 	(void)version;
 	string body = request.get_body();
@@ -775,7 +775,7 @@ string  c_response::sanitize_filename(const string &filename, c_location *locati
 
 /********************    test form    ********************/
 
-void	c_response::handle_test_form(c_request &request, const string &version)
+void	c_response::handle_test_form(const c_request &request, const string &version)
 {
 	map<string, string> form_data = parse_form_data(request.get_body());
 	// cout << GREEN << "=== DONNEES PARSEES ===" << endl;
@@ -784,7 +784,7 @@ void	c_response::handle_test_form(c_request &request, const string &version)
 	create_form_response(form_data, request, version);
 }
 
-void	c_response::create_form_response(const map<string, string> &form, c_request &request, const string &version)
+void	c_response::create_form_response(const map<string, string> &form, const c_request &request, const string &version)
 {
 	string html = "<!DOCTYPE html>\n<html><head><title>Formulaire recu</title></head>\n<body>\n";
 	html += "<h1>Donnees recues :</h1>\n<ul>\n";
@@ -947,7 +947,7 @@ string c_response::read_error_pages(int error_code)
 
 /* Build the successfull request response */
 
-void	c_response::build_cgi_response(c_cgi & cgi, c_request &request)
+void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
@@ -961,7 +961,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, c_request &request)
 
 /* COde 303 avec redirection */
 
-void	c_response::buid_upload_success_response(const string &file_path, const string version, c_request &request)
+void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
 {
 	(void)file_path;
 	_response = version + " 303 See other\r\n";
@@ -1010,7 +1010,7 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 // 	_file_content.clear();
 // }
 
-void c_response::build_success_response(const string &file_path, const string version, c_request &request)
+void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
 	// c_client *client = _server.find_client(this->_client_fd);
 	
@@ -1043,7 +1043,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 
 /* Build basic error response for some cases. */
 
-void c_response::build_error_response(int error_code, const string version, c_request &request)
+void c_response::build_error_response(int error_code, const string version, const c_request &request)
 {
 	string status;
 	string error_content;
@@ -1161,7 +1161,7 @@ void c_response::build_error_response(int error_code, const string version, c_re
 
 /* Build the response in case of redirection's error with the locations. */
 
-void	c_response::build_redirect_response(int code, const string &location, const string &version, c_request &request)
+void	c_response::build_redirect_response(int code, const string &location, const string &version, const c_request &request)
 {
 	string status;
 	switch (code)
@@ -1212,7 +1212,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
 
-void c_response::build_directory_listing_response(const string &dir_path, const string &version, c_request &request)
+void c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
 {
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
