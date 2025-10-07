@@ -11,6 +11,7 @@ NAME = webserv
 INCLUDES	= includes -I./srcs/response -I./srcs/request -I./srcs/clients -I./srcs/server_config
 SRCS_DIR	= srcs
 OBJS_DIR	= obj
+LOGS_DIR	= logs
 
 # ************************************************************************ #
 #                			 SRCS && OBJECTS FILES                         #
@@ -53,10 +54,11 @@ RM			= rm -rf
 
 all:    $(NAME)
 
-$(NAME): includes/colors.hpp $(OBJS_DIR) $(OBJS)
+$(NAME): includes/colors.hpp $(OBJS_DIR) $(OBJS) $(LOGS_DIR)
 	@echo "\033[1;33m  COMPILING WEBSERV \n"
 	@$(CC) $(OBJS) $(CFLAGS) -o $(NAME)
 	@echo "\033[1;32m ./$(NAME) created\n"
+	@$ rm -f logs/access.log logs/error.log
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp includes/colors.hpp
 	@mkdir -p $(dir $@)
@@ -65,6 +67,9 @@ $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp includes/colors.hpp
 $(OBJS_DIR):
 	@mkdir -p $(OBJS_DIR)
 
+$(LOGS_DIR):
+	mkdir -p $(LOGS_DIR)
+
 # ************************************************************************ #
 #                  		     CLEANUP SESSION                               #
 # ************************************************************************ #
@@ -72,6 +77,7 @@ $(OBJS_DIR):
 clean:
 	@$(RM) $(OBJS_DIR)
 	@$(RM) $(OBJS:.o=.d)
+	@$(RM) $(LOGS_DIR)
 	@echo "\033[1;32m🫧  DONE 🫧"
 
 fclean: clean

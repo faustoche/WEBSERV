@@ -169,3 +169,28 @@ void	c_server::print_config() const
 	}
 			
 }
+
+void	c_server::log_message(const string& message)
+{
+	ofstream log("logs/error.log", ios::app);
+
+	time_t now = time(NULL);
+	char buf[64];
+	strftime(buf, sizeof(buf), "%d/%b/%Y:%H:%M:%S %z", localtime(&now));
+
+	log << "[" << buf << "] " << message << endl;
+}
+
+void	c_server::log_access(c_client *client)
+{
+	ofstream log("logs/access.log", ios::app);
+
+	time_t now = time(NULL);
+	char buf[64];
+	strftime(buf, sizeof(buf), "%d/%b/%Y:%H:%M:%S %z", localtime(&now));
+
+	log << client->get_ip() << " - ["
+		<< buf << "]"
+		<< " \"" << client->get_last_request() << " \" "
+		<< client->get_status_code() << " " << client->get_bytes_written() << endl;
+}

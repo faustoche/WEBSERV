@@ -2,10 +2,12 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_response::c_response(c_server& server, int client_fd) : _server(server), _client_fd(client_fd)
+c_response::c_response(c_server& server, c_client &client) : _server(server), _client(client)
 {
 	this->_is_cgi = false;
 	this->_error = false;
+	this->_client_fd = _client.get_fd();
+	// this->_client = _server.find_client(_client_fd);
 }
 
 c_response::~c_response()
@@ -61,6 +63,7 @@ bool	is_regular_file(const string& path)
 
 void	c_response::define_response_content(const c_request &request)
 {
+	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -72,7 +75,6 @@ void	c_response::define_response_content(const c_request &request)
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
-		cout << "status code: " << status_code << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -83,7 +85,8 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
-		cout << GREEN << ">>> Traitement DELETE todo" << RESET << endl;
+		// cout << GREEN << ">>> Traitement DELETE todo" << RESET << endl;
+		_server.log_message("[DEBUG] DELETE todo");
 		handle_delete_todo(request, version);
 		return;
 	}
@@ -118,7 +121,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	
+	// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -141,7 +144,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	/***************/
-	
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
@@ -163,7 +165,7 @@ void	c_response::define_response_content(const c_request &request)
 	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
-	
+
 	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
@@ -182,7 +184,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 	}
-
 	if (this->_is_cgi)
 	{
 		if (request.get_path().find(".") == string::npos)
@@ -196,7 +197,7 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 		}
 
-		cout << YELLOW << "==PROCESS CGI IDENTIFIED FOR FD " << this->_client_fd << "=="  << RESET << endl << endl;
+		_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
 		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
 		
 		if (cgi->init_cgi(request, *matching_location, request.get_target()))
@@ -205,7 +206,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, version, request);
 			return ;
 		}
-		
 		build_cgi_response(*cgi, request);
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
@@ -227,7 +227,9 @@ void	c_response::define_response_content(const c_request &request)
 		build_success_response(file_path, version, request);
 	}
 	else
+	{
 		build_success_response(file_path, version, request);
+	}
 }
 
 /********************    POST    ********************/
@@ -244,10 +246,10 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	// cout << "=== DEBUG POST ===" << endl
-	// 		<< "Body recu: [" << body << "]" << endl
-	// 		<< "Content-Type: [" << content_type << "]" << endl
-	// 		<< "Target: [" << request.get_target() << "]" << endl;
+	cout << "=== DEBUG POST ===" << endl
+			<< "Body recu: [" << body << "]" << endl
+			<< "Content-Type: [" << content_type << "]" << endl
+			<< "Target: [" << request.get_target() << "]" << endl;
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
@@ -278,7 +280,6 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	(void)version;
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 
@@ -300,8 +301,10 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			{
 				uploaded_files.push_back(saved_path);
 				_file_content = load_file_content(saved_path);
-				cout << "Uploaded file: " << part.filename
-				<< " (" << part.content.size() << " bytes)" << endl;
+				_server.log_message("[INFO] ✅ UPLOADED FILE : " + part.filename 
+									+ " (" + int_to_string(part.content.size()) + " bytes)");
+				// cout << "Uploaded file: " << part.filename
+				// << " (" << part.content.size() << " bytes)" << endl;
 			}
 		}
 		else // seulement du texte
@@ -320,7 +323,9 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		}
 	}
 	else
+	{
 		build_error_response(400, version, request);
+	}
 	// creer liste de fichiers sauvegardes ?
 }
 
@@ -425,6 +430,7 @@ string	c_response::extract_boundary(const string &content_type)
 vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
 {
 	string			delimiter = "--" + boundary;
+	string			closing_delimier = delimiter + "--";
 	size_t			pos = 0;
 	vector<size_t>	boundary_pos;
 
@@ -437,9 +443,33 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		size_t	begin = boundary_pos[i] + delimiter.length() + 2; // pour sauter le "\r\n" qui suit souvent le boundary 
+		size_t	begin = boundary_pos[i] + delimiter.length();
+		
+		// sauter le \r\n ou \n apres le boundary
+		if (begin < body.size() && body[begin] == '\r')
+			begin++;
+		if (begin < body.size() && body[begin] == '\n')
+			begin++;
+
+		// end doit pointer juste avant le prochain boundary
+		// on ne doit pas inclure le \r\n qui precede le boundary
 		size_t	end = boundary_pos[i + 1];
+
+		// if (body.compare(begin, 2, "\r\n") == 0)
+		// 	begin += 2;
+		if (end >= 2 && body[end - 2] == '\r' && body[end - 1] == '\n')
+			end -= 2;
+		else if (end >= 1 && body[end - 1] == '\n')
+			end -= 1;
+		
+		if (begin >= end)
+			continue;
+		// if (end >= 2 && body.compare(end - 2, 2, "\r\n") == 0)
+		// 	end -= 2;
 		string	raw_part = body.substr(begin, end - begin);
+
+		if (raw_part.find(closing_delimier) != string::npos)
+			continue;
 		if (raw_part.find_first_not_of(" \r\n") == string::npos)
 			continue;
 		s_multipart single_part = parse_single_part(raw_part);
@@ -452,19 +482,59 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
-
 	if (separator_pos == string::npos)
 		return part;
 
 	string header_section = raw_part.substr(0, separator_pos);
-	string content_section = raw_part.substr(separator_pos + 4, raw_part.size());
+	string content_section = raw_part.substr(separator_pos + 4);
+	// if (content_section.size() >= 2 && 
+	// 	content_section.compare(content_section.size() - 2, 2, "\r\n") == 0)
+	// {
+	// 		content_section.erase(content_section.size() - 2);
+	// }
+	// else if (!content_section.empty() &&
+	// 	(content_section[content_section.size() -1] == '\n') || content_section.back() == '\r')
+	// {
+	// 	content_section.erase(content_section.size() - 1);
+	// }
+	while (!content_section.empty() && (content_section[content_section.size() -1] == '\r'))
+		content_section.erase(content_section.size() - 1, 1);
+	while (!content_section.empty() && (content_section[content_section.size() -1] == '\n'))
+		content_section.erase(content_section.size() - 1, 1);
+
+	// DEBUG: Afficher les derniers octets AVANT tout traitement
+    cout << YELLOW << "Derniers octets bruts: ";
+    for (size_t j = (content_section.size() > 20 ? content_section.size() - 20 : 0); 
+         j < content_section.size(); j++) {
+        printf("%02X ", (unsigned char)content_section[j]);
+    }
+
+
+	size_t pos = content_section.rfind("\r\n--");
+	if ( pos != string::npos)
+	{
+		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+		content_section.erase(pos);
+	}
 	// cout << ORANGE << header_section << endl;
 	// cout << ORANGE << content_section << endl;
+
+	
+    // printf("\n" << RESET);
+
 
 	// parser les header
 	parse_header_section(header_section, part);
 	part.content = content_section;
 	part.is_file = !part.filename.empty();
+
+	// print des octets finaux
+	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
+		for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
+    printf("%02X ", (unsigned char)content_section[j]);
+	}
+	printf("\n");
+
 	return part;
 }
 
@@ -490,7 +560,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 	}
-	
 }
 
 
@@ -559,12 +628,10 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 		build_error_response(500, version, request);
 }
 
-
-
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
 	string filename = "./www/data/contact.txt"; //location.get_upload_path();
-	ofstream file(filename.c_str(), ios::app);
+	ofstream file(filename.c_str(), ios::binary);
 
 	if (!file.is_open())
 	{
@@ -695,7 +762,6 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
-	
 	if (!file.is_open()) {
 		return ("");
 	}
@@ -762,7 +828,6 @@ string c_response::read_error_pages(int error_code)
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
-
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 
@@ -827,12 +892,14 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
+	// c_client *client = _server.find_client(this->_client_fd);
+	
 	if (_file_content.empty())
 	{
-		cout << CYAN << __FILE__ << "/" << __LINE__ << RESET << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
+	_client.set_status_code(200);
 
 	size_t content_size = _file_content.size();
 	ostringstream oss;
@@ -844,11 +911,10 @@ void c_response::build_success_response(const string &file_path, const string ve
 	_response += "Server: webserv/1.0\r\n";
 
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += _file_content;
@@ -860,6 +926,29 @@ void c_response::build_error_response(int error_code, const string version, cons
 {
 	string status;
 	string error_content;
+
+	// Définir le message de statut
+	// switch (error_code)
+	// {
+	// 	case 400:
+	// 		status = "Bad Request";
+	// 		break;
+	// 	case 404:
+	// 		status = "Not Found";
+	// 		break;
+	// 	case 405:
+	// 		status = "Method Not Allowed";
+	// 		break;
+	// 	case 505:
+	// 		status = "HTTP Version Not Supported";
+	// 		break;
+	// 	default:
+	// 		status = "Internal Server Error";
+	// 		break;
+	// }
+
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(error_code);
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
@@ -963,6 +1052,9 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
+
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(code);
 }
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
@@ -1008,6 +1100,9 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	_response += "\r\n";
 	_response += content;
 	_file_content = content;
+
+	// c_client *client = _server.find_client(this->_client_fd);
+	_client.set_status_code(200);
 }
 
 /************ HANDLING LOCATIONS ************/
@@ -1102,6 +1197,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location->set_is_directory(true);
 		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
+		// cout << CYAN << __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
 			return (location_root + relative_path);
 		else

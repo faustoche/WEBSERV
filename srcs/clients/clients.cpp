@@ -5,7 +5,7 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_client::c_client() : _fd(-1), _state(READING)
+c_client::c_client() : _fd(-1), _client_ip(""), _state(READING)
 {
     memset(_buffer, 0, sizeof(_buffer));
     gettimeofday(&_timestamp, 0);
@@ -16,10 +16,11 @@ c_client::c_client() : _fd(-1), _state(READING)
 	_bytes_written = 0;
     _creation_time = time(NULL);
     _last_modified = time(NULL);
-    
+    _last_request.clear();
+    _status_code = 0;
 }
 
-c_client::c_client(int client_fd) : _fd(client_fd), _state(READING)
+c_client::c_client(int client_fd, string client_ip) : _fd(client_fd), _client_ip(client_ip), _state(READING)
 {
     memset(_buffer, 0, sizeof(_buffer));
     gettimeofday(&_timestamp, 0);
@@ -30,6 +31,8 @@ c_client::c_client(int client_fd) : _fd(client_fd), _state(READING)
 	_bytes_written = 0;
     _creation_time = time(NULL);
     _last_modified = time(NULL);
+    _last_request.clear();
+    _status_code = 0;
 }
 
 c_client::~c_client() {}
@@ -44,16 +47,15 @@ void    c_server::add_fd(int fd, short events)
     tmp_poll_fd.revents = 0;
 
     _poll_fds.push_back(tmp_poll_fd);
-    cout << "fd " << fd << " is now monitored by _poll_fds" << endl;
-    // _clients[fd] = c_client(fd);
+    log_message("[DEBUG] fd " + int_to_string(fd) + " is now monitored by _poll_fds");
 }
 
-void c_server::add_client(int client_fd)
+void c_server::add_client(int client_fd, string client_ip)
 {
-    _clients[client_fd] = c_client(client_fd);
+    _clients[client_fd] = c_client(client_fd, client_ip);
     set_non_blocking(client_fd);
     add_fd(client_fd, POLLIN);
-    cout << PINK << "\n*Client " << client_fd << " can send a request : POLLIN*" << RESET << endl;
+    log_message("[DEBUG] Client " + int_to_string(client_fd) + " can send a request : POLLIN");
 }
 
 void c_server::remove_client(int client_fd)
@@ -66,7 +68,7 @@ void c_server::remove_client(int client_fd)
         if (it->fd == client_fd)
         {
             _poll_fds.erase(it);
-            cout << "fd " << client_fd << " is no longer monitored by _poll_fds" << endl;
+            log_message("[DEBUG] fd " + int_to_string(client_fd) + " is no longer monitored by _poll_fds");
             break;
         }
     }
@@ -75,7 +77,7 @@ void c_server::remove_client(int client_fd)
     if (it != _clients.end())
     {
         _clients.erase(it);
-        cout << "Client with fd " << client_fd << " erased from _clients" << endl;
+        log_message("[DEBUG] fd " + int_to_string(client_fd) + " erased from _clients");
     }
      close(client_fd);
     

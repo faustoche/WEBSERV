@@ -2,16 +2,9 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-// c_request::c_request() : _server(NULL)
-// {
-// 	this->init_request();
-// }
-
-c_request::c_request(c_server& server) : _server(server)
+c_request::c_request(c_server& server, c_client &client) : _server(server), _client(client)
 {
 	this->init_request();
-	// (void)ip_str;
-	// this->_ip_client = static_cast<string>(ip_str);
 }
 
 c_request::~c_request()
@@ -21,54 +14,39 @@ c_request::~c_request()
 
 /************ REQUEST ************/
 
-void	c_request::read_request(int socket_fd)
+void	c_request::read_request()
 {
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
 	string	request;
 	
 	this->init_request();
-	this->_socket_fd = socket_fd;
-	c_client *client = _server.find_client(socket_fd);
-	if (!client)
-	{
-		this->_error = true;
-		return ;
-	}
+	this->_socket_fd = _client.get_fd();
 
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
-		fill(buffer, buffer + sizeof(buffer), '\0');
-		// condition pour l'appel de recv ?
-		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, MSG_NOSIGNAL);
+		// fill(buffer, buffer + sizeof(buffer), '\0');
+		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
-			// if (receivedBytes == 0 && (time(NULL) - client->get_last_modified() > TIMEOUT)) // break ou vrai erreur ?
-			// {
-			// 	cout << __FILE__ << "/" << __LINE__ << endl;
-			// 	cout << "Client has timed out" << endl;
-			// 	close(this->_socket_fd);
-			// 	// remove_client(this->_socket_fd);
-			// 	// cout << "(Request) client closed connection: " << __FILE__ << "/" << __LINE__ << endl;;
-			// 	// this->_error = true;
-			// 	// close(this->_socket_fd);
-			// 	return ;
-			// }
 			if (receivedBytes == 0)
 			{
-				client->set_state(IDLE);
+				_client.set_state(IDLE);
 				return ;
 			}
-			else
+			else if (receivedBytes < 0) 
 			{
-				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;;
-				this->_error = true;
-				return ;
+    			// Ici pas d'errno, donc on ne sait pas si c'est une vraie erreur
+    			// On se contente de logguer un warning
+    			_server.log_message("[WARNING] recv() returned <0 for client " 
+    			                    + int_to_string(_socket_fd) 
+    			                    + ". Will retry on next POLLIN.");
+    			return;
 			}
 		}
-		buffer[receivedBytes] = '\0';
-		request.append(buffer);
+		// buffer[receivedBytes] = '\0';
+		request.append(buffer, receivedBytes);
 	}
 	this->parse_request(request);
 	c_location *matching_location = _server.find_matching_location(this->get_target());
@@ -78,7 +56,7 @@ void	c_request::read_request(int socket_fd)
 	}
 	
 	/* -----Lire le body -----*/
-	this->determine_body_reading_strategy(socket_fd, buffer, request);
+	this->determine_body_reading_strategy(_socket_fd, buffer, request);
 
 	if (!this->_error)
 		this->_request_fully_parsed = true;
@@ -174,15 +152,12 @@ int c_request::parse_start_line(string& start_line)
 	{
 		this->_path = tmp.substr(0, question_pos);
 		this->_query = tmp.substr(question_pos + 1);
-		cout << "this->_path: " << this->_path << endl;
-		cout << "this->_query: " << this->_query << endl;
 	}	
 	else
 	{
 		this->_path = start_line.substr(start, space_pos - start);
 		this->_query = "";
 	}
-	
 
 	/*- ---- Version ----- */
 	start = space_pos + 1;
@@ -195,7 +170,6 @@ int c_request::parse_start_line(string& start_line)
 	}
 	if (this->_version != "HTTP/1.1")
 	{
-		cout << "this->_version: " << this->_version << endl; 
 		this->_status_code = 505;
 		return (0);
 	}
@@ -215,7 +189,7 @@ int c_request::parse_headers(string& headers)
 	key = headers.substr(0, pos);
 	if (!is_valid_header_name(key))
 	{
-		cerr << "(Request) Error: invalid header_name: " << key << endl;
+		_server.log_message("[ERROR] invalid header name: " + key);
 		this->_status_code = 400;
 	}
 
@@ -226,7 +200,7 @@ int c_request::parse_headers(string& headers)
 	value = ft_trim(headers.substr(pos + 1));
 	if (!is_valid_header_value(key, value))
 	{
-		cerr << "(Request) Error: invalid header_value: " << key << endl;
+		_server.log_message("[ERROR] invalid header value: " + value);
 		this->_status_code = 400;
 	}
 
@@ -242,6 +216,7 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
     this->_body.append(buffer, len);
 	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size)
 	{
+		// cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		this->_status_code = 413;
 		this->_error = true;
 		return (1);
@@ -267,12 +242,10 @@ void c_request::fill_body_with_chunks(string &accumulator)
         {
             // On lit la taille du chunk
             this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
-            cout << "Taille en bytes: " << this->_expected_chunk_size << endl;
             
             // Si taille = 0, c'est le chunk final
             if (this->_expected_chunk_size == 0)
             {
-                cout << "*** Chunk final détecté - Body complet ***\n" << endl;
                 this->_request_fully_parsed = true;
 				accumulator.clear();
                 return;
@@ -280,9 +253,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
         }
         else
         {
-            // On lit les données du chunk
-            cout << "Lecture données chunk (attendu: " << this->_expected_chunk_size << " bytes): ";
-            
+            // On lit les données du chunk            
             if (tmp.size() < this->_expected_chunk_size)
             {
 				accumulator.insert(0, tmp + "\r\n");
@@ -291,14 +262,13 @@ void c_request::fill_body_with_chunks(string &accumulator)
             }
 			if (tmp.size() > this->_expected_chunk_size)
 			{
-				cerr << "(Request) Error: Invalid chunk size: " 
-                     << "reçu: " << tmp.size() << " attendu: " << _expected_chunk_size << endl;
+				_server.log_message("[ERROR] Invalid chunk size. Received: " 
+										+ int_to_string(tmp.size()) + " Expected: " 
+										+ int_to_string(_expected_chunk_size));
                 this->_status_code = 400;
 				this->_error = true;
                 return;				
 			}
-            
-			cout << "✓ Chunk valide, ajout au body !\n" << endl;
             if (this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size))
 				return ;
         }
@@ -312,26 +282,31 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 	string 	body_part = request.substr(body_start);
 	int		receivedBytes;
 
+	c_client *client = _server.find_client(socket_fd);
+
 	if (!body_part.empty())
 		this->fill_body_with_chunks(body_part);
 	while (!this->_request_fully_parsed && !this->_error)
 	{
-		fill(buffer, buffer + sizeof(buffer), '\0');
-		receivedBytes = recv(socket_fd, buffer, sizeof(buffer) - 1, 0);
+		// fill(buffer, buffer + sizeof(buffer), '\0');
+		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (string(buffer) == "\0\r\n\r\n")
 			break;
     	if (receivedBytes <= 0) 
 		{
 			if (receivedBytes == 0) 
 			{
-				cout << "Client " << socket_fd << " closed connection, cleaning up socket " << endl;;
-				this->_disconnected = true;
-			} 
-			else
-			{
-				cout << "Client " << socket_fd << " client disconnected unexepectedly, closing socket " << endl;;
-				this->_error = true;
+				client->set_state(IDLE);
 				return ;
+			} 
+			else if (receivedBytes < 0) 
+			{
+    			// Ici pas d'errno, donc on ne sait pas si c'est une vraie erreur
+    			// On se contente de logguer un warning
+    			_server.log_message("[WARNING] recv() returned <0 for client " 
+    			                    + int_to_string(socket_fd) 
+    			                    + ". Will retry on next POLLIN.");
+    			return;
 			}
 		}
 		// buffer[receivedBytes] = '\0';
@@ -340,7 +315,7 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 	}
 }
 
-void	c_request::read_body_with_length(int socket_fd, char* buffer, string request, size_t buffer_size)
+void	c_request::read_body_with_length(int socket_fd, char* buffer, string request)
 {
 	size_t 	body_start = request.find("\r\n\r\n") + 4;
 	string 	body_part = request.substr(body_start);
@@ -356,47 +331,46 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		total_bytes += body_part.size();
 
 		if (total_bytes >= max_body_size)
-		{
-			cout << "(Request) Complete body already received in the initial request" << endl;
 			return;
-		}
 	}
 
 	while (total_bytes < max_body_size)
 	{	
-		fill(buffer, buffer + buffer_size, '\0');
-		receivedBytes = recv(socket_fd, buffer, buffer_size -1, 0); // faut-il conditionner l'appel a recv
+		// fill(buffer, buffer + buffer_size, '\0');
+		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{
     		if (receivedBytes == 0) // faut-il vraiment return et mettre _error a true ?
 			{
 				// verifier si on a recu tout ce qu'on attendait
 				if (total_bytes == max_body_size)
-				{
-					cout << "(Request) Full body received, connection closed" << endl;
 					return ;
-				}
 				// Connexion fermee avant d'avoir tout recu
-				cerr << "(Request) Error: Incomplete body. Expected " << max_body_size 
-					<< " and received " << total_bytes << endl;
+				_server.log_message("[ERROR] Incomplete body. Expected: " 
+									+ int_to_string(max_body_size) + " Received: " + int_to_string(total_bytes));
 				this->_error = true;
 				return;
 			}
-			else // faut-il vraiment return et mettre _error a true ?
+
+			else if (receivedBytes < 0) 
 			{
-				// erreur reseau
-				cout << "(Request) Error: client disconnected unexepectedly: " << __FILE__ << "/" << __LINE__ << endl;
-				this->_error = true;
-				return;
+    			// Ici pas d'errno, donc on ne sait pas si c'est une vraie erreur
+    			// On se contente de logguer un warning
+    			_server.log_message("[WARNING] recv() returned <0 for client " 
+    			                    + int_to_string(socket_fd) 
+    			                    + ". Will retry on next POLLIN.");
+    			return;
 			}
 		}
-		buffer[receivedBytes] = '\0';
+	
+		// buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
 		
 		if (total_bytes > max_body_size)
 		{
-			cerr << "(Request) Error: actual body size (" << total_bytes 
-				<< ") excess announced size (" << max_body_size << ")" << endl;
+			_server.log_message("[ERROR] actual body size (" 
+								+ int_to_string(total_bytes) 
+								+ ") excesses announced size (" + int_to_string(max_body_size) + ")");
 			this->_status_code = 413;
 			this->_error = true;
 			return ;
@@ -408,7 +382,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		if (total_bytes == max_body_size)
 			break;
 	}
-	fill(buffer, buffer + sizeof(buffer), '\0');
+	// fill(buffer, buffer + sizeof(buffer), '\0');
 }
 
 
@@ -418,7 +392,7 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 	{
 		if (this->get_content_length())
 		{
-			this->read_body_with_length(socket_fd, buffer, request, sizeof(buffer)); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
+			this->read_body_with_length(socket_fd, buffer, request); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
 		}
 		else
 			this->read_body_with_chunks(socket_fd, buffer, request);

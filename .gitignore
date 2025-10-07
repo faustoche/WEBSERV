@@ -14,3 +14,7 @@ includes/colors.hpp
 # VS code + DS Store files
 *.vscode
 *.DS_Store
+
+# logs
+logs/*
+!logs/.gitkeep

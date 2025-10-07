@@ -77,7 +77,7 @@ class c_server
 		void 		create_socket();
 		void 		bind_and_listen();
 		void 		set_non_blocking(int fd);
-		void		add_client(int client_fd);
+		void		add_client(int client_fd, string client_ip);
 		void		remove_client(int client_fd);
 		c_client	*find_client(int client_fd);
 		void		setup_pollfd();
@@ -87,14 +87,16 @@ class c_server
 		void		handle_client_write(int client_fd);
 		void		handle_cgi_write(c_cgi* cgi);
 		void		handle_cgi_read(c_cgi* cgi);
-		void		transfer_by_bytes(c_cgi *cgi, const string& buffer);
-		void 		transfer_with_chunks(c_cgi *cgi, const string& buffer);
+		void		transfer_by_bytes(c_cgi *cgi, const string& buffer, size_t bytes);
+		void 		transfer_with_chunks(const char *buffer, size_t bytes, c_cgi *cgi);
 		void		process_client_request(int client_fd);
 		void		fill_cgi_response_headers(string headers, c_cgi *cgi);
-		void		fill_cgi_response_body(string body_part, c_cgi *cgi);
+		void		fill_cgi_response_body(const char* buffer, size_t bytes, c_cgi *cgi);
 		void		cleanup_cgi(c_cgi* cgi);
 		void 		clear_read_buffer();
 		void 		clear_write_buffer();
+		void		log_message(const string& message);
+		void		log_access(c_client *client);
 
 		c_location	*find_matching_location(const string &request_path);
 		bool		is_method_allowed(const c_location *location, const string &method);
