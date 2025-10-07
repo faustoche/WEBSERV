@@ -402,6 +402,8 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 		cerr << "Error: the server can't upload the file " << final_path <<endl;
 		return "";
 	}
+	// cout << "[DEBUG] Saving file: " << safe_filename << " to " << final_path << endl;
+	// cout << "[DEBUG] File content size: " << int_to_string(part.content.size()) << endl;
 	file.write(part.content.data(), part.content.size());
 	file.close();
 	return final_path;

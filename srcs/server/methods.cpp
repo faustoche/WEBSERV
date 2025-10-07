@@ -143,3 +143,80 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	outfile.close();
 	load_todo_page(version, request);
 }
+
+/* GESTION DES UPLOADS */
+
+void c_response::load_upload_page(const string &version, const c_request &request)
+{
+    string html_template = load_file_content("./www/upload.html");
+    string files_html;
+
+    string upload_dir = "./www/data/";
+    DIR *dir = opendir(upload_dir.c_str());
+    if (dir)
+    {
+        struct dirent *entry;
+        while ((entry = readdir(dir)) != NULL)
+        {
+            string filename = entry->d_name;
+            if (filename == "." || filename == "..")
+                continue;
+
+            files_html += "<div class=\"file-item\">";
+            files_html += "<div class=\"file-info\">";
+            files_html += "<span class=\"file-name-list\">" + filename + "</span>";
+            files_html += "</div>";
+            files_html += "<button class=\"delete-btn\" onclick=\"deleteFile('" + filename + "')\">DELETE</button>";
+            files_html += "</div>\n";
+        }
+        closedir(dir);
+    }
+    else
+    {
+        files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
+    }
+    size_t pos = html_template.find("{{FILES_HTML}}");
+    if (pos != string::npos)
+        html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
+
+    _file_content = html_template;
+    build_success_response("upload.html", version, request);
+}
+
+void c_response::handle_delete_upload(const c_request &request, const string &version)
+{
+    string target = request.get_target();
+    string file_to_delete;
+    size_t pos = target.find("?file=");
+    
+    if (pos != string::npos)
+    {
+        file_to_delete = target.substr(pos + 6); // passer "?file=" + 6
+        file_to_delete = url_decode(file_to_delete);
+    }
+    else
+    {
+        build_error_response(400, version, request);
+        return ;
+    }
+
+    string filename = "./www/data/" + file_to_delete;
+    
+    // pas desuppression de fichiers en dehors du dossier
+    if (file_to_delete.find("..") != string::npos || file_to_delete.find("todo.txt") != string::npos)
+    {
+        build_error_response(403, version, request);
+        return ;
+    }
+    
+    if (remove(filename.c_str()) != 0)
+    {
+		cout << "[ERROR] file not found or cannot be deleted: " << filename << endl;
+        // cout << YELLOW << "Warning: file not found or cannot be deleted: " << filename << RESET << endl;
+        build_error_response(500, version, request);
+        return ;
+    }
+    
+	cout << "[INFO] ✅ FILE DELETED: " << filename << endl;
+    load_upload_page(version, request); // charger page avec liste mise à jour
+}
