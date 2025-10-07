@@ -1,100 +1,18 @@
-[07/Oct/2025:12:33:13 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
-[07/Oct/2025:12:33:13 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
-[07/Oct/2025:12:33:13 +0200] [DEBUG] Client 5 can send a request : POLLIN
-[07/Oct/2025:12:33:13 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:13 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 0s
-[07/Oct/2025:12:33:13 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:16 +0200] [DEBUG] Request has a body
-[07/Oct/2025:12:33:16 +0200] [INFO] ✅ UPLOADED FILE : dog_wrong.webp (773086 bytes)
-[07/Oct/2025:12:33:16 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:16 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 3s
-[07/Oct/2025:12:33:16 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:19 +0200] [DEBUG] Request has a body
-[07/Oct/2025:12:33:19 +0200] [INFO] ✅ UPLOADED FILE : dog_wrong.webp (773086 bytes)
-[07/Oct/2025:12:33:19 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:19 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 6s
-[07/Oct/2025:12:33:19 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:22 +0200] [DEBUG] Request has a body
-[07/Oct/2025:12:33:22 +0200] [INFO] ✅ UPLOADED FILE : dog_wrong.webp (773086 bytes)
-[07/Oct/2025:12:33:22 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:22 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 9s
-[07/Oct/2025:12:33:22 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Request has a body
-[07/Oct/2025:12:33:25 +0200] [ERROR] expected length (1832454) excesses announced client max body size (1048576)
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 12s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 6 ON PORT : 8080
-[07/Oct/2025:12:33:25 +0200] [DEBUG] fd 6 is now monitored by _poll_fds
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 6 can send a request : POLLIN
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:25 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 0s
-[07/Oct/2025:12:33:25 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:26 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:26 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 1s
-[07/Oct/2025:12:33:26 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:26 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:26 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 1s
-[07/Oct/2025:12:33:26 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:29 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:29 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 4s
-[07/Oct/2025:12:33:29 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Request has a body
-[07/Oct/2025:12:33:32 +0200] [ERROR] expected length (5080807) excesses announced client max body size (1048576)
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:32 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 7s
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:32 +0200] [WARNING] recv() returned <0 for client 6. Will retry on next POLLIN.
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:32 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 7s
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:32 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 7s
-[07/Oct/2025:12:33:32 +0200] [DEBUG] Client 6 can send a new request : POLLIN
-[07/Oct/2025:12:33:40 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 7 ON PORT : 8080
-[07/Oct/2025:12:33:40 +0200] [DEBUG] fd 7 is now monitored by _poll_fds
-[07/Oct/2025:12:33:40 +0200] [DEBUG] Client 7 can send a request : POLLIN
-[07/Oct/2025:12:33:40 +0200] [DEBUG] Client 5 has timed out
-[07/Oct/2025:12:33:40 +0200] [DEBUG] fd 5 erased from _clients
-[07/Oct/2025:12:33:40 +0200] [DEBUG] Client 7 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:40 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 7 IN 0s
-[07/Oct/2025:12:33:40 +0200] [DEBUG] Client 7 can send a new request : POLLIN
-[07/Oct/2025:12:33:40 +0200] [DEBUG] Client 7 is ready to receive the end of the response's body : POLLOUT
-[07/Oct/2025:12:33:40 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 7 IN 0s
-[07/Oct/2025:12:33:40 +0200] [DEBUG] Client 7 can send a new request : POLLIN
-[07/Oct/2025:12:33:50 +0200] [DEBUG] Client 6 has timed out
-[07/Oct/2025:12:33:50 +0200] [DEBUG] fd 6 erased from _clients
-[07/Oct/2025:12:34:00 +0200] [DEBUG] Client 7 has timed out
-[07/Oct/2025:12:34:00 +0200] [DEBUG] fd 7 erased from _clients
+[07/Oct/2025:14:36:39 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
+[07/Oct/2025:14:36:39 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
+[07/Oct/2025:14:36:39 +0200] [DEBUG] Client 5 can send a request : POLLIN
+[07/Oct/2025:14:36:39 +0200] [DEBUG] Request has a body
+[07/Oct/2025:14:36:39 +0200] [INFO] ✅ UPLOADED FILE : dog_png_tall.png (5080585 bytes)
+[07/Oct/2025:14:36:39 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:14:36:39 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 0s
+[07/Oct/2025:14:36:39 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:14:36:47 +0200] [DEBUG] Request has a body
+[07/Oct/2025:14:36:47 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
+[07/Oct/2025:14:36:47 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:14:36:47 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 8s
+[07/Oct/2025:14:36:47 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:14:36:47 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:14:36:47 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 8s
+[07/Oct/2025:14:36:47 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:14:37:07 +0200] [DEBUG] Client 5 has timed out
+[07/Oct/2025:14:37:07 +0200] [DEBUG] fd 5 erased from _clients

@@ -72,9 +72,6 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	cout << YELLOW << "method = " << method << endl;
-	cout << "max body size = " << request.get_client_max_body_size() << endl;
-	cout << "status code = " << status_code << RESET << endl;
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
@@ -294,9 +291,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	string body = request.get_body();
 	string content_type = request.get_header_value("Content-Type");
 	
-	// cout << YELLOW << body << RESET << endl;
-	cout << PINK << __LINE__ << " / " << __FILE__ << endl;
-
 	// PARSING
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
@@ -307,7 +301,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
-	// cout << body << endl;
 	if (get_status() >= 400)
 	{
 		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
@@ -328,6 +321,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
@@ -354,7 +348,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		for (size_t i = 0; i < uploaded_files.size(); i++)
 		{
 			load_upload_page(version, request);
-			//buid_upload_success_response(uploaded_files[i], version, request);
 		}
 	}
 	else
@@ -483,6 +476,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
@@ -518,7 +512,11 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 			break;
 		
 		parts.push_back(single_part);
+		if (single_part.content.empty())
+			cout << PINK << __LINE__ << " / EMPTY / " << __FILE__ << endl;
 	}
+	if (parts.empty())
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	return parts;
 }
 
@@ -716,7 +714,6 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 	if (location->get_allowed_extensions().empty() || 
 		find(location->get_allowed_extensions().begin(), location->get_allowed_extensions().end(), extension) != location->get_allowed_extensions().end())
 	{
-		cout << PINK << "COUCOU" << RESET << endl;
 		return extension;
 	}
 	else 
@@ -724,11 +721,6 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 		cout << "Error: extension not allowded (" << extension << ")" << endl;
         return "";
 	}
-    // if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
-    //     && extension != "pdf" && extension != "txt")
-    // {
-    //     
-    // }
     return extension;
 }
 
