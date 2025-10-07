@@ -134,7 +134,7 @@ bool    c_lexer::is_directive_keyword(string const & word) const
     /* list avec des find ? */
     if (word == "listen" || word == "index" || word == "cgi" || word == "autoindex"
         || word == "redirect" || word == "alias" || word == "methods" || word == "upload_path"
-        || word == "error_page" || word == "server_name" || word == "client_max_body_size")
+        || word == "error_page" || word == "server_name" || word == "client_max_body_size" || word == "allowed_extensions")
         return true ;
     return false ;
 }

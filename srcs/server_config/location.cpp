@@ -43,7 +43,7 @@ c_location const&    c_location::operator=(c_location const & rhs)
         _cgi_extension = rhs._cgi_extension;
         _is_directory = rhs._is_directory;
         _location_err_pages = rhs._location_err_pages;
-
+        _allowed_extensions = rhs._allowed_extensions;
     }
     return *this;
 }
@@ -79,6 +79,11 @@ void    c_location::add_index_file(string const & file)
     _location_indexes.push_back(file);
 }
 
+void    c_location::add_allowed_extension(string const & extension)
+{
+    _allowed_extensions.push_back(extension);
+}
+
 void	c_location::add_error_page(vector<int> const & codes, string path)
 {
 
@@ -100,6 +105,15 @@ void	c_location::print_methods() const
 {
 	vector<string>::const_iterator it;
 	for (it = get_methods().begin(); it != get_methods().end(); it++)
+	{
+		cout << *it << " " << flush;
+	}
+}
+
+void	c_location::print_allowed_extensions() const
+{
+	vector<string>::const_iterator it;
+	for (it = get_allowed_extensions().begin(); it != get_allowed_extensions().end(); it++)
 	{
 		cout << *it << " " << flush;
 	}
@@ -144,6 +158,9 @@ void    c_location::print_location() const
             << "            index files = ";
             print_indexes();
     cout << endl
+            << "            allowed extensions = ";
+            print_allowed_extensions();
+    cout    << endl
             << "            auto index: ";
             if (get_auto_index())
                 cout << "ON";

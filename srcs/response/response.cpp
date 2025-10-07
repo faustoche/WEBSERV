@@ -427,7 +427,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 		if (!create_directory("./www/data/"))
 			return "";
 	}
-	string safe_filename = sanitize_filename(part.filename);
+	string safe_filename = sanitize_filename(part.filename, location);
 	if (safe_filename.empty())
 		return "";
 
@@ -680,7 +680,7 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
-	string filename = "./www/data/contact.txt"; //location.get_upload_path();
+	string filename = "./www/data/contact.txt"; //location->get_upload_path();
 	ofstream file(filename.c_str(), ios::binary);
 
 	if (!file.is_open())
@@ -703,29 +703,39 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	return true;
 }
 
-string  c_response::extract_extension(const string &filename, string &name)
+string  c_response::extract_extension(const string &filename, string &name, c_location *location)
 {
     size_t point_pos = filename.find_last_of(".");
     if (point_pos == string::npos)
         return "";
     if (point_pos == 0)
         return "";
-    string extension = filename.substr(point_pos + 1);
+    string extension = filename.substr(point_pos); // + 1 enleve
     name = filename.substr(0, point_pos);
-    if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
-        && extension != "pdf" && extension != "txt")
-    {
-        cout << "Error: extension not allowded (." << extension << ")" << endl;
+
+	if (location->get_allowed_extensions().empty() || 
+		find(location->get_allowed_extensions().begin(), location->get_allowed_extensions().end(), extension) != location->get_allowed_extensions().end())
+	{
+		return extension;
+	}
+	else 
+	{
+		cout << "Error: extension not allowded (." << extension << ")" << endl;
         return "";
-    }
+	}
+    // if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
+    //     && extension != "pdf" && extension != "txt")
+    // {
+    //     
+    // }
     return extension;
 }
 
 
-string  c_response::sanitize_filename(const string &filename)
+string  c_response::sanitize_filename(const string &filename, c_location *location)
 {
     string name;
-    string extension = extract_extension(filename, name);
+    string extension = extract_extension(filename, name, location);
     if (extension.empty())
 	{
 		set_status(415); // unsupported media type
@@ -753,7 +763,7 @@ string  c_response::sanitize_filename(const string &filename)
         clean_name = clean_name.substr(0, 200);
     clean_name = trim_underscore(clean_name);
     if (!extension.empty())
-        return clean_name += "." + extension;
+        return clean_name += extension;
     else
         return clean_name;
 }

@@ -103,9 +103,9 @@ private:
 	string						extract_after_points(const string &line);
 	string						extract_boundary(const string &content_type);
 	string						save_uploaded_file(const s_multipart &part, c_location *location);
-	string 						extract_extension(const string &filename, string &name);
+	string 						extract_extension(const string &filename, string &name, c_location *location);
 	void						buid_upload_success_response(const string &file_path, const string version, const c_request &request);
-	string						sanitize_filename(const string &filename);
+	string						sanitize_filename(const string &filename, c_location *location);
 	/***** DELETE method *****/
 	void						handle_delete_todo(const c_request &request, const string &version);
 	void						handle_delete_request(const c_request &request, const string &version, string file_path);
