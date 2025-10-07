@@ -1,13 +1,39 @@
-[06/Oct/2025:16:38:50 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
-[06/Oct/2025:16:38:50 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
-[06/Oct/2025:16:38:50 +0200] [DEBUG] Client 5 can send a request : POLLIN
-[06/Oct/2025:16:38:50 +0200] [DEBUG] Request has a body
-[06/Oct/2025:16:38:50 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
-[06/Oct/2025:16:38:50 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[06/Oct/2025:16:38:50 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 0s
-[06/Oct/2025:16:38:50 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[06/Oct/2025:16:38:50 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
-[06/Oct/2025:16:38:50 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 0s
-[06/Oct/2025:16:38:50 +0200] [DEBUG] Client 5 can send a new request : POLLIN
-[06/Oct/2025:16:39:10 +0200] [DEBUG] Client 5 has timed out
-[06/Oct/2025:16:39:10 +0200] [DEBUG] fd 5 erased from _clients
+[07/Oct/2025:10:51:12 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 5 ON PORT : 8080
+[07/Oct/2025:10:51:12 +0200] [DEBUG] fd 5 is now monitored by _poll_fds
+[07/Oct/2025:10:51:12 +0200] [DEBUG] Client 5 can send a request : POLLIN
+[07/Oct/2025:10:51:13 +0200] [DEBUG] Request has a body
+[07/Oct/2025:10:51:13 +0200] [INFO] ✅ UPLOADED FILE : duck.gif (260119 bytes)
+[07/Oct/2025:10:51:13 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:13 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 1s
+[07/Oct/2025:10:51:13 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Request has a body
+[07/Oct/2025:10:51:18 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:18 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 6s
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:10:51:18 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:18 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 6s
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:10:51:18 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:18 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 6s
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:10:51:18 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:18 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 6s
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:10:51:18 +0200] [WARNING] recv() returned <0 for client 5. Will retry on next POLLIN.
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:18 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 5 IN 6s
+[07/Oct/2025:10:51:18 +0200] [DEBUG] Client 5 can send a new request : POLLIN
+[07/Oct/2025:10:51:19 +0200] [INFO] ✅ NEW CONNECTION FOR CLIENT : 6 ON PORT : 8080
+[07/Oct/2025:10:51:19 +0200] [DEBUG] fd 6 is now monitored by _poll_fds
+[07/Oct/2025:10:51:19 +0200] [DEBUG] Client 6 can send a request : POLLIN
+[07/Oct/2025:10:51:19 +0200] [DEBUG] Client 6 is ready to receive the end of the response's body : POLLOUT
+[07/Oct/2025:10:51:19 +0200] [INFO] ✅ RESPONSE FULLY SENT TO CLIENT 6 IN 0s
+[07/Oct/2025:10:51:19 +0200] [DEBUG] Client 6 can send a new request : POLLIN
+[07/Oct/2025:10:51:29 +0200] [DEBUG] Client 5 has timed out
+[07/Oct/2025:10:51:29 +0200] [DEBUG] fd 5 erased from _clients
+[07/Oct/2025:10:51:39 +0200] [DEBUG] Client 6 has timed out
+[07/Oct/2025:10:51:39 +0200] [DEBUG] fd 6 erased from _clients
