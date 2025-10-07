@@ -231,7 +231,7 @@ void                c_parser::parse_methods(c_location & location)
 
     while (is_token_type(TOKEN_VALUE))
     {
-        if (get_value() == "GET" || get_value() == "POST" || get_value() == "DELETE")
+        if (get_value() == "GET" || get_value() == "POST" || get_value() == "DELETE" || get_value() == "PUT")
         {
             tmp_methods.push_back(get_value());
             advance_token();

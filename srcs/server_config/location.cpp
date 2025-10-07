@@ -16,6 +16,7 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
     _location_methods.push_back("GET");
     _location_methods.push_back("POST");
     _location_methods.push_back("DELETE");
+    _location_methods.push_back("PUT");
 }
 
 

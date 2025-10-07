@@ -221,3 +221,43 @@ void c_response::handle_delete_upload(const c_request &request, const string &ve
     // cout << GREEN << "File deleted: " << filename << RESET << endl;
     load_upload_page(version, request); // charger page avec liste mise à jour
 }
+
+void c_response::handle_put_request(const c_request &request, c_location *location, const string &version, const string &file_path)
+{
+	// on check que le file_path n'est pas dans un dossier trop eloigne comme dans delete (pour ne pas remplacer des fichiers importants)
+	if (file_path.find("..") != string::npos) // empeche les suppressions dans les fichiers + loins
+	{
+		build_error_response(403, version, request);
+		return ;
+	}
+
+	// on verifie que la location autorise l'upload de fichier
+	// une stirng uploaddirectory qui va chercher wwww data
+	// si la location n'est pas null et que !get upload path n'est pas vide
+	string upload_dir = "/www/data";
+	if (!location && !location->get_upload_path().empty())
+		upload_dir = location->get_upload_path();
+	
+	// siu je trouve pas upload dir dans file path (!= 0)
+	if (file_path.find(upload_dir) != 0)
+	{
+		build_error_response(403, version, request);
+		return ;
+	}
+
+	// creer ou ecraser le fichier 
+	// j'essaiue d'ouvrir le fichier
+	ofstream file(file_path.c_str(), ios::binary | ios::trunc);
+	if (!file.is_open())
+	{
+		build_error_response(500, version, request);
+		return ;
+	}
+	// creation du body de la reponse 
+	const string &body = request.get_body();
+	file.write(body.data(), body.size()); // je remplace le contenu par la data + la taille
+	file.close();
+
+	_file_content = body;
+	build_success_response(file_path, version, request);
+}

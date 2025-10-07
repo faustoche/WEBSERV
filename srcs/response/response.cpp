@@ -109,7 +109,7 @@ void	c_response::define_response_content(const c_request &request)
         handle_delete_upload(request, version);
         return;
     }
-	if (method != "GET" && method != "POST" && method != "DELETE")
+	if (method != "GET" && method != "POST" && method != "DELETE" && method != "PUT")
 	{
 		build_error_response(405, version, request);
 		return ;
@@ -229,6 +229,11 @@ void	c_response::define_response_content(const c_request &request)
 		handle_delete_request(request, version, file_path);
 		build_success_response(file_path, version, request);
 	}
+	else if (method == "PUT")
+	{
+		handle_put_request(request, matching_location, version, file_path);
+		return ;
+	}
 	else
 	{
 		build_success_response(file_path, version, request);
@@ -269,7 +274,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	else if (target == "/post_todo")
 		handle_todo_form(request, version);
 	else
-		build_error_response(404, version, request); // est-ce la bonne erreur ? 
+		build_error_response(404, version, request);
 }
 
 /********************   upload file   ********************/

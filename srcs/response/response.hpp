@@ -111,4 +111,7 @@ private:
 	void						handle_delete_request(const c_request &request, const string &version, string file_path);
 	void						load_upload_page(const string &version, const c_request &request);
 	void						handle_delete_upload(const c_request &request, const string &version);
+
+	/***** DELETE method *****/
+	void						handle_put_request(const c_request &request, c_location *location, const string &version, const string &file_path);
 };

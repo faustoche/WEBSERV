@@ -128,7 +128,7 @@ int c_request::parse_start_line(string& start_line)
 		return (0);
 	}
 	this->_method = start_line.substr(start, space_pos - start);;
-	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
+	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE" && this->_method != "PUT")
 	{
 		this->_status_code = 405;
 		this->_error = true;
