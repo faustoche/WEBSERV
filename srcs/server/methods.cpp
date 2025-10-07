@@ -7,7 +7,7 @@
 * DOes the directory exist? Do we have access? -> checking permissions with stat
 */
 
-void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
+void	c_response::handle_delete_request(c_request &request, const string &version, string file_path)
 {
 	if (file_path.find("..") != string::npos) // empeche les suppressions dans les fichiers + loins
 	{
@@ -16,6 +16,7 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 	}
 	if (!is_existing_file(file_path))
 	{
+		cout << __FILE__ << "/" << __LINE__ << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
@@ -38,7 +39,7 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 	}
 }
 
-void c_response::load_todo_page(const string &version, const c_request &request)
+void c_response::load_todo_page(const string &version, c_request &request)
 {
 	string filename = "./www/data/todo.txt";
 	string todo_html = load_file_content("./www/todo.html");
@@ -62,7 +63,7 @@ void c_response::load_todo_page(const string &version, const c_request &request)
 	build_success_response("todo.html", version, request);
 }
 
-void c_response::handle_todo_form(const c_request &request, const string &version)
+void c_response::handle_todo_form(c_request &request, const string &version)
 {
 	map<string, string>form = parse_form_data(request.get_body());
 	string task;
@@ -90,7 +91,7 @@ void c_response::handle_todo_form(const c_request &request, const string &versio
 	load_todo_page(version, request);
 }
 
-void c_response::handle_delete_todo(const c_request &request, const string &version)
+void c_response::handle_delete_todo(c_request &request, const string &version)
 {
 	string target = request.get_target();
 	string task_to_delete;
@@ -146,7 +147,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 
 /* GESTION DES UPLOADS */
 
-void c_response::load_upload_page(const string &version, const c_request &request)
+void c_response::load_upload_page(const string &version, c_request &request)
 {
     string html_template = load_file_content("./www/upload.html");
     string files_html;
@@ -183,7 +184,7 @@ void c_response::load_upload_page(const string &version, const c_request &reques
     build_success_response("upload.html", version, request);
 }
 
-void c_response::handle_delete_upload(const c_request &request, const string &version)
+void c_response::handle_delete_upload(c_request &request, const string &version)
 {
     string target = request.get_target();
     string file_to_delete;

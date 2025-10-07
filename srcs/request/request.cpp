@@ -132,8 +132,8 @@ int c_request::parse_start_line(string& start_line)
 		this->_error = true;
 		return (0);
 	}
-	this->_method = start_line.substr(start, space_pos - start);;
-	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE" && this->_method != "PUT")
+	this->_method = start_line.substr(start, space_pos - start);
+	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 	{
 		this->_status_code = 405;
 		this->_error = true;
@@ -177,6 +177,7 @@ int c_request::parse_start_line(string& start_line)
 	}
 	if (this->_version != "HTTP/1.1")
 	{
+		cout << "version : " << this->_version << " !" << endl;
 		this->_status_code = 505;
 		return (0);
 	}

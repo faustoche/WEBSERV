@@ -34,6 +34,7 @@ class c_cgi
         const string&   get_read_buffer() const { return _read_buffer; };
         const size_t&   get_bytes_written() const { return _bytes_written; };
         const size_t&   get_content_length() const { return _content_length; };
+        const int&      get_status_code() const { return _status_code; };
         bool            is_finished() { return _finished; };
         bool            headers_parsed() { return _headers_parsed; };
         void            set_finished(bool state) { _finished = state; };
@@ -53,6 +54,7 @@ class c_cgi
         bool            is_valid_header_value(string& key, const string& value);
         bool            is_request_fully_sent_to_cgi() { return _request_fully_sent_to_cgi; };
         void            vectorize_env();
+        void            clear_context();
         void            close_cgi();
         size_t          identify_script_type(const string& path);
 
@@ -67,8 +69,6 @@ class c_cgi
         size_t              _bytes_written;
         size_t              _content_length;
         size_t              _body_size;
-        // bool                _stdout_closed;
-        // bool                _stdin_closed;
         bool                _finished;
         bool                _headers_parsed;
         bool                _request_fully_sent_to_cgi;

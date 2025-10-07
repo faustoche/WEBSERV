@@ -164,7 +164,16 @@ void c_server::handle_poll_events()
 				{
 					if (fd == cgi->get_pipe_out() && !client->get_response_complete())
 					{
+						// if (!cgi->is_finished())
+						// 	cgi->set_finished(true);
 						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
+						return ;
+					}
+					else
+					{
+						if (!cgi->is_finished())
+							cgi->set_finished(true);
+						client->set_state(SENDING);
 						return ;
 					}
 				}
@@ -186,7 +195,7 @@ void c_server::handle_poll_events()
 			else if (pfd.revents & POLLOUT)
 			{
 				handle_client_write(fd);
-				if (client->get_write_buffer().empty())
+				if (client->get_write_buffer().empty() || client->get_response_complete())
     			{
     			    c_cgi* cgi = find_cgi_by_client(fd);
     			    if (cgi && cgi->is_finished())
@@ -324,18 +333,22 @@ void c_server::handle_client_read(int client_fd)
 */
 void	c_server::handle_client_write(int client_fd)
 {
+	
 	c_client *client = find_client(client_fd);
 	if (client == NULL)
-	{
 		return ;
-	}
 
 	const string	&write_buffer = client->get_write_buffer();
 	size_t bytes_written = client->get_bytes_written();
 
+	c_cgi *cgi = find_cgi_by_client(client_fd);
 	size_t remaining = write_buffer.length() - bytes_written;
 	if (remaining == 0)
-		return ;
+	{
+		if (client->get_response_complete() && cgi->is_finished())
+			handle_fully_sent_response(client);
+        return;
+	}
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
 	size_t bytes_sent = send(client_fd, data_to_send, remaining, MSG_NOSIGNAL);
@@ -348,11 +361,12 @@ void	c_server::handle_client_write(int client_fd)
 	}
 	else
 		client->set_last_modified();
+
 	client->set_bytes_written(bytes_written + bytes_sent);
 
     if (client->get_bytes_written() >= write_buffer.length())
     {
-        c_cgi *cgi = find_cgi_by_client(client_fd);
+        
 		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
 			log_message("[DEBUG] CGI " + int_to_string(cgi->get_pipe_out()) 
@@ -362,23 +376,7 @@ void	c_server::handle_client_write(int client_fd)
 
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
-		{
-			int duration = client->get_last_modified() - client->get_creation_time();
-			log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
-						+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
-
-			log_access(client);
-
-			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
-						+ " can send a new request : POLLIN");
-
-			client->set_bytes_written(0);
-			client->clear_read_buffer();
-			client->clear_write_buffer();
-			client->set_response_complete(false);
-			client->set_state(READING);
-			return ;
-		}
+			handle_fully_sent_response(client);
     }
 }
 
@@ -456,7 +454,7 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 				+ " is ready to receive the end of the response's body : POLLOUT");
 
 	cgi->consume_read_buffer(cgi->get_read_buffer().size());
-
+	
 	client->set_response_complete(true);
 	client->set_status_code(200);
 }

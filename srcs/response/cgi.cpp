@@ -85,6 +85,29 @@ c_cgi::~c_cgi()
 {
 }
 
+void    c_cgi::clear_context()
+{
+    this->_loc = NULL;
+    this->_script_name = "";
+    this->_path_info = "";
+    this->_translated_path ="";
+    this->_interpreter = "";
+    this->_relative_argv = "";
+    this->_relative_script_name = "";
+    this->_finished = false;
+    this->_content_length = 0;
+    this->_body_size = 0;
+    this->_headers_parsed = false;
+    this->_pipe_in = 0;
+    this->_pipe_out = 0;
+    this->_write_buffer.clear();
+    this->_read_buffer.clear();
+    this->_bytes_written = 0;
+    this->_map_env_vars.clear();
+    this->_vec_env_vars.clear();
+    this->_request_fully_sent_to_cgi = false;
+}
+
 void    c_cgi::append_read_buffer(const char* buffer, ssize_t bytes)
 {
     if (!buffer || bytes == 0)
@@ -191,15 +214,48 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 {
     this->_status_code = request.get_status_code();
     this->_loc = &loc;
-    
+    char cwd[1024];
+
+    // Sauvegarder le répertoire courant
+    if (getcwd(cwd, sizeof(cwd)) == NULL) 
+    {
+        perror("getcwd() error");
+        return 1;
+    }
+    std::string old_dir = cwd;
+ 
     string extension = find_script_extension(target);
 
     resolve_cgi_paths(loc, request.get_target());
     if (!this->_relative_argv.empty())
     {
+        if (chdir("www/cgi-bin/") == 0)
+        {
+            ifstream file_checker(this->_relative_argv.c_str());
+            if (!file_checker.is_open())
+            {
+                if (chdir(old_dir.c_str()) != 0)
+                    perror("chdir()");
+                this->_status_code = 404;
+                return (1);
+            }
+            else
+            {
+                file_checker.close();
+                if (chdir(old_dir.c_str()) != 0)
+                {
+                    perror("chdir");
+                    return (1);
+                }
+            }
+        }
         if (this->_relative_argv.find("data") == string::npos)
         {
-            cout << "WARNING: CGI's argument file is outside data file" << endl;
+            if (chdir(old_dir.c_str()) != 0)
+                perror("chdir()");
+            this->_status_code = 403;
+            clear_context();
+            _server.log_message("[WARN] CGI's argument is outside data file");
             return (1);
         }
     }
@@ -318,13 +374,13 @@ string  c_cgi::launch_cgi(const string &body)
                 perror("chdir failed");
                 return ("");
             }
-
-                char *argv[4];
-                argv[0] = const_cast<char*>(this->_interpreter.c_str());
-                argv[1] = const_cast<char*>(this->_relative_script_name.c_str());
-                argv[2] = const_cast<char*>(this->_relative_argv.c_str());
-                argv[3] = NULL;
-                execve(this->_interpreter.c_str(), argv, &envp[0]);
+            cout << "coucou" << endl;
+            char *argv[4];
+            argv[0] = const_cast<char*>(this->_interpreter.c_str());
+            argv[1] = const_cast<char*>(this->_relative_script_name.c_str());
+            argv[2] = const_cast<char*>(this->_relative_argv.c_str());
+            argv[3] = NULL;
+            execve(this->_interpreter.c_str(), argv, &envp[0]);
         }
         else
         {
