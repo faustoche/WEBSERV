@@ -67,6 +67,7 @@ private :
             void                parse_upload_path(c_location & location);
             void                parse_redirect(c_location & location);
             void                loc_parse_error_page(c_location & location);
+            void                parse_allowed_extensions(c_location & location);
 
             // utils
             void                expected_token_type(int expected_type) const;

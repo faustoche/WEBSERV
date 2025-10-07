@@ -137,7 +137,7 @@ void	c_request::init_request()
 	this->_disconnected = false;
 	this->_content_length = 0;
 	this->_chunk_line_count = 0;
-	this->_client_max_body_size = 0;
+	this->_client_max_body_size = 0; // limite systeme par defaut
 	this->_socket_fd = _client.get_fd();
 	// this->_client = NULL;
 

@@ -72,9 +72,6 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	cout << YELLOW << "method = " << method << endl;
-	cout << "max body size = " << request.get_client_max_body_size() << endl;
-	cout << "status code = " << status_code << RESET << endl;
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
@@ -303,9 +300,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	string content_type = request.get_header_value("Content-Type");
 	
-	// cout << YELLOW << body << RESET << endl;
-	cout << PINK << __LINE__ << " / " << __FILE__ << endl;
-
 	// PARSING
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
@@ -316,7 +310,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
-	// cout << body << endl;
 	if (get_status() >= 400)
 	{
 		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
@@ -337,6 +330,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
@@ -363,7 +357,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		for (size_t i = 0; i < uploaded_files.size(); i++)
 		{
 			load_upload_page(version, request);
-			//buid_upload_success_response(uploaded_files[i], version, request);
 		}
 	}
 	else
@@ -436,7 +429,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 		if (!create_directory("./www/data/"))
 			return "";
 	}
-	string safe_filename = sanitize_filename(part.filename);
+	string safe_filename = sanitize_filename(part.filename, location);
 	if (safe_filename.empty())
 		return "";
 
@@ -491,6 +484,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
@@ -526,7 +520,11 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 			break;
 		
 		parts.push_back(single_part);
+		if (single_part.content.empty())
+			cout << PINK << __LINE__ << " / EMPTY / " << __FILE__ << endl;
 	}
+	if (parts.empty())
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	return parts;
 }
 
@@ -688,7 +686,7 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
-	string filename = "./www/data/contact.txt"; //location.get_upload_path();
+	string filename = "./www/data/contact.txt"; //location->get_upload_path();
 	ofstream file(filename.c_str(), ios::binary);
 
 	if (!file.is_open())
@@ -711,29 +709,34 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	return true;
 }
 
-string  c_response::extract_extension(const string &filename, string &name)
+string  c_response::extract_extension(const string &filename, string &name, c_location *location)
 {
     size_t point_pos = filename.find_last_of(".");
     if (point_pos == string::npos)
         return "";
     if (point_pos == 0)
         return "";
-    string extension = filename.substr(point_pos + 1);
+    string extension = filename.substr(point_pos); // + 1 enleve
     name = filename.substr(0, point_pos);
-    if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
-        && extension != "pdf" && extension != "txt")
-    {
-        cout << "Error: extension not allowded (." << extension << ")" << endl;
+
+	if (location->get_allowed_extensions().empty() || 
+		find(location->get_allowed_extensions().begin(), location->get_allowed_extensions().end(), extension) != location->get_allowed_extensions().end())
+	{
+		return extension;
+	}
+	else 
+	{
+		cout << "Error: extension not allowded (" << extension << ")" << endl;
         return "";
-    }
+	}
     return extension;
 }
 
 
-string  c_response::sanitize_filename(const string &filename)
+string  c_response::sanitize_filename(const string &filename, c_location *location)
 {
     string name;
-    string extension = extract_extension(filename, name);
+    string extension = extract_extension(filename, name, location);
     if (extension.empty())
 	{
 		set_status(415); // unsupported media type
@@ -761,7 +764,7 @@ string  c_response::sanitize_filename(const string &filename)
         clean_name = clean_name.substr(0, 200);
     clean_name = trim_underscore(clean_name);
     if (!extension.empty())
-        return clean_name += "." + extension;
+        return clean_name += extension;
     else
         return clean_name;
 }

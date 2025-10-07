@@ -58,9 +58,9 @@ void	c_request::read_request()
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
 	{
 		this->set_client_max_body_size(matching_location->get_body_size());
-		cout << RED << matching_location->get_body_size() << RESET << endl;
-		cout << RED << matching_location->get_alias() << RESET << endl;
 	}
+	if (this->_client_max_body_size == 0)
+		_client_max_body_size = 100 * 1024 * 1024; // 100 MB
 	
 	/* -----Lire le body -----*/
 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
@@ -229,6 +229,66 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 	}
 	return (0);
 }
+
+
+/* PB de taille des chunck dans le cas dun file avec taille illimite --> PB des fois ulpoad reussi dautre fois non */
+// void c_request::fill_body_with_chunks(string &accumulator)
+// {
+// 	string			tmp;
+// 	size_t			pos;
+
+// 	while (true)
+//     {
+//         if (this->_chunk_line_count % 2 == 0)
+//         {
+//            // on attend la ligne de taille
+// 			pos = accumulator.find("\r\n");
+// 			if (pos == string::npos)
+// 				return ; // pas assez de donnees on attend le prochain recv
+			
+// 			tmp = accumulator.substr(0, pos);
+// 			accumulator.erase(0, pos + 2); // supprimer \r\n
+			
+// 			if (tmp.empty())
+// 				continue ;
+
+// 			this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
+// 			this->_chunk_line_count++;
+
+// 			if (this->_expected_chunk_size == 0)
+// 			{
+// 				this->_request_fully_parsed = true;
+// 				accumulator.clear();
+// 				return ;
+// 			}
+//         }
+//         else
+//         {
+//             // On attend les données du chunk + \r\n       
+// 			if (accumulator.size() < this->_expected_chunk_size + 2)
+// 				return ; // pas assez de donnees, on attend
+			
+// 			tmp = accumulator.substr(0, this->_expected_chunk_size);
+// 			accumulator.erase(0, this->_expected_chunk_size);
+
+// 			// verifier et consommer le \r\n
+// 			if (accumulator.size() >= 2 && accumulator.substr(0, 2) == "\r\n")
+// 				accumulator.erase(0, 2);
+// 			else
+// 			{
+// 				_server.log_message("[ERROR] Missing \\r\\n after chunk data");
+// 				this->_status_code = 400;
+// 				this->_error = true;
+// 				return;
+// 			}
+
+// 			if (this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size))
+// 				return;
+			
+// 			this->_chunk_line_count++;
+//         }
+//     }
+// }
 
 void c_request::fill_body_with_chunks(string &accumulator)
 {
