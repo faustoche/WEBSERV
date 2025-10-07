@@ -52,6 +52,7 @@ class c_request
         void    check_required_headers();
         void    check_port();
         bool    is_valid_header_value(string& key, const string& value);
+        bool    is_limited() const { return _client_max_body_size > 0; };
         
 
         // string  ft_trim(const string& str);
@@ -69,6 +70,7 @@ class c_request
         const string    &get_ip_client() const { return _ip_client; }
         bool            get_has_body() {return _has_body; }
         bool            get_error() {return _error; }
+        bool            get_error() const {return _error; }
         bool            is_client_disconnected() { return _disconnected; };
         const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;

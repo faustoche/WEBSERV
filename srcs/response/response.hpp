@@ -62,6 +62,7 @@ public:
 	const string 	&get_header_value(const string& key) const;
 	void			set_body(const string &body) { this->_body = body; };
 	void			set_status(const int &status) { this->_status = status; };
+	int				get_status() { return this->_status; };
 	const string	&get_body() { return this->_body; };
 	bool			get_is_cgi() { return this->_is_cgi; };
 	bool			get_error() { return this->_error; };
@@ -102,7 +103,9 @@ private:
 	string						extract_after_points(const string &line);
 	string						extract_boundary(const string &content_type);
 	string						save_uploaded_file(const s_multipart &part, c_location *location);
+	string 						extract_extension(const string &filename, string &name);
 	void						buid_upload_success_response(const string &file_path, const string version, const c_request &request);
+	string						sanitize_filename(const string &filename);
 	/***** DELETE method *****/
 	void						handle_delete_todo(const c_request &request, const string &version);
 	void						handle_delete_request(const c_request &request, const string &version, string file_path);
