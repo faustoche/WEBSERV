@@ -33,6 +33,9 @@ void c_server::setup_pollfd()
 		int client_fd = it->first;
 		c_client &client = it->second;
 		time_t now = time(NULL);
+		int timeout_value = TIMEOUT;
+		if (client.get_state() == PROCESSING || client.get_state() == SENDING)
+			timeout_value = TIMEOUT * 3;
 		if (now - client.get_last_modified() > TIMEOUT)
 		{
 			log_message("[DEBUG] Client " + int_to_string(client.get_fd()) + " has timed out");

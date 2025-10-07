@@ -178,7 +178,7 @@
             <!-- INput personnalisé pour que ce soit en anglais sinon c'est tiré directement du navigateur -->
             <label for="fileInput" class="custom-file-label">BROWSE</label>
             <span class="file-name">No file chosen</span>
-            <input type="file" name="file" id="fileInput" required>
+            <input type="file" name="file[]" id="fileInput" multiple>
             
             <div class="button-group">
                 <button type="submit">SEND</button>
@@ -220,7 +220,8 @@
 
         fileInput.addEventListener("change", () => {
             if (fileInput.files.length > 0) {
-                fileNameSpan.textContent = fileInput.files[0].name;
+                const names = Array.from(fileInput.files).map(f => f.name).join(", ");
+                fileNameSpan.textContent = names;
             } else {
                 fileNameSpan.textContent = "No file chosen";
             }

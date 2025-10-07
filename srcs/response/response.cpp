@@ -295,6 +295,12 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
 	string body = request.get_body();
+	if (body.empty())
+	{
+		_server.log_message("[ERROR] Empty body for upload request");
+		build_error_response(400, version, request);
+		return ;
+	}
 	string content_type = request.get_header_value("Content-Type");
 	
 	// cout << YELLOW << body << RESET << endl;
@@ -1036,27 +1042,61 @@ void c_response::build_error_response(int error_code, const string version, cons
 	string status;
 	string error_content;
 
-	// Définir le message de statut
-	// switch (error_code)
-	// {
-	// 	case 400:
-	// 		status = "Bad Request";
-	// 		break;
-	// 	case 404:
-	// 		status = "Not Found";
-	// 		break;
-	// 	case 405:
-	// 		status = "Method Not Allowed";
-	// 		break;
-	// 	case 505:
-	// 		status = "HTTP Version Not Supported";
-	// 		break;
-	// 	default:
-	// 		status = "Internal Server Error";
-	// 		break;
-	// }
+	switch (error_code)
+	{
+		case 400:
+			status = "Bad Request";
+			break;
+		case 401:
+			status = "Unauthorized";
+			break;
+		case 403:
+			status = "Forbidden";
+			break;
+		case 404:
+			status = "Not Found";
+			break;
+		case 405:
+			status = "Method Not Allowed";
+			break;
+		case 408:
+			status = "Request Timeout";
+			break;
+		case 413:
+			status = "Payload Too Large";
+			break;
+		case 414:
+			status = "URI Too Long";
+			break;
+		case 415:
+			status = "Unsupported Media Type";
+			break;
+		case 429:
+			status = "Too Many Request";
+			break;
+		case 500:
+			status = "Internal Server Error";
+			break;
+		case 501:
+			status = "Not Implemented";
+			break;
+		case 502:
+			status = "Bad Gateway";
+			break;
+		case 503:
+			status = "Service Unavailable";
+			break;
+		case 504:
+			status = "Gateway Timeout";
+			break;
+		case 505:
+			status = "HTTP Version Not Supported";
+			break;
+		default:
+			status = "Internal Server Error";
+			break;
+	}
 
-	// c_client *client = _server.find_client(this->_client_fd);
 	_client.set_status_code(error_code);
 
 	map<int, string> const &err_pages = _server.get_err_pages();

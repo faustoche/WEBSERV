@@ -18,15 +18,22 @@ void	c_request::read_request()
 {
 	char	buffer[BUFFER_SIZE];
 	int		receivedBytes;
-	string	request;
+	string	request = "";
 	
+	_server.log_message("[DEBUG] === NEW read_request() - _body.size() = " 
+                        + int_to_string(this->_body.size()));
+    
+    this->init_request();
+    
+    _server.log_message("[DEBUG] After init_request() - _body.size() = " 
+                        + int_to_string(this->_body.size()));
+
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
 
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
-		// fill(buffer, buffer + sizeof(buffer), '\0');
 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
         if (receivedBytes <= 0)
 		{
@@ -37,8 +44,6 @@ void	c_request::read_request()
 			}
 			else if (receivedBytes < 0) 
 			{
-    			// Ici pas d'errno, donc on ne sait pas si c'est une vraie erreur
-    			// On se contente de logguer un warning
     			_server.log_message("[WARNING] recv() returned <0 for client " 
     			                    + int_to_string(_socket_fd) 
     			                    + ". Will retry on next POLLIN.");
@@ -289,7 +294,6 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 		this->fill_body_with_chunks(body_part);
 	while (!this->_request_fully_parsed && !this->_error)
 	{
-		// fill(buffer, buffer + sizeof(buffer), '\0');
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (string(buffer) == "\0\r\n\r\n")
 			break;
@@ -346,8 +350,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 	}
 
 	while (total_bytes < expected_length)
-	{	
-		// fill(buffer, buffer + buffer_size, '\0');
+	{
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{

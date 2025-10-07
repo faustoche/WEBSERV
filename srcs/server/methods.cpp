@@ -257,7 +257,7 @@ void c_response::handle_put_request(const c_request &request, c_location *locati
 	const string &body = request.get_body();
 	file.write(body.data(), body.size()); // je remplace le contenu par la data + la taille
 	file.close();
-
+	
 	_file_content = body;
 	build_success_response(file_path, version, request);
 }
