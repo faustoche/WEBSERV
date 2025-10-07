@@ -33,13 +33,15 @@ size_t	c_server::extract_content_length(string headers)
 void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer, size_t bytes)
 {
 	c_client *client = find_client(cgi->get_client_fd());
+	
 	if (client)
 	{
-	    client->get_write_buffer().append(buffer, bytes);
+	    client->get_write_buffer().append(buffer, 0, bytes);
 		client->append_response_body_size(buffer.size());
-
-		if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
-			cgi->set_finished(true);
+	}
+	if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
+	{
+		cgi->set_finished(true);
 	}
 }
 
@@ -77,6 +79,22 @@ void	c_server::fill_cgi_response_headers(string headers, c_cgi *cgi)
 		client->get_write_buffer().append("\r\n");
 		cgi->set_headers_parsed(true);
 	}
+}
+
+void	c_server::handle_fully_sent_response(c_client *client)
+{
+	int duration = client->get_last_modified() - client->get_creation_time();
+	log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
+				+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
+	log_access(client);
+	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
+				+ " can send a new request : POLLIN");
+	client->set_bytes_written(0);
+	client->clear_read_buffer();
+	client->clear_write_buffer();
+	client->set_response_complete(false);
+	client->set_state(READING);
+	return ;
 }
 
 void	c_server::fill_cgi_response_body(const char *buffer, size_t bytes, c_cgi *cgi)

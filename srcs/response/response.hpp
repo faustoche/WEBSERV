@@ -51,7 +51,7 @@ private:
 public:
 
 	void define_response_content(const c_request &request);
-	// void define_response_content(c_request &request, c_server &server, int client_fd);
+	// void define_response_content(const c_request &request, c_server &server, int client_fd);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }
 
@@ -76,7 +76,7 @@ private:
 	string	read_error_pages(int error_code);
 	void	build_success_response(const string &file_path, const string version, const c_request &request);
 	void    build_cgi_response(c_cgi & cgi, const c_request &request);
-	// void	build_error_response(int error_code, const string version, const c_request &request);
+	// void	build_error_response(int error_code, const string version, const const c_request &request);
 	void	build_redirect_response(int code, const string &location, const string &version, const c_request &request);
 	void	build_directory_listing_response(const string &dir_path, const string &version, const c_request &request);
 	string	load_file_content(const string &file_path);

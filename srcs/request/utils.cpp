@@ -92,6 +92,7 @@ void    c_request::check_port()
 
 void	c_request::print_full_request() const
 {
+	cout << "print full request" << endl;
 	if (this->_request_fully_parsed)
 	{
 		cout << "*********** START-LINE ************" << endl;
@@ -139,6 +140,7 @@ void	c_request::init_request()
 	this->_chunk_line_count = 0;
 	this->_client_max_body_size = 0; // limite systeme par defaut
 	this->_socket_fd = _client.get_fd();
+	this->_ip_client = _client.get_ip();
 	// this->_client = NULL;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)

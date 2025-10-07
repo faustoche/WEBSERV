@@ -121,6 +121,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
+	
 
 	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
@@ -201,11 +202,14 @@ void	c_response::define_response_content(const c_request &request)
 		
 		if (cgi->init_cgi(request, *matching_location, request.get_target()))
 		{
+			_server.cleanup_cgi(cgi);
+			this->_is_cgi = false;
 			set_error();
-			build_error_response(404, version, request);
+			build_error_response(cgi->get_status_code(), version, request);
 			return ;
 		}
 		build_cgi_response(*cgi, request);
+		
 		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
 		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
 		return ;
@@ -422,11 +426,11 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	
 	// si pas d'upload path donne dans le .conf on en donne un par defaut
 	if (uploaded_dir.empty())
-		uploaded_dir = "./www/data/";
+		uploaded_dir = "./www/upload/";
 	if (!directory_exists(uploaded_dir))
 	{
 		// si le dossier d'upload n'existe pas on cree un dossier
-		if (!create_directory("./www/data/"))
+		if (!create_directory("./www/upload/"))
 			return "";
 	}
 	string safe_filename = sanitize_filename(part.filename, location);
@@ -686,8 +690,8 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 
 bool	c_response::save_contact_data(const map<string, string> &data)
 {
-	string filename = "./www/data/contact.txt"; //location->get_upload_path();
-	ofstream file(filename.c_str(), ios::binary);
+	string filename = "./www/data/contact.txt"; 
+	ofstream file(filename.c_str(), ios::binary | ios::app);
 
 	if (!file.is_open())
 	{
@@ -950,6 +954,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 
 	if (cgi.get_interpreter().empty())
 		return ;
+
 	string content_cgi = cgi.launch_cgi(request_body);
 
 }
@@ -963,11 +968,9 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 	_response += "Location: /upload_success.html\r\n";
 	
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
 
 	_response += "Connection: " + connection + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -1107,6 +1110,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 	if (it != err_pages.end())
 	{
 		string error_path = it->second;
+		
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
@@ -1114,6 +1118,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 				root = "./www";
 			error_path = root + error_path;
 		}
+		
 		error_content = load_file_content(error_path);
 		if (error_content.empty())
 		{
@@ -1124,7 +1129,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 		}
 		else
 		{
-			cout << GREEN << "Successfully loaded error page (" << error_content.length() << " bytes)" << RESET << endl;
+			cout << GREEN << "Successfully loaded error page " << error_path << " (" << error_content.length() << " bytes)" << RESET << endl;
 		}
 	}
 	else
@@ -1144,12 +1149,10 @@ void c_response::build_error_response(int error_code, const string version, cons
 	_response += "Server: webserv/1.0\r\n";
 
 	string connection;
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
-		cerr << "Error: No Header: Connection is kept alive by default" << endl;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += error_content;
@@ -1194,13 +1197,11 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection = "keep-alive";
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
-		cerr << "Error: No Header: Connection is kept alive by default" << endl;
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
@@ -1236,24 +1237,22 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	ostringstream oss;
 	oss << content.length();
 
-	_response = version + " 200 OK\r\n";
+ 	(void)version;
+	_response = "HTTP/1.1 200 OK\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection = "keep-alive";
-	try {
-		connection = request.get_header_value("Connection");
-	} catch (...) {
-		cerr << "Error: No Header: Connection is kept alive by default" << endl;
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
 		connection = "keep-alive";
-	}
+
 	_response += "Connection: " + connection + "\r\n";
 	_response += "\r\n";
 	_response += content;
 	_file_content = content;
 
-	// c_client *client = _server.find_client(this->_client_fd);
 	_client.set_status_code(200);
 }
 
