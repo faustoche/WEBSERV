@@ -72,7 +72,6 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	cout << YELLOW << "TARGET = " << target << RESET << endl;
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
@@ -97,7 +96,7 @@ void	c_response::define_response_content(const c_request &request)
 		handle_todo_form(request, version);
 		return;
 	}
-	if (method == "GET" && target == "/page_upload.html")
+	if (method == "GET" && target == "/upload.html")
     {
         load_upload_page(version, request);
         return ;
@@ -309,6 +308,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status() >= 400 ? get_status() : 400, version, request);
 		return ;
 	}
@@ -316,6 +316,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
 	if (get_status() >= 400)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status(), version, request);
 		return ;
 	}
@@ -333,6 +334,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
@@ -356,16 +358,16 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	if (uploaded_files.size() > 0)
 	{
-		_response = version + " 303 See Other\r\n";
-		_response += "Location: /page_upload.html\r\n";
-		_response += "Content-Length: 0\r\n";
-		_response += "Connection: keep-alive\r\n";
-		_response += "Server: webserv/1.0\r\n\r\n";
-
-		_server.log_message("[INFO] ✅ Upload done. Redirection to /page_upload.html");
+		for (size_t i = 0; i < uploaded_files.size(); i++)
+		{
+			load_upload_page(version, request);
+		}
 	}
 	else
+	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
+	}
 }
 
 bool	file_exists(const std::string &path)
@@ -420,11 +422,6 @@ string	get_unique_filename(const string &directory, string &filename)
 
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
-	if (!location)
-    {
-        _server.log_message("[ERROR] NULL location in save_uploaded_file");
-        return "";
-    }
 	string	uploaded_dir = location->get_upload_path();
 	
 	// si pas d'upload path donne dans le .conf on en donne un par defaut
@@ -491,6 +488,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
@@ -967,7 +965,7 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 {
 	(void)file_path;
 	_response = version + " 303 See other\r\n";
-	_response += "Location: /page_upload.html\r\n";
+	_response += "Location: /upload_success.html\r\n";
 	
 	string connection;
 	connection = request.get_header_value("Connection");
