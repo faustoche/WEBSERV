@@ -832,6 +832,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, c_request &request)
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 
+	// cout << "request_body: " << request_body << endl; 
 	if (cgi.get_interpreter().empty())
 		return ;
 

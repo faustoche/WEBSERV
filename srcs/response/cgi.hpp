@@ -32,7 +32,7 @@ class c_cgi
         const pid_t&    get_pid() const { return _pid; };
         const string&   get_write_buffer() const { return _write_buffer; };
         const string&   get_read_buffer() const { return _read_buffer; };
-        const size_t&   get_bytes_written() const { return _bytes_written; };
+        // const size_t&   get_bytes_written() const { return _bytes_written; };
         const size_t&   get_content_length() const { return _content_length; };
         const int&      get_status_code() const { return _status_code; };
         bool            is_finished() { return _finished; };
@@ -42,17 +42,22 @@ class c_cgi
         void            set_headers_parsed(bool state) { _headers_parsed = state; };
         void            consume_read_buffer(size_t n);
         void            set_content_length(size_t bytes) { _content_length = bytes; };
-        void            set_body_size(size_t bytes) { _body_size = bytes; };
+        // void            set_body_size(size_t bytes) { _body_size = bytes; };
         const size_t&   get_body_size() { return _body_size; };
-        void            mark_request_fully_sent() { _request_fully_sent_to_cgi = true; };
+        const string&   get_body_to_send() const { return _body_to_send; };
+        const size_t&   get_body_sent() const { return _body_sent; };
+        // void            mark_request_fully_sent() { _request_fully_sent_to_cgi = true; };
         void            mark_stdin_closed() { _pipe_in = -1; };
         void            mark_stdout_closed() { _pipe_out = -1; };
+        void            set_body_fully_sent_to_cgi() { _body_fully_sent = true; };
 
-        void            add_bytes_written(ssize_t bytes) { _bytes_written += bytes; };
+        // void            add_bytes_written(ssize_t bytes) { _bytes_written += bytes; };
+        void            add_body_sent(ssize_t bytes) { _body_sent += bytes; };
         void            append_read_buffer(const char* buffer, ssize_t bytes);
         int             parse_headers(c_response &response, string& headers);
         bool            is_valid_header_value(string& key, const string& value);
-        bool            is_request_fully_sent_to_cgi() { return _request_fully_sent_to_cgi; };
+        // bool            is_request_fully_sent_to_cgi() { return _request_fully_sent_to_cgi; };
+        bool            is_body_fully_sent_to_cgi() { return _body_fully_sent; };
         void            vectorize_env();
         void            clear_context();
         void            close_cgi();
@@ -64,14 +69,18 @@ class c_cgi
         int                 _pipe_in;
         int                 _pipe_out;
         pid_t               _pid;
+        string              _body_to_send;
+        size_t              _body_sent;
         string              _write_buffer; //body a envoyer
         string              _read_buffer; // reponse CGI accumulee
         size_t              _bytes_written;
         size_t              _content_length;
         size_t              _body_size;
+        bool                _body_fully_sent;
         bool                _finished;
         bool                _headers_parsed;
         bool                _request_fully_sent_to_cgi;
+        time_t              _start_time;
 
         map<string, string> _map_env_vars;
         vector<string>      _vec_env_vars;

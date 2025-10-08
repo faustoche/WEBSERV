@@ -22,6 +22,10 @@ _server(server), _client_fd(client_fd)
     this->_map_env_vars.clear();
     this->_vec_env_vars.clear();
     this->_request_fully_sent_to_cgi = false;
+    this->_body_to_send.clear();
+    this->_body_sent = 0;
+    this->_body_fully_sent = false;
+    this->_start_time = time(NULL);
 }
 
 c_cgi::c_cgi(const c_cgi& other): _server(other._server)
@@ -47,6 +51,10 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
     this->_relative_argv = other._relative_argv;
     this->_relative_script_name = other._relative_script_name;
     this->_request_fully_sent_to_cgi = other._request_fully_sent_to_cgi;
+    this->_body_to_send = other._body_sent;
+    this->_body_sent = other._body_sent;
+    this->_body_fully_sent = other._body_fully_sent;
+    this->_start_time = other._start_time;
 }
 
 
@@ -77,6 +85,10 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
         this->_relative_argv = rhs._relative_argv;
         this->_relative_script_name = rhs._relative_script_name;
         this->_request_fully_sent_to_cgi = rhs._request_fully_sent_to_cgi;
+        this->_body_to_send = rhs._body_sent;
+        this->_body_sent = rhs._body_sent;
+        this->_body_fully_sent = rhs._body_fully_sent;
+        this->_start_time = rhs._start_time;
     }
     return (*this);
 }
@@ -176,15 +188,19 @@ size_t c_cgi::identify_script_type(const string& path)
     pos_script = path.find(".py");
     if (pos_script == string::npos)
     {
-        pos_script= path.find(".php");
+        pos_script = path.find(".sh");
         if (pos_script == string::npos)
         {
-            cerr << "Error: unknown script type" << endl;
-            return (string::npos);
+            pos_script= path.find(".php");
+            if (pos_script == string::npos)
+            {
+                cerr << "Error: unknown script type" << endl;
+                return (string::npos);
+            }
+             this->_script_name = path.substr(0, pos_script + 4);
+             this->_path_info = path.substr(pos_script + 4);
+            return (pos_script + 4);
         }
-         this->_script_name = path.substr(0, pos_script + 4);
-         this->_path_info = path.substr(pos_script + 4);
-        return (pos_script + 4);
     }
     this->_script_name = path.substr(0, pos_script + 3);
     this->_path_info = path.substr(pos_script + 3);
@@ -285,7 +301,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["PATH_INFO"] = this->_path_info;
     this->_map_env_vars["TRANSLATED_PATH"] = this->_translated_path;
     this->_map_env_vars["SCRIPT_FILENAME"] = this->_script_filename;
-    this->_map_env_vars["CONTENT-LENGTH"] = int_to_string(request.get_content_length());
+    this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_content_length());
     this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
     this->_map_env_vars["QUERY_STRING"] = request.get_query();
     this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
@@ -324,7 +340,10 @@ string  c_cgi::launch_cgi(const string &body)
 
     this->_pipe_in = server_to_cgi[1];
     this->_pipe_out = cgi_to_server[0];
-    this->_write_buffer = body;
+    this->_body_to_send = body;
+    this->_body_sent = 0;
+    this->_body_fully_sent = false;
+    this->_start_time = time(NULL);
     this->_read_buffer.clear();
     this->_bytes_written = 0;
 
@@ -337,7 +356,7 @@ string  c_cgi::launch_cgi(const string &body)
         return (""); // ou gérer l'erreur
     }
 
-    if (fcntl(this->_pipe_out, F_SETFL, flags_out | O_NONBLOCK) == -1 || fcntl(this->_pipe_in, F_SETFL, flags_out | O_NONBLOCK) == -1) 
+    if (fcntl(this->_pipe_out, F_SETFL, flags_out | O_NONBLOCK) == -1 || fcntl(this->_pipe_in, F_SETFL, flags_in| O_NONBLOCK) == -1) 
     {
         perror("fcntl F_SETFL O_NONBLOCK failed");
         return (""); // ou gérer l'erreur
@@ -353,13 +372,15 @@ string  c_cgi::launch_cgi(const string &body)
     /**** Processus enfant ****/
     if (this->_pid == 0)
     {
-        /* Redirection stdin depuis le pipe d'entree: permet au parent server le body au cgi */
+        /* Redirection stdin depuis le pipe d'entree: permet au parent d'envoyer le body au cgi */
         dup2(server_to_cgi[0], STDIN_FILENO);
-        close(server_to_cgi[1]);
+        close(server_to_cgi[0]);
+        close(this->_pipe_in);
 
         /* Redirection stdout vers le pipe de sortie: permet au cgi de renvoyer la reponse au server */
         dup2(cgi_to_server[1], STDOUT_FILENO);
-        close(cgi_to_server[0]);
+        close(cgi_to_server[1]);
+        close(this->_pipe_out);
      
         /**** Convertir en tableau de char* pour execve ****/
         vector<char*> envp;
@@ -372,9 +393,8 @@ string  c_cgi::launch_cgi(const string &body)
             if (chdir("www/cgi-bin/") != 0) 
             {
                 perror("chdir failed");
-                return ("");
+                exit(1);
             }
-            cout << "coucou" << endl;
             char *argv[4];
             argv[0] = const_cast<char*>(this->_interpreter.c_str());
             argv[1] = const_cast<char*>(this->_relative_script_name.c_str());

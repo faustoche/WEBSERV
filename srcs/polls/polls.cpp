@@ -150,7 +150,9 @@ void c_server::handle_poll_events()
 
 				// Ecriture vers CGI
 				if ((pfd.revents & POLLOUT) && (fd == cgi->get_pipe_in()))
+				{
 					handle_cgi_write(cgi);
+				}
 
 				// Lecture vers CGI
 				if ((pfd.revents & POLLIN) && (fd == cgi->get_pipe_out()))
@@ -161,8 +163,6 @@ void c_server::handle_poll_events()
 				{
 					if (fd == cgi->get_pipe_out() && !client->get_response_complete())
 					{
-						// if (!cgi->is_finished())
-						// 	cgi->set_finished(true);
 						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
 						return ;
 					}
@@ -458,22 +458,41 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 
 void	c_server::handle_cgi_write(c_cgi* cgi)
 {
-	ssize_t bytes = write(cgi->get_pipe_in(), 
-						cgi->get_write_buffer().c_str() + cgi->get_bytes_written(),
-						cgi->get_write_buffer().size() - cgi->get_bytes_written());
-	
-	if (bytes > 0)
-		cgi->add_bytes_written(bytes);
-	
+	if (cgi->is_body_fully_sent_to_cgi())
+		return ;
 
-	if (cgi->get_write_buffer().size() == cgi->get_bytes_written())
+	size_t	remaining = cgi->get_body_to_send().length() - cgi->get_body_sent();
+	int 	fd = cgi->get_pipe_in();
+
+	if (remaining == 0)
 	{
-		cgi->mark_request_fully_sent();
-		_active_cgi.erase(cgi->get_pipe_in());
-		remove_client(cgi->get_pipe_in());
-		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_in()) + " erased from active_cgi");
+		if (cgi->get_body_sent() > 0)
+			log_message("[DEBUG] request body fully sent to CGI " 
+    	                    + int_to_string(fd) 
+    	                    + ". Closing pipe_in.");
+		cgi->set_body_fully_sent_to_cgi();
+		_active_cgi.erase(fd);
+		remove_client(fd);
+		log_message("[DEBUG] fd " + int_to_string(fd) 
+						+ " erased from active_cgi");
+		close(fd);
 		cgi->mark_stdin_closed();
-	}	
+		return ;
+	}
+
+	ssize_t bytes = write(fd, cgi->get_body_to_send().c_str() + cgi->get_body_sent(),
+						remaining);
+
+	if (bytes < 0)
+	{
+		log_message("[WARNING] recv() returned < 0 for CGI " 
+    	                    + int_to_string(fd) 
+    	                    + ". Will retry on next POLLIN.");
+    	return;
+	}
+
+	cgi->add_body_sent(bytes);
+
 }
 
 void c_server::check_terminated_cgi_processes()
