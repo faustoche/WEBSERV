@@ -73,7 +73,7 @@ for key in [
     "PATH_INFO", 
     "QUERY_STRING", 
     "REMOTE_ADDR",
-    "CONTENT-LENGT",
+    "CONTENT_LENGTH",
     "CONTENT_TYPE",
     "SERVER_PROTOCOL",
     "GATEWAY_INTERFACE",

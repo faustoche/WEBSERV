@@ -17,7 +17,7 @@ class c_cgi
 
 
         int             init_cgi(const c_request &request, const c_location &loc, string file_path);
-        string          launch_cgi(const string &body);
+        int            launch_cgi(const string &body);
         int             resolve_cgi_paths(const c_location &loc, const string& filename);
         void            set_environment(const c_request &request);
         void            set_script_filename(const string& filename) { this->_script_filename = filename; };

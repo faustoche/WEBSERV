@@ -135,7 +135,8 @@ void	c_response::define_response_content(c_request &request)
 		{
 			if (_server.get_indexes().empty())
 			{
-				cout << "Error: no location found for target: " << target  << endl;
+				// cout << "Error: no location found for target: " << target  << endl;
+				_server.log_message("[ERROR] No location found for target " + target);
 				build_error_response(404, version, request);
 				return ;
 			}
@@ -248,10 +249,10 @@ void	c_response::handle_post_request(c_request &request, c_location *location, c
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	cout << "=== DEBUG POST ===" << endl
-			<< "Body recu: [" << body << "]" << endl
-			<< "Content-Type: [" << content_type << "]" << endl
-			<< "Target: [" << request.get_target() << "]" << endl;
+	// cout << "=== DEBUG POST ===" << endl
+	// 		<< "Body recu: [" << body << "]" << endl
+	// 		<< "Content-Type: [" << content_type << "]" << endl
+	// 		<< "Target: [" << request.get_target() << "]" << endl;
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
@@ -313,7 +314,7 @@ void	c_response::handle_upload_form_file(c_request &request, const string &versi
 		{
 			if(part.name == "description")
 				description = part.content;
-			cout << "Textual field: " << part.name << " = " << part.content << endl;
+			// cout << "Textual field: " << part.name << " = " << part.content << endl;
 		}
 	}
 	if (uploaded_files.size() > 0)
@@ -406,7 +407,8 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	ofstream file(final_path.c_str(), ios::binary);
 	if (!file.is_open())
 	{
-		cerr << "Error: the server can't upload the file " << final_path <<endl;
+		_server.log_message("[ERROR] the server cannot upload file " + final_path);
+		// cerr << "Error: the server can't upload the file " << final_path <<endl;
 		return "";
 	}
 	// cout << PINK << part.content << RESET << endl;
@@ -514,7 +516,6 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	size_t pos = content_section.rfind("\r\n--");
 	if ( pos != string::npos)
 	{
-		cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		content_section.erase(pos);
 	}
 	// cout << ORANGE << header_section << endl;
@@ -530,7 +531,6 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	part.is_file = !part.filename.empty();
 
 	// print des octets finaux
-	cout << YELLOW << __LINE__ << " / " << __FILE__ << endl;
 		for (size_t j = content_section.size() - 20; j < content_section.size(); j++) {
     printf("%02X ", (unsigned char)content_section[j]);
 	}
@@ -636,7 +636,8 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 
 	if (!file.is_open())
 	{
-		cerr << "Error with the creation of the file " << filename << endl;
+		_server.log_message("[ERROR] error with the creation of file " + filename);
+		// cerr << "Error with the creation of the file " << filename << endl;
 		return false;
 	}
 
@@ -644,7 +645,7 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	char *str_time = ctime(&now);
 	str_time[strlen(str_time) - 1] = '\0';
 
-	file << "[ " << str_time << " ] ";
+	// file << "[ " << str_time << " ] ";
 	for (map<string, string>::const_iterator it = data.begin(); it != data.end(); it++)
 	{
 		file << it->first << "=" << it->second << "; ";
@@ -836,7 +837,7 @@ void	c_response::build_cgi_response(c_cgi & cgi, c_request &request)
 	if (cgi.get_interpreter().empty())
 		return ;
 
-	string content_cgi = cgi.launch_cgi(request_body);
+	this->set_status(cgi.launch_cgi(request_body));
 
 }
 
@@ -946,19 +947,19 @@ void c_response::build_error_response(int error_code, const string version, c_re
 		error_content = load_file_content(error_path);
 		if (error_content.empty())
 		{
-			cerr << RED << "Error: Could not load error page: " << error_path << RESET << endl;
+			_server.log_message("[ERROR] could not load error page : " + error_path);
 			ostringstream fallback;
 			fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 			error_content = fallback.str();
 		}
 		else
 		{
-			cout << GREEN << "Successfully loaded error page " << error_path << " (" << error_content.length() << " bytes)" << RESET << endl;
+			_server.log_message("[INFO] ✅ Successfully loaded error page: " + error_path);
 		}
 	}
 	else
 	{
-		cerr << YELLOW << "Warning: No error page configured for code " << error_code << RESET << endl;
+		_server.log_message("[WARN] No error page configured for code " + int_to_string(error_code));
 		ostringstream fallback;
 		fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 		error_content = fallback.str();

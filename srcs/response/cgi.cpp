@@ -126,7 +126,7 @@ void    c_cgi::append_read_buffer(const char* buffer, ssize_t bytes)
         return ;
     if (_read_buffer.size() + bytes > 10 * 1024 * 1024) 
     {
-        std::cerr << "CGI output too large, killing process" << std::endl;
+        _server.log_message("[ERROR] CGI output too large, killing process");
         kill(this->get_pid(), SIGKILL); // ou close le fd
         return;
     }
@@ -194,7 +194,7 @@ size_t c_cgi::identify_script_type(const string& path)
             pos_script= path.find(".php");
             if (pos_script == string::npos)
             {
-                cerr << "Error: unknown script type" << endl;
+                _server.log_message("[ERROR] Unknown script type");
                 return (string::npos);
             }
              this->_script_name = path.substr(0, pos_script + 4);
@@ -235,7 +235,7 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
     // Sauvegarder le répertoire courant
     if (getcwd(cwd, sizeof(cwd)) == NULL) 
     {
-        perror("getcwd() error");
+        _server.log_message("[ERROR] getcwd failed");
         return 1;
     }
     std::string old_dir = cwd;
@@ -251,7 +251,7 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
             if (!file_checker.is_open())
             {
                 if (chdir(old_dir.c_str()) != 0)
-                    perror("chdir()");
+                    _server.log_message("[ERROR] chdir failed");
                 this->_status_code = 404;
                 return (1);
             }
@@ -260,7 +260,7 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
                 file_checker.close();
                 if (chdir(old_dir.c_str()) != 0)
                 {
-                    perror("chdir");
+                    _server.log_message("[ERROR] chdir failed");
                     return (1);
                 }
             }
@@ -268,7 +268,7 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
         if (this->_relative_argv.find("data") == string::npos)
         {
             if (chdir(old_dir.c_str()) != 0)
-                perror("chdir()");
+                _server.log_message("[ERROR] chdir failed");
             this->_status_code = 403;
             clear_context();
             _server.log_message("[WARN] CGI's argument is outside data file");
@@ -327,15 +327,15 @@ string make_absolute(const string &path)
     return (path);
 }
 
-string  c_cgi::launch_cgi(const string &body)
+int c_cgi::launch_cgi(const string &body)
 {
     int server_to_cgi[2];
     int cgi_to_server[2];
 
     if (pipe(server_to_cgi) < 0 || pipe(cgi_to_server) < 0)
     {
-        cout << "(CGI): Error de pipe" << endl;
-        return ("500 Internal server error");
+        _server.log_message("[ERROR] pipe error");
+        return (500);
     }
 
     this->_pipe_in = server_to_cgi[1];
@@ -352,21 +352,21 @@ string  c_cgi::launch_cgi(const string &body)
 
     if (flags_out == -1 || flags_in == -1) 
     {
-        perror("fcntl F_GETFL failed");
-        return (""); // ou gérer l'erreur
+        _server.log_message("[ERROR] flags fcntl failed");
+        return (500);
     }
 
     if (fcntl(this->_pipe_out, F_SETFL, flags_out | O_NONBLOCK) == -1 || fcntl(this->_pipe_in, F_SETFL, flags_in| O_NONBLOCK) == -1) 
     {
-        perror("fcntl F_SETFL O_NONBLOCK failed");
-        return (""); // ou gérer l'erreur
+        _server.log_message("[ERROR] flags fcntl failed");
+        return (500);
     }
 
     this->_pid = fork();
     if (this->_pid < 0)
     {
-        cout << "(CGI): Error de fork";
-        return ("500 Internal server error");        
+        _server.log_message("[ERROR] fork failed");
+        return (500);
     }
 
     /**** Processus enfant ****/
@@ -392,7 +392,7 @@ string  c_cgi::launch_cgi(const string &body)
         {
             if (chdir("www/cgi-bin/") != 0) 
             {
-                perror("chdir failed");
+                // perror("chdir failed");
                 exit(1);
             }
             char *argv[4];
@@ -411,7 +411,6 @@ string  c_cgi::launch_cgi(const string &body)
             execve(this->_interpreter.c_str(), argv, &envp[0]);
         }
 
-        cout << "Status: 500 Internal Server Error" << endl;
         exit(1);
     }
 
@@ -422,6 +421,6 @@ string  c_cgi::launch_cgi(const string &body)
     _server.add_fd(this->_pipe_in, POLLOUT);
     _server.add_fd(this->_pipe_out, POLLIN);
 
-    return ("");
+    return (200);
 }
 

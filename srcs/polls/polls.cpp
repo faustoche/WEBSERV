@@ -88,9 +88,12 @@ void c_server::setup_pollfd()
 		c_cgi *cgi = find_cgi_by_client(to_remove[i]);
 		if (cgi)
 		{
+			log_message("[INFO] Killing CGI pid " + int_to_string(cgi->get_pid()) 
+							+ "linked to client" + int_to_string(i));
 			kill(cgi->get_pid(), SIGTERM);
 			cleanup_cgi(cgi);
 		}
+		log_message("[INFO] Closing client " + int_to_string(i) + " (timeout inactivity)");
 		remove_client(to_remove[i]);
 	}
 }
@@ -186,9 +189,7 @@ void c_server::handle_poll_events()
 			}
 
 			if (pfd.revents & POLLIN)
-			{
 				handle_client_read(fd);
-			}
 			else if (pfd.revents & POLLOUT)
 			{
 				handle_client_write(fd);
@@ -509,7 +510,7 @@ void c_server::check_terminated_cgi_processes()
 		{
         	if (!terminated_cgi)
         	{
-        	    cerr << "Warning: Unknown CGI process " << pid << " terminated\n";
+				log_message("[WARN] Unkown CGI pid " + int_to_string(pid));
         	    continue;
         	}
 		
