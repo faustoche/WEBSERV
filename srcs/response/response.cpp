@@ -419,6 +419,11 @@ string	get_unique_filename(const string &directory, string &filename)
 
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
+	if (!location)
+    {
+        _server.log_message("[ERROR] NULL location in save_uploaded_file");
+        return "";
+    }
 	string	uploaded_dir = location->get_upload_path();
 	
 	// si pas d'upload path donne dans le .conf on en donne un par defaut
