@@ -50,7 +50,6 @@ print("""
       border:5px ridge #ff00aa;
       max-width:300px;
     }
-<<<<<<< HEAD:www/cgi-bin/html.py
     .back-link {
             display: inline-block;
             background: rgb(21, 255, 0);
@@ -66,12 +65,6 @@ print("""
             border: 2px solid rgb(252, 248, 17);
             color: #000000;
       }
-=======
-    ul {
-      text-align: left;
-    }
-      
->>>>>>> main:www/cgi-bin/env.py
   </style>
 </head>
 <body>
