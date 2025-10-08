@@ -343,17 +343,14 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 	int		receivedBytes;
 
 	c_client *client = _server.find_client(socket_fd);
-	// je rajoute ce check
 	if (!client)
 	{
 		this->_error = true;
 		return ;
 	}
-
 	if (!body_part.empty())
 	{
 		this->fill_body_with_chunks(body_part);
-		// je rajoute ce check
 		if (this->_request_fully_parsed)
 		{
 			_server.log_message("[DEBUG] Complete chunked body received in first packet");
@@ -376,8 +373,6 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 			} 
 			else if (receivedBytes < 0) 
 			{
-    			// Ici pas d'errno, donc on ne sait pas si c'est une vraie erreur
-    			// On se contente de logguer un warning
     			_server.log_message("[WARNING] recv() returned <0 for client " 
     			                    + int_to_string(socket_fd) 
     			                    + ". Will retry on next POLLIN.");
@@ -385,7 +380,6 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
     			return;
 			}
 		}
-		// buffer[receivedBytes] = '\0';
 		this->_chunk_accumulator.append(buffer, receivedBytes);
 		this->fill_body_with_chunks(this->_chunk_accumulator);
 	}
@@ -425,12 +419,10 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{
-    		if (receivedBytes == 0) // faut-il vraiment return et mettre _error a true ?
+    		if (receivedBytes == 0)
 			{
-				// verifier si on a recu tout ce qu'on attendait
 				if (total_bytes == expected_length)
 					return ;
-				// Connexion fermee avant d'avoir tout recu
 				_server.log_message("[ERROR] Incomplete body. Expected: " 
 									+ int_to_string(expected_length) + " Received: " + int_to_string(total_bytes));
 				this->_error = true;
@@ -439,17 +431,12 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 			else if (receivedBytes < 0) 
 			{
-    			// Ici pas d'errno, donc on ne sait pas si c'est une vraie erreur
-    			// On se contente de logguer un warning
-    			_server.log_message("[WARNING] recv() returned <0 for client " 
-    			                    + int_to_string(socket_fd) 
-    			                    + ". Will retry on next POLLIN.");
+    			_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(socket_fd) + ". Will retry on next POLLIN.");
 				this->_request_fully_parsed = false;
     			return;
 			}
 		}
 	
-		// buffer[receivedBytes] = '\0';
 		total_bytes += receivedBytes;
 		
 		if (total_bytes > expected_length && is_limited())
@@ -468,7 +455,6 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		if (total_bytes == expected_length)
 			break;
 	}
-	// fill(buffer, buffer + sizeof(buffer), '\0');
 }
 
 
@@ -478,22 +464,18 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 	{
 		if (this->get_content_length())
 		{
-			this->read_body_with_length(socket_fd, buffer, request); // sizeof(buffer) correspond a la taille du pointeur, changer pour passer BUFFER_SIZE
+			this->read_body_with_length(socket_fd, buffer, request);
 		}
 		else
 			this->read_body_with_chunks(socket_fd, buffer, request);
 		if (this->_error)
 			return ;
-		// je rajoute ca pour traiter les doubles uploads
 		if (this->_error)
-		{
 			return ;
-		}
 	}
 	// else
 	// 	this->_request_fully_parsed = true;
 }
-
 
 /************ SETTERS & GETTERS ************/
 
