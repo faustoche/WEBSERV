@@ -181,10 +181,23 @@ void c_server::handle_poll_events()
 			if (pfd.revents & 0 && time(NULL) - client->get_last_modified() > TIMEOUT)
 			{
 				log_message("[WARNING] Client " + int_to_string(fd) + " has timed out");
+				cout << __FILE__ << " - " << __LINE__ << endl;
 				remove_client(fd);
 			}
 
-			if (pfd.revents & POLLIN)
+			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				c_cgi* cgi = find_cgi_by_client(client->get_fd());
+				if (cgi)
+				{
+					kill(cgi->get_pid(), SIGTERM);
+					cleanup_cgi(cgi);
+					close_all_sockets_and_fd();
+				}
+				cout << __FILE__ << " - " << __LINE__ << endl;
+				remove_client(fd);
+			}	
+			else if (pfd.revents & POLLIN)
 			{
 				handle_client_read(fd);
 			}
@@ -200,18 +213,7 @@ void c_server::handle_poll_events()
     			        client->set_state(READING);
     			    }
     			}
-			}
-			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
-			{
-				c_cgi* cgi = find_cgi_by_client(client->get_fd());
-				if (cgi)
-				{
-					kill(cgi->get_pid(), SIGTERM);
-					cleanup_cgi(cgi);
-					close_all_sockets_and_fd();
-				}
-				remove_client(fd);
-			}			
+			}		
 		}
 	}
 }

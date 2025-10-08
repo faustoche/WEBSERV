@@ -485,7 +485,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
