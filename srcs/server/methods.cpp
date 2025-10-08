@@ -148,8 +148,8 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 
 void c_response::load_upload_page(const string &version, const c_request &request)
 {
-	string html_template = load_file_content("./www/page_upload.html");
-	string files_html;
+    string html_template = load_file_content("./www/page_upload.html");
+    string files_html;
 
 	string upload_dir = "./www/upload/";
 	DIR *dir = opendir(upload_dir.c_str());
@@ -179,8 +179,8 @@ void c_response::load_upload_page(const string &version, const c_request &reques
 	if (pos != string::npos)
 		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 
-	_file_content = html_template;
-	build_success_response("page_upload.html", version, request);
+    _file_content = html_template;
+    build_success_response("page_upload.html", version, request);
 }
 
 void c_response::handle_delete_upload(const c_request &request, const string &version)
