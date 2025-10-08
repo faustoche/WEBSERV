@@ -67,6 +67,7 @@ private :
             void                parse_upload_path(c_location & location);
             void                parse_redirect(c_location & location);
             void                loc_parse_error_page(c_location & location);
+            void                parse_allowed_extensions(c_location & location);
 
             // utils
             void                expected_token_type(int expected_type) const;
@@ -125,6 +126,10 @@ void            c_parser::parse_body_size(C & servloc)
     }
 
     size_t limit = convert_to_octet(str, suffix, i);
+
+    if (limit == 0)
+        throw invalid_argument("invalid argument for max_body_size, it can't be unlimited value => " + str);
+
     servloc.set_body_size(limit);
 }
 

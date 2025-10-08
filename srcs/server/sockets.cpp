@@ -69,7 +69,6 @@ void	c_server::close_all_sockets_and_fd(void)
 	for (map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		int socket_fd = it->first;
-		// int port = it->second;
 		close(socket_fd);
 	}
 	_multiple_ports.clear();

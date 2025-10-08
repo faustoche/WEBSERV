@@ -7,16 +7,15 @@
 * DOes the directory exist? Do we have access? -> checking permissions with stat
 */
 
-void	c_response::handle_delete_request(c_request &request, const string &version, string file_path)
+void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
 {
-	if (file_path.find("..") != string::npos) // empeche les suppressions dans les fichiers + loins
+	if (file_path.find("..") != string::npos)
 	{
 		build_error_response(403, version, request);
 		return ;
 	}
 	if (!is_existing_file(file_path))
 	{
-		cout << __FILE__ << "/" << __LINE__ << endl;
 		build_error_response(404, version, request);
 		return ;
 	}
@@ -39,7 +38,7 @@ void	c_response::handle_delete_request(c_request &request, const string &version
 	}
 }
 
-void c_response::load_todo_page(const string &version, c_request &request)
+void c_response::load_todo_page(const string &version, const c_request &request)
 {
 	string filename = "./www/data/todo.txt";
 	string todo_html = load_file_content("./www/todo.html");
@@ -63,7 +62,7 @@ void c_response::load_todo_page(const string &version, c_request &request)
 	build_success_response("todo.html", version, request);
 }
 
-void c_response::handle_todo_form(c_request &request, const string &version)
+void c_response::handle_todo_form(const c_request &request, const string &version)
 {
 	map<string, string>form = parse_form_data(request.get_body());
 	string task;
@@ -91,7 +90,7 @@ void c_response::handle_todo_form(c_request &request, const string &version)
 	load_todo_page(version, request);
 }
 
-void c_response::handle_delete_todo(c_request &request, const string &version)
+void c_response::handle_delete_todo(const c_request &request, const string &version)
 {
 	string target = request.get_target();
 	string task_to_delete;
@@ -130,7 +129,7 @@ void c_response::handle_delete_todo(c_request &request, const string &version)
 	}
 	infile.close();
 	if (!found)
-		cout << YELLOW << "Error: task cannot be found!" << RESET << endl;
+		_server.log_message("[ERROR] Task cannot be found");
 	
 	ofstream outfile(filename.c_str(), ios::trunc);
 	if (!outfile.is_open())
@@ -147,78 +146,75 @@ void c_response::handle_delete_todo(c_request &request, const string &version)
 
 /* GESTION DES UPLOADS */
 
-void c_response::load_upload_page(const string &version, c_request &request)
+void c_response::load_upload_page(const string &version, const c_request &request)
 {
-    string html_template = load_file_content("./www/upload.html");
+    string html_template = load_file_content("./www/page_upload.html");
     string files_html;
 
-    string upload_dir = "./www/data/";
-    DIR *dir = opendir(upload_dir.c_str());
-    if (dir)
-    {
-        struct dirent *entry;
-        while ((entry = readdir(dir)) != NULL)
-        {
-            string filename = entry->d_name;
-            if (filename == "." || filename == "..")
-                continue;
+	string upload_dir = "./www/upload/";
+	DIR *dir = opendir(upload_dir.c_str());
+	if (dir)
+	{
+		struct dirent *entry;
+		while ((entry = readdir(dir)) != NULL)
+		{
+			string filename = entry->d_name;
+			if (filename == "." || filename == "..")
+				continue;
 
-            files_html += "<div class=\"file-item\">";
-            files_html += "<div class=\"file-info\">";
-            files_html += "<span class=\"file-name-list\">" + filename + "</span>";
-            files_html += "</div>";
-            files_html += "<button class=\"delete-btn\" onclick=\"deleteFile('" + filename + "')\">DELETE</button>";
-            files_html += "</div>\n";
-        }
-        closedir(dir);
-    }
-    else
-    {
-        files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
-    }
-    size_t pos = html_template.find("{{FILES_HTML}}");
-    if (pos != string::npos)
-        html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
+			files_html += "<div class=\"file-item\">";
+			files_html += "<div class=\"file-info\">";
+			files_html += "<span class=\"file-name-list\">" + filename + "</span>";
+			files_html += "</div>";
+			files_html += "<button class=\"delete-btn\" onclick=\"deleteFile('" + filename + "')\">DELETE</button>";
+			files_html += "</div>\n";
+		}
+		closedir(dir);
+	}
+	else
+	{
+		files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
+	}
+	size_t pos = html_template.find("{{FILES_HTML}}");
+	if (pos != string::npos)
+		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 
     _file_content = html_template;
-    build_success_response("upload.html", version, request);
+    build_success_response("page_upload.html", version, request);
 }
 
-void c_response::handle_delete_upload(c_request &request, const string &version)
+void c_response::handle_delete_upload(const c_request &request, const string &version)
 {
-    string target = request.get_target();
-    string file_to_delete;
-    size_t pos = target.find("?file=");
-    
-    if (pos != string::npos)
-    {
-        file_to_delete = target.substr(pos + 6); // passer "?file=" + 6
-        file_to_delete = url_decode(file_to_delete);
-    }
-    else
-    {
-        build_error_response(400, version, request);
-        return ;
-    }
+	string target = request.get_target();
+	string file_to_delete;
+	size_t pos = target.find("?file=");
+	
+	if (pos != string::npos)
+	{
+		file_to_delete = target.substr(pos + 6);
+		file_to_delete = url_decode(file_to_delete);
+	}
+	else
+	{
+		build_error_response(400, version, request);
+		return ;
+	}
 
-    string filename = "./www/data/" + file_to_delete;
-    
-    // pas desuppression de fichiers en dehors du dossier
-    if (file_to_delete.find("..") != string::npos || file_to_delete.find("todo.txt") != string::npos)
-    {
-        build_error_response(403, version, request);
-        return ;
-    }
-    
-    if (remove(filename.c_str()) != 0)
-    {
+	string filename = "./www/upload/" + file_to_delete;
+
+	if (file_to_delete.find("..") != string::npos || file_to_delete.find("todo.txt") != string::npos)
+	{
+		build_error_response(403, version, request);
+		return ;
+	}
+	
+	if (remove(filename.c_str()) != 0)
+	{
 		_server.log_message("[ERROR] file not found or cannot be deleted: " + filename);
-        // cout << YELLOW << "Warning: file not found or cannot be deleted: " << filename << RESET << endl;
-        build_error_response(500, version, request);
-        return ;
-    }
-    
+		build_error_response(404, version, request);
+		return ;
+	}
+	
 	_server.log_message("[INFO] ✅ FILE DELETED: " + filename);
-    // cout << GREEN << "File deleted: " << filename << RESET << endl;
-    load_upload_page(version, request); // charger page avec liste mise à jour
+	load_upload_page(version, request);
 }

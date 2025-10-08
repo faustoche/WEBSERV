@@ -172,10 +172,9 @@
     <div class="container">
         <h2>📨 UPLOAD</h2>
         
-        <form class="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+        <form class="upload-form" action="/page_upload" method="POST" enctype="multipart/form-data">
+            <p>Beware! Files cannot be bigger than 1MB.</p>
             <label>Choose a file :</label>
-            
-            <!-- INput personnalisé pour que ce soit en anglais sinon c'est tiré directement du navigateur -->
             <label for="fileInput" class="custom-file-label">BROWSE</label>
             <span class="file-name">No file chosen</span>
             <input type="file" name="file" id="fileInput" required>
@@ -212,7 +211,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error while deleting a task');
+                alert('Error while deleting a file');
             });
         }
         const fileInput = document.getElementById("fileInput");
@@ -223,6 +222,21 @@
                 fileNameSpan.textContent = fileInput.files[0].name;
             } else {
                 fileNameSpan.textContent = "No file chosen";
+            }
+        });
+    </script>
+    <script>
+        const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+        const uploadForm = document.querySelector(".upload-form");
+
+        uploadForm.addEventListener("submit", (event) => {
+            const files = fileInput.files;
+            for (const file of files) {
+                if (file.size > MAX_FILE_SIZE) {
+                    event.preventDefault(); // pempche l'envoi
+                    alert(`❌ The file "${file.name}" is too large. Max allowed size: 1 MB.`);
+                    return;
+                }
             }
         });
     </script>

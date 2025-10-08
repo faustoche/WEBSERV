@@ -14,7 +14,6 @@ void c_server::setup_pollfd()
 	std::vector<int> to_remove;
 
 	/**** INITIALISATION DES DONNÉES *****/
-
 	for (std::map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		struct pollfd server_pollfd;
@@ -32,8 +31,12 @@ void c_server::setup_pollfd()
 
 		int client_fd = it->first;
 		c_client &client = it->second;
+
 		time_t now = time(NULL);
-		if (now - client.get_last_modified() > TIMEOUT)
+		int timeout_value = TIMEOUT;
+		if (client.get_state() == PROCESSING || client.get_state() == SENDING)
+			timeout_value = TIMEOUT * 3;
+		if (now - client.get_last_modified() > timeout_value) // timeoutvalue a la place de timeout
 		{
 			log_message("[DEBUG] Client " + int_to_string(client.get_fd()) + " has timed out");
 			to_remove.push_back(client_fd);
@@ -111,7 +114,6 @@ void c_server::handle_poll_events()
 {
 	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
-	
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
 	if (num_events < 0)
 	{
@@ -126,10 +128,7 @@ void c_server::handle_poll_events()
 	{
 		/*struct*/ pollfd pfd = _poll_fds[i];
 		if (pfd.revents == 0)
-		{
 			continue ;
-		}
-
 		if (is_listening_socket(pfd.fd))
 		{
 			if (pfd.revents & POLLIN)
@@ -184,11 +183,24 @@ void c_server::handle_poll_events()
 				continue;
 			if (pfd.revents & 0 && time(NULL) - client->get_last_modified() > TIMEOUT)
 			{
-				log_message("[WARN] Client " + int_to_string(fd) + " has timed out");
+				log_message("[WARNING] Client " + int_to_string(fd) + " has timed out");
+				cout << __FILE__ << " - " << __LINE__ << endl;
 				remove_client(fd);
 			}
 
-			if (pfd.revents & POLLIN)
+			if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+			{
+				c_cgi* cgi = find_cgi_by_client(client->get_fd());
+				if (cgi)
+				{
+					kill(cgi->get_pid(), SIGTERM);
+					cleanup_cgi(cgi);
+					close_all_sockets_and_fd();
+				}
+				cout << __FILE__ << " - " << __LINE__ << endl;
+				remove_client(fd);
+			}	
+			else if (pfd.revents & POLLIN)
 				handle_client_read(fd);
 			else if (pfd.revents & POLLOUT)
 			{
@@ -202,18 +214,7 @@ void c_server::handle_poll_events()
     			        client->set_state(READING);
     			    }
     			}
-			}
-			else if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL))
-			{
-				c_cgi* cgi = find_cgi_by_client(client->get_fd());
-				if (cgi)
-				{
-					kill(cgi->get_pid(), SIGTERM);
-					cleanup_cgi(cgi);
-					close_all_sockets_and_fd();
-				}
-				remove_client(fd);
-			}			
+			}		
 		}
 	}
 }
@@ -288,6 +289,12 @@ void c_server::handle_client_read(int client_fd)
 
 	c_request request(*this, *client);
 	request.read_request();
+	// je rajoute ca pour traiter les doubles uploads
+	if (!request.is_request_fully_parsed())
+	{
+		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
+		return ;
+	}
 	if (request.is_client_disconnected())
 	{
 		close(client_fd);

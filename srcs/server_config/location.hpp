@@ -26,6 +26,7 @@ public:
 		void								set_alias(string const & root) {this->_location_root = root; };
 		void								set_index_files(vector<string> const & files) {this->_location_indexes = files; };
 		void								add_index_file(string const & file);
+
 		void								set_methods(vector<string> const & methods) {this->_location_methods = methods; };
 		void								set_body_size(size_t const & size) {this->_location_body_size = size; };
 		void								set_auto_index(bool const & index) {this->_auto_index = index; };
@@ -35,6 +36,7 @@ public:
 		void								set_is_directory(bool const & dir) {this->_is_directory = dir; };	
 		void								set_err_pages(map<int, string> err_pages) {this->_location_err_pages = err_pages; };
 		void								add_error_page(vector<int> const & codes, string path);
+		void								add_allowed_extension(const string & extension);
 
 		// Getters			
 		string const &						get_url_key() const {return _url_key; };
@@ -49,6 +51,7 @@ public:
 		string const &						get_upload_path() const {return _upload_path; };
 		bool								get_bool_is_directory() const {return _is_directory; };
 		map<int, string> const &			get_err_pages() const {return (_location_err_pages); };
+		vector<string> const &				get_allowed_extensions() const {return _allowed_extensions; };
 
 		// Print
 		void								print_location() const;
@@ -56,6 +59,7 @@ public:
 		void								print_methods() const;
 		void								print_error_page() const;
 		void								print_cgi() const;
+		void								print_allowed_extensions() const;
 
 		void								clear_cgi();
 		void								clear_indexes();
@@ -73,6 +77,7 @@ private:		// remplacer "root" par alias
 		string								_upload_path; // chemin de stockage pour les fichiers uploades recu via POST (attention si POST pas autorise dans la location l'uploiad doit etre refuse et renvoyer 405)
 		bool								_is_directory;
 		map<int, string>					_location_err_pages;
+		vector<string>						_allowed_extensions;
 };
 
 

@@ -18,4 +18,16 @@ flush(); // envoie immédiat
 
 echo "<p>Ceci est un test simple pour vérifier que votre serveur HTTP gère bien le CGI avec PHP.</p>\n";
 flush();
+
+echo '<p><a href="javascript:history.back()" style="
+    display:inline-block;
+    padding:10px 20px;
+    background-color:#21ff00;
+    color:#000;
+    text-decoration:none;
+    font-weight:bold;
+    border:2px solid #21ff00;
+    border-radius:5px;
+">← Go back to the CGI page</a></p>';
+flush();
 ?>

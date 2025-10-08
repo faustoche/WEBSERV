@@ -95,60 +95,7 @@ string  trim_underscore(const string &str)
 }
 
 
-string  sanitize_filename(const string &filename)
-{
-    string name;
-    string extension = extract_extension(filename, name);
 
-    if (extension.empty())
-        return "";
-    if (name.empty())
-        name = "file";
-
-    string clean_name;
-    for(size_t i = 0; i < name.size(); i++)
-    {
-        char c = name[i];
-        if (isalnum(static_cast<unsigned char>(c)))
-            clean_name += c;
-        else if (c == '_' || c == '-' || c == ' ')
-            clean_name += '_';
-        else
-            clean_name += '_';
-    }
-    while (clean_name.find("__") != string::npos)
-        clean_name.replace(clean_name.find("__"), 2, "_");
-    while (!clean_name.empty() && clean_name[clean_name.size() - 1] == '_')
-        clean_name.erase(clean_name.size() - 1);
-    if (clean_name.size() > 200)
-        clean_name = clean_name.substr(0, 200);
-    clean_name = trim_underscore(clean_name);
-    if (!extension.empty())
-        return clean_name += "." + extension;
-    else
-        return clean_name;
-}
-
-
-string  extract_extension(const string &filename, string &name)
-{
-    size_t point_pos = filename.find_last_of(".");
-    if (point_pos == string::npos)
-        return "";
-    if (point_pos == 0)
-        return "";
-    string extension = filename.substr(point_pos + 1);
-    name = filename.substr(0, point_pos);
-    if (extension != "jpg" && extension != "jpeg" && extension != "png" && extension != "gif"
-        && extension != "pdf" && extension != "txt")
-    {
-        cout << "Error: extension not allowded (." << extension << ")" << endl;
-        // revoir comment gerer l'erreur (peut etre juste ecrire que le telechargement n'a pas reussi)
-        // est-ce que si l'extension ets vide on en met une par defaut ?
-        return "";
-    }
-    return extension;
-}
 
 // string get_valid_index(vector<string> const & indexes) 
 // { 

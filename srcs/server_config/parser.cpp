@@ -218,6 +218,8 @@ void                c_parser::location_directives(c_location & location)
         parse_auto_index(location);
     else if (is_token_value("redirect"))
         parse_redirect(location);
+    else if (is_token_value("allowed_extensions"))
+        parse_allowed_extensions(location);
     else
         return;
 }
@@ -286,6 +288,23 @@ void                c_parser::location_indexes(c_location & location)
         }
     }
     if (location.get_indexes().empty())
+       throw invalid_argument("Index directive requires at least one value");
+
+    expected_token_type(TOKEN_SEMICOLON);
+    advance_token();
+}
+
+void                c_parser::parse_allowed_extensions(c_location & location)
+{
+    advance_token(); // skip directive
+    expected_token_type(TOKEN_VALUE);
+
+    while (is_token_type(TOKEN_VALUE))
+    {
+        location.add_allowed_extension(_current->value);
+        advance_token();
+    }
+    if (location.get_allowed_extensions().empty())
        throw invalid_argument("Index directive requires at least one value");
 
     expected_token_type(TOKEN_SEMICOLON);
@@ -435,6 +454,7 @@ void                c_parser::parse_listen_directive(c_server & server)
     }
     if (port == ERANGE || port < 0 || port > 65535)
         throw invalid_argument("Invalid port [0-65535]: " + get_value());
+
     server.add_port(static_cast<int>(port));
     server.set_ip(str_ip);
 
@@ -530,6 +550,8 @@ c_server            c_parser::parse_server_block()
     }
     expected_token_type(TOKEN_RBRACE);
     advance_token();
+    if (server.get_ports().empty())
+        throw invalid_argument("No listening ports defined");
 
     // if (!server.is_valid())
     //     throw invalid_argument("Invalid server configuration: " + server.get_validation_error());
