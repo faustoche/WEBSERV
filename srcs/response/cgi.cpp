@@ -313,6 +313,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");
     this->_map_env_vars["HTTP_COOKIE"] = request.get_header_value("Cookie");
     this->_map_env_vars["HTTP_REFERER"] = request.get_header_value("Referer");
+    this->_map_env_vars["HTTP_HOST"] = request.get_header_value("Host");
 
     this->vectorize_env();
 }

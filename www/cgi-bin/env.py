@@ -93,7 +93,8 @@ for key in [
     "HTTP_USER_AGENT",
     "HTTP_ACCEPT_LANGUAGE",
     "HTTP_COOKIE",
-    "HTTP_REFERER"
+    "HTTP_REFERER",
+    "HTTP_HOST",
     ]:
     value = os.environ.get(key, "")
     if value:
