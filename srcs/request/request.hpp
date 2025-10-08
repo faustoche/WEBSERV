@@ -68,6 +68,7 @@ class c_request
         bool            get_error() {return _error; }
         bool            get_error() const {return _error; }
         bool            is_client_disconnected() { return _disconnected; };
+        bool            is_request_fully_parsed() { return _request_fully_parsed; };
         const size_t    &get_content_length() const { return _content_length; }
         const string    &get_header_value(const string& key) const;
         const string    &get_body() const { return _body; }

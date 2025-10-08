@@ -47,6 +47,7 @@ void	c_request::read_request()
     			_server.log_message("[WARNING] recv() returned <0 for client " 
     			                    + int_to_string(_socket_fd) 
     			                    + ". Will retry on next POLLIN.");
+				this->_request_fully_parsed = false;
     			return;
 			}
 		}
@@ -350,9 +351,25 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 	int		receivedBytes;
 
 	c_client *client = _server.find_client(socket_fd);
+	// je rajoute ce check
+	if (!client)
+	{
+		this->_error = true;
+		return ;
+	}
 
 	if (!body_part.empty())
+	{
 		this->fill_body_with_chunks(body_part);
+		// je rajoute ce check
+		if (this->_request_fully_parsed)
+		{
+			_server.log_message("[DEBUG] Complete chunked body received in first packet");
+			return ;
+		}
+		if (this->_error)
+			return ;
+	}
 	while (!this->_request_fully_parsed && !this->_error)
 	{
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
@@ -372,6 +389,7 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
     			_server.log_message("[WARNING] recv() returned <0 for client " 
     			                    + int_to_string(socket_fd) 
     			                    + ". Will retry on next POLLIN.");
+				this->_request_fully_parsed = false;
     			return;
 			}
 		}
@@ -434,6 +452,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
     			_server.log_message("[WARNING] recv() returned <0 for client " 
     			                    + int_to_string(socket_fd) 
     			                    + ". Will retry on next POLLIN.");
+				this->_request_fully_parsed = false;
     			return;
 			}
 		}
@@ -473,9 +492,14 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 			this->read_body_with_chunks(socket_fd, buffer, request);
 		if (this->_error)
 			return ;
+		// je rajoute ca pour traiter les doubles uploads
+		if (this->_error)
+		{
+			return ;
+		}
 	}
-	else
-		this->_request_fully_parsed = true;
+	// else
+	// 	this->_request_fully_parsed = true;
 }
 
 

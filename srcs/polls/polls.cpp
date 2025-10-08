@@ -31,11 +31,12 @@ void c_server::setup_pollfd()
 
 		int client_fd = it->first;
 		c_client &client = it->second;
+
 		time_t now = time(NULL);
 		int timeout_value = TIMEOUT;
 		if (client.get_state() == PROCESSING || client.get_state() == SENDING)
 			timeout_value = TIMEOUT * 3;
-		if (now - client.get_last_modified() > TIMEOUT)
+		if (now - client.get_last_modified() > timeout_value) // timeoutvalue a la place de timeout
 		{
 			log_message("[DEBUG] Client " + int_to_string(client.get_fd()) + " has timed out");
 			to_remove.push_back(client_fd);
@@ -285,6 +286,12 @@ void c_server::handle_client_read(int client_fd)
 
 	c_request request(*this, *client);
 	request.read_request();
+	// je rajoute ca pour traiter les doubles uploads
+	if (!request.is_request_fully_parsed())
+	{
+		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
+		return ;
+	}
 	if (request.is_client_disconnected())
 	{
 		close(client_fd);
