@@ -20,14 +20,6 @@ void	c_request::read_request()
 	int		receivedBytes;
 	string	request = "";
 	
-	_server.log_message("[DEBUG] === NEW read_request() - _body.size() = " 
-                        + int_to_string(this->_body.size()));
-    
-    this->init_request();
-    
-    _server.log_message("[DEBUG] After init_request() - _body.size() = " 
-                        + int_to_string(this->_body.size()));
-
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
 

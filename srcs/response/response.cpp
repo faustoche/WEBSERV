@@ -37,16 +37,12 @@ const string& c_response::get_header_value(const string& key) const
 * We construct the correct path according to locations again
 */
 
-
 bool	is_directory(const string& path)
 {
 	struct stat path_stat;
 
 	if (stat(path.c_str(), &path_stat) != 0)
-	{
-		// Erreur chemin n'existe pas ou n'est pas accessible
 		return (false);
-	}
 	return (S_ISDIR(path_stat.st_mode));
 }
 
@@ -55,10 +51,7 @@ bool	is_regular_file(const string& path)
 	struct stat path_stat;
 
 	if (stat(path.c_str(), &path_stat) != 0)
-	{
-		// Erreur chemin n'existe pas ou n'est pas accessible
 		return (false);
-	}
 	return (S_ISREG(path_stat.st_mode));
 }
 
@@ -85,28 +78,25 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
-		// cout << GREEN << ">>> Traitement DELETE todo" << RESET << endl;
-		_server.log_message("[DEBUG] DELETE todo");
 		handle_delete_todo(request, version);
 		return;
 	}
 	if (method == "POST" && target == "/post_todo")
 	{
-		cout << GREEN << ">>> Traitement POST todo" << RESET << endl;
 		handle_todo_form(request, version);
 		return;
 	}
 	if (method == "GET" && target == "/upload.html")
-    {
-        load_upload_page(version, request);
-        return ;
-    }
-    if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
-    {
-        handle_delete_upload(request, version);
-        return;
-    }
-	if (method != "GET" && method != "POST" && method != "DELETE" && method != "PUT")
+	{
+		load_upload_page(version, request);
+		return ;
+	}
+	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
+	{
+		handle_delete_upload(request, version);
+		return;
+	}
+	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		build_error_response(405, version, request);
 		return ;
@@ -122,15 +112,13 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 	
-
-	/***** TROUVER LA CONFIGURATION DE LOCATION LE PLUS APPROPRIÉE POUR L'URL DEMANDÉE *****/
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
 	if (matching_location == NULL) 
-	{// si on a une requete vers un dossier qui ne matche avec aucune location, sinon build la reponse avec le fichier index s'il existe ou renvoyer une erreur
+	{
 		string full_path = _server.get_root() + target;
 		if (is_directory(full_path))
 		{
@@ -143,30 +131,24 @@ void	c_response::define_response_content(const c_request &request)
 		}
 	}
 
-	/***************/
 	if (!_server.is_method_allowed(matching_location, method))
 	{
 		build_error_response(405, version, request);
 		return ;	
 	}
 
-	
-	/***** VÉRIFICATION DE LA REDIRECTION CONFIGURÉE OU NON *****/
 	if (matching_location != NULL)
 	{
-		pair<int, string> redirect = matching_location->get_redirect(); // pair avec code de redirection et URL de destination
-		if (redirect.first != 0 && !redirect.second.empty()) // first = redirection (301, 302), second = URL
+		pair<int, string> redirect = matching_location->get_redirect();
+		if (redirect.first != 0 && !redirect.second.empty())
 		{
 			build_redirect_response(redirect.first, redirect.second, version, request);
 			return ;
 		}
 	}
-	
-	/***** CONSTRUCTION DU CHEMIN DU FICHIER *****/
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
 
-	/***** CHARGER LE CONTENU DU FICHIER *****/
 	if (is_regular_file(file_path))
 	{
 		_file_content = load_file_content(file_path);
@@ -216,7 +198,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		handle_post_request(request, matching_location, version);
 		return;
 	}
@@ -229,11 +210,6 @@ void	c_response::define_response_content(const c_request &request)
 		}
 		handle_delete_request(request, version, file_path);
 		build_success_response(file_path, version, request);
-	}
-	else if (method == "PUT")
-	{
-		handle_put_request(request, matching_location, version, file_path);
-		return ;
 	}
 	else
 	{
@@ -578,8 +554,8 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		return;
 
 	// Headers possibles :
-    // - Content-Disposition: form-data; name="xxx"; filename="yyy"
-    // - Content-Type: image/jpeg
+	// - Content-Disposition: form-data; name="xxx"; filename="yyy"
+	// - Content-Type: image/jpeg
 
 	// Parsing Content-Disposition
 	size_t	pos_disposition = header_section.find("Content-Disposition");
@@ -588,14 +564,12 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_disposition);
 		if (line.empty())
 		{
-			cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 			set_status(400); // en-tete manquant, parsing multipart echoue
 			return;
 		}
 		part.name = extract_quotes(line, "name=");
 		if (part.name.empty())
 		{
-			cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 			set_status(400); // en-tete manquant, parsing multipart echoue
 			return;
 		}
@@ -603,22 +577,17 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	}
 	else
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		set_status(400);
 		return;
 	}
 
-	// Parsing Content-Type
 	size_t	pos_type = header_section.find("Content-Type");
 	if (pos_type != string::npos)
 	{
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 		if (part.content_type.empty())
-		{
-			cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 			set_status(400);
-		}
 	}
 }
 
@@ -628,7 +597,7 @@ string	c_response::extract_line(const string &header_section, const size_t &pos)
 	size_t	end_pos = header_section.find("\r\n", pos);
 
 	if (end_pos == string::npos)
-		end_pos = header_section.length(); //verifier si lenght ou size
+		end_pos = header_section.length();
 	
 	string line = header_section.substr(pos, end_pos - pos);
 	return line;
@@ -675,17 +644,17 @@ void	c_response::handle_contact_form(const c_request &request, const string &ver
 		build_error_response(400, version, request);
 		return;
 	}
-	// creer fonciton is_valid email ?
+
 	if (save_contact_data(form_data))
 	{
 		_response = version + " 303 See Other\r\n";
-        _response += "Location: /contact_success.html\r\n";
-        _response += "Content-Length: 0\r\n";
-        _response += "\r\n";
-        return;
+		_response += "Location: /contact_success.html\r\n";
+		_response += "Content-Length: 0\r\n";
+		_response += "\r\n";
+		return;
 	}
 	else
-		build_error_response(500, version, request); // erreur lors de la sauvegarde du fichier
+		build_error_response(500, version, request);
 }
 
 bool	c_response::save_contact_data(const map<string, string> &data)
@@ -715,13 +684,13 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 
 string  c_response::extract_extension(const string &filename, string &name, c_location *location)
 {
-    size_t point_pos = filename.find_last_of(".");
-    if (point_pos == string::npos)
-        return "";
-    if (point_pos == 0)
-        return "";
-    string extension = filename.substr(point_pos); // + 1 enleve
-    name = filename.substr(0, point_pos);
+	size_t point_pos = filename.find_last_of(".");
+	if (point_pos == string::npos)
+		return "";
+	if (point_pos == 0)
+		return "";
+	string extension = filename.substr(point_pos);
+	name = filename.substr(0, point_pos);
 
 	if (location->get_allowed_extensions().empty() || 
 		find(location->get_allowed_extensions().begin(), location->get_allowed_extensions().end(), extension) != location->get_allowed_extensions().end())
@@ -731,46 +700,46 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 	else 
 	{
 		cout << "Error: extension not allowded (" << extension << ")" << endl;
-        return "";
+		return "";
 	}
-    return extension;
+	return extension;
 }
 
 
 string  c_response::sanitize_filename(const string &filename, c_location *location)
 {
-    string name;
-    string extension = extract_extension(filename, name, location);
-    if (extension.empty())
+	string name;
+	string extension = extract_extension(filename, name, location);
+	if (extension.empty())
 	{
-		set_status(415); // unsupported media type
-        return "";
+		set_status(415);
+		return "";
 	}
-    if (name.empty())
-        name = "file";
+	if (name.empty())
+		name = "file";
 
-    string clean_name;
-    for(size_t i = 0; i < name.size(); i++)
-    {
-        char c = name[i];
-        if (isalnum(static_cast<unsigned char>(c)))
-            clean_name += c;
-        else if (c == '_' || c == '-' || c == ' ')
-            clean_name += '_';
-        else
-            clean_name += '_';
-    }
-    while (clean_name.find("__") != string::npos)
-        clean_name.replace(clean_name.find("__"), 2, "_");
-    while (!clean_name.empty() && clean_name[clean_name.size() - 1] == '_')
-        clean_name.erase(clean_name.size() - 1);
-    if (clean_name.size() > 200)
-        clean_name = clean_name.substr(0, 200);
-    clean_name = trim_underscore(clean_name);
-    if (!extension.empty())
-        return clean_name += extension;
-    else
-        return clean_name;
+	string clean_name;
+	for(size_t i = 0; i < name.size(); i++)
+	{
+		char c = name[i];
+		if (isalnum(static_cast<unsigned char>(c)))
+			clean_name += c;
+		else if (c == '_' || c == '-' || c == ' ')
+			clean_name += '_';
+		else
+			clean_name += '_';
+	}
+	while (clean_name.find("__") != string::npos)
+		clean_name.replace(clean_name.find("__"), 2, "_");
+	while (!clean_name.empty() && clean_name[clean_name.size() - 1] == '_')
+		clean_name.erase(clean_name.size() - 1);
+	if (clean_name.size() > 200)
+		clean_name = clean_name.substr(0, 200);
+	clean_name = trim_underscore(clean_name);
+	if (!extension.empty())
+		return clean_name += extension;
+	else
+		return clean_name;
 }
 
 /********************    test form    ********************/
@@ -879,10 +848,10 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 
 
 /* Proceed to load the file content. Nothing else to say. */
+
 string c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
-	// cout << YELLOW << file_path << RESET << endl;
 	if (!file.is_open()) {
 		return ("");
 	}
@@ -1012,8 +981,6 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 
 void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
 {
-	// c_client *client = _server.find_client(this->_client_fd);
-	
 	if (_file_content.empty())
 	{
 		build_error_response(404, version, request);
@@ -1184,7 +1151,6 @@ void	c_response::build_redirect_response(int code, const string &location, const
 			break ;
 	}
 
-	// ici modifier car on devrait plutot reorienté direct vers la bonne page?
 	string content = "<html><body><h1>" + int_to_string(code) + " - " + status + "</h1>"
 					"<p>The document has moved <a href=\"" + location + "\">here</a>.</p>"
 					"</body></html>";
@@ -1206,7 +1172,6 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	_response += "\r\n";
 	_response += content;
 
-	// c_client *client = _server.find_client(this->_client_fd);
 	_client.set_status_code(code);
 }
 
@@ -1324,50 +1289,41 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 	if (location == NULL)
 	{
 		string index = get_valid_index(_root, this->get_indexes());
-		// si pas de location, alors on fait le request path par default. par exemple default root = repertoire racine par default cad www et l'index = index.html
 		if (request_path == "/")
 			return (default_root + "/" + index);
 		return (default_root + request_path);
 	}
+
 	string location_root = location->get_alias();
 	string location_key = location->get_url_key();
-	// calculer le chemin relatif en enlevant la partie location du chemin de requete
+
 	string relative_path;
-	if (request_path.find(location_key) == 0) // on verifie si l'url commence par le pattern de la location
+	if (request_path.find(location_key) == 0)
 	{
 		relative_path = request_path.substr(location_key.length());
-		// on tej les // qui sont en plus pour evciter les doublons
 		if (!relative_path.empty() && relative_path[0] == '/')
 			relative_path = relative_path.substr(1);
-		// if (!relative_path.empty())
-		// 		relative_path = '/' + relative_path;
 	}
-	// Si l'utilisateur demande un dossier et pas un fichier precis -> on cherche un fichier index a l'interieur du dossier
+
 	if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	{
 		location->set_is_directory(true);
-		// on va recuperer tous les fichiers index.xxx existants
 		vector<string> index_files = location->get_indexes();
-		if (index_files.empty()) // si c'est vide, alors on lui donne le fichier index par default (index.html par exemple)
+		if (index_files.empty())
 			return (location_root + relative_path);
 		else
 		{
-			// Processus: On teste tous les autres fichiers dans l'ordre
-				// 1. essaye index.html 
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + relative_path + index_files[i]; // on itere dans les index
+				string index_path = location_root + relative_path + index_files[i];
 				ifstream file_checker(index_path.c_str());
-				if (file_checker.is_open()) // est-ce que le fichier existe? est-ce que j'ai reussi a l'ouvrir
+				if (file_checker.is_open())
 				{
 					file_checker.close();
-			
-					return (index_path); // ca fonctione donc je le return
+					return (index_path);
 				}
 				file_checker.close();
 			}
-			// aucun fichier index trouve alors on retourne le premier de la liste car il renverra une erreur 404
-			// CM = si aucun fichier index n'est trouve dans le dossier de la location et que l'autoindex est on il faut afficher le listing du dossier
 			if (location->get_auto_index())
 				return (location_root + relative_path);
 			return (location_root + relative_path + index_files[0]);
