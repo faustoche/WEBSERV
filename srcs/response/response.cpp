@@ -96,7 +96,7 @@ void	c_response::define_response_content(const c_request &request)
 		handle_todo_form(request, version);
 		return;
 	}
-	if (method == "GET" && target == "/upload.html")
+	if (method == "GET" && target == "/page_upload.html")
     {
         load_upload_page(version, request);
         return ;
@@ -356,12 +356,12 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	if (uploaded_files.size() > 0)
 	{
 		_response = version + " 303 See Other\r\n";
-		_response += "Location: /upload.html\r\n";
+		_response += "Location: /page_upload.html\r\n";
 		_response += "Content-Length: 0\r\n";
 		_response += "Connection: keep-alive\r\n";
 		_response += "Server: webserv/1.0\r\n\r\n";
 
-		_server.log_message("[INFO] ✅ Upload done. Redirection to /upload.html");
+		_server.log_message("[INFO] ✅ Upload done. Redirection to /page_upload.html");
 	}
 	else
 		build_error_response(400, version, request);
@@ -966,7 +966,7 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 {
 	(void)file_path;
 	_response = version + " 303 See other\r\n";
-	_response += "Location: /upload.html\r\n";
+	_response += "Location: /page_upload.html\r\n";
 	
 	string connection;
 	connection = request.get_header_value("Connection");
