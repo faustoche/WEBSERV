@@ -114,7 +114,7 @@ void c_server::handle_poll_events()
 {
 	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
-	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
+	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 100);
 	if (num_events < 0)
 	{
 		close_all_sockets_and_fd();
@@ -184,7 +184,6 @@ void c_server::handle_poll_events()
 			if (pfd.revents & 0 && time(NULL) - client->get_last_modified() > TIMEOUT)
 			{
 				log_message("[WARNING] Client " + int_to_string(fd) + " has timed out");
-				cout << __FILE__ << " - " << __LINE__ << endl;
 				remove_client(fd);
 			}
 
@@ -197,7 +196,6 @@ void c_server::handle_poll_events()
 					cleanup_cgi(cgi);
 					close_all_sockets_and_fd();
 				}
-				cout << __FILE__ << " - " << __LINE__ << endl;
 				remove_client(fd);
 			}	
 			else if (pfd.revents & POLLIN)

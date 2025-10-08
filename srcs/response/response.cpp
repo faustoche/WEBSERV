@@ -119,6 +119,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (matching_location == NULL) 
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		string full_path = _server.get_root() + target;
 		if (is_directory(full_path))
 		{
@@ -152,6 +153,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (is_regular_file(file_path))
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		_file_content = load_file_content(file_path);
 	}
 	if (_file_content.empty() && !this->_is_cgi)
@@ -1295,6 +1297,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 {
 	if (location == NULL)
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		string index = get_valid_index(_root, this->get_indexes());
 		if (request_path == "/")
 			return (default_root + "/" + index);

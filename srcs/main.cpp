@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 		if (servers.empty())
 			throw invalid_argument("Error: No servers configurations");
 
-		servers.resize(1); //limite vecteur a 1 seul c_server
+		// servers.resize(1); //limite vecteur a 1 seul c_server
 		
 		webserv.print_configurations();
 	
