@@ -145,11 +145,16 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 }
 
 /* GESTION DES UPLOADS */
-
 void c_response::load_upload_page(const string &version, const c_request &request)
 {
+	cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
     string html_template = load_file_content("./www/page_upload.html");
     string files_html;
+
+	/* recuperer max_body_size pour lenvoyer a la page HTML */
+	size_t max_body_size = request.get_client_max_body_size();
+	cout << "client max body size = " << max_body_size << endl;
+	string max_body_size_str = int_to_string(max_body_size);
 
 	string upload_dir = "./www/upload/";
 	DIR *dir = opendir(upload_dir.c_str());
@@ -175,7 +180,17 @@ void c_response::load_upload_page(const string &version, const c_request &reques
 	{
 		files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
 	}
-	size_t pos = html_template.find("{{FILES_HTML}}");
+
+	/*debug*/
+	cout << "max_body_size_str = [" << max_body_size_str << "]" << endl;
+
+	/* remplacememtn du placeholder {{MAX_BODY_SIZE}}*/
+	size_t pos = html_template.find("{{MAX_BODY_SIZE}}");
+	if (pos != string::npos)
+		html_template.replace(pos, strlen("{{MAX_BODY_SIZE}}"), max_body_size_str);
+
+	/* remplacement des fichiers existants */
+	pos = html_template.find("{{FILES_HTML}}");
 	if (pos != string::npos)
 		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 

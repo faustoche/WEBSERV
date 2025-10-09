@@ -285,8 +285,11 @@ void c_server::handle_client_read(int client_fd)
 		return ;
 	}
 
+	/* a voir si ca pose PB car ca recree une request a chaque lecture et ne concerve pas les infos
+	le parsing doit pouvoir persister entre deux evenements poll() */
 	c_request request(*this, *client);
 	request.read_request();
+
 	// je rajoute ca pour traiter les doubles uploads
 	if (!request.is_request_fully_parsed())
 	{
@@ -299,7 +302,6 @@ void c_server::handle_client_read(int client_fd)
 		remove_client(client_fd);
 		return ;
 	}
-
 	if (client->get_state() != IDLE)
 	{
 		// request.print_full_request();

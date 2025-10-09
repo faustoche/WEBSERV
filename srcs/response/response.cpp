@@ -65,9 +65,12 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
+	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
+
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
+		cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -88,6 +91,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method == "GET" && target == "/page_upload.html")
     {
+		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
         load_upload_page(version, request);
         return ;
     }
@@ -119,7 +123,6 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (matching_location == NULL) 
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		string full_path = _server.get_root() + target;
 		if (is_directory(full_path))
 		{
@@ -153,7 +156,6 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (is_regular_file(file_path))
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		_file_content = load_file_content(file_path);
 	}
 	if (_file_content.empty() && !this->_is_cgi)
@@ -240,7 +242,6 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	// 		<< "Target: [" << request.get_target() << "]" << endl;
 	if (request.get_error() || request.get_status_code() != 200)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
@@ -255,7 +256,6 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		handle_todo_form(request, version);
 	else
 		build_error_response(404, version, request);
-	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 }
 
 /********************   upload file   ********************/
@@ -275,8 +275,6 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
-	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
-
 	string body = request.get_body();
 	if (body.empty())
 	{
@@ -290,7 +288,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status() >= 400 ? get_status() : 400, version, request);
 		return ;
 	}
@@ -298,20 +295,15 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
 	if (get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status(), version, request);
 		return ;
 	}
-
-	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
-
 
 	// TRAITEMENT de chaque partie
 	// string 			description;
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
@@ -343,14 +335,11 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		_response += "Server: webserv/1.0\r\n\r\n";
 
 		_server.log_message("[INFO] ✅ Upload done. Redirection to /page_upload.html");
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	}
 	else
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
-	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 }
 
 bool	file_exists(const std::string &path)
@@ -372,7 +361,6 @@ bool	create_directory(const string &path)
 
 string	get_unique_filename(const string &directory, string &filename)
 {
-	cout << __LINE__ << " / " << __FILE__ << endl;
 	string full_path = directory + filename;
 	if (!file_exists(full_path))
 		return filename;
@@ -509,11 +497,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 			break;
 		
 		parts.push_back(single_part);
-		if (single_part.content.empty())
-			cout << PINK << __LINE__ << " / EMPTY / " << __FILE__ << endl;
 	}
-	if (parts.empty())
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	return parts;
 }
 
@@ -1307,7 +1291,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 {
 	if (location == NULL)
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		string index = get_valid_index(_root, this->get_indexes());
 		if (request_path == "/")
 			return (default_root + "/" + index);
