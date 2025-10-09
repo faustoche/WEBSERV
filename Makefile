@@ -20,7 +20,7 @@ LOGS_DIR	= logs
 WEBSERV		= $(addprefix $(SRCS_DIR)/, main.cpp\
 										response/response.cpp \
 										response/cgi.cpp \
-										request/utils.cpp \
+										request/request_utils.cpp \
 										request/request.cpp\
 										clients/clients.cpp\
 										utils/utils.cpp\
@@ -63,13 +63,15 @@ $(NAME): includes/colors.hpp $(OBJS_DIR) $(OBJS) $(LOGS_DIR)
 
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp includes/colors.hpp
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+	@echo "\033[1;34m Compiling: \033[0m $<"
+	@$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
 $(OBJS_DIR):
 	@mkdir -p $(OBJS_DIR)
 
 $(LOGS_DIR):
-	mkdir -p $(LOGS_DIR)
+	@echo " "
+	@mkdir -p $(LOGS_DIR)
 
 # ************************************************************************ #
 #                  		     CLEANUP SESSION                               #
