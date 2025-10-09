@@ -255,6 +255,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		handle_todo_form(request, version);
 	else
 		build_error_response(404, version, request);
+	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 }
 
 /********************   upload file   ********************/
@@ -274,6 +275,8 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
+	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
+
 	string body = request.get_body();
 	if (body.empty())
 	{
@@ -300,12 +303,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		return ;
 	}
 
-	// if (parts.empty()) // pour fichiers lourds parfois rentre parfois non
-	// {
-		// cout << PINK << __LINE__ << " / " << __FILE__ << endl;
-		// build_error_response(400, version, request);
-		// return ;
-	// }
+	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 
 
 	// TRAITEMENT de chaque partie
@@ -337,6 +335,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	if (uploaded_files.size() > 0)
 	{
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		_response = version + " 303 See Other\r\n";
 		_response += "Location: /page_upload.html\r\n";
 		_response += "Content-Length: 0\r\n";
@@ -344,12 +343,14 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		_response += "Server: webserv/1.0\r\n\r\n";
 
 		_server.log_message("[INFO] ✅ Upload done. Redirection to /page_upload.html");
+		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	}
 	else
 	{
 		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
+	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 }
 
 bool	file_exists(const std::string &path)
@@ -371,6 +372,7 @@ bool	create_directory(const string &path)
 
 string	get_unique_filename(const string &directory, string &filename)
 {
+	cout << __LINE__ << " / " << __FILE__ << endl;
 	string full_path = directory + filename;
 	if (!file_exists(full_path))
 		return filename;
@@ -526,6 +528,7 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	if (separator_pos == string::npos)
 	{
 		set_status(400); // en-tete manquant, parsing multipart echoue
+		_client.set_status_code(400);
 		return part;
 	}
 
@@ -572,12 +575,14 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		if (line.empty())
 		{
 			set_status(400); // en-tete manquant, parsing multipart echoue
+			_client.set_status_code(400);
 			return;
 		}
 		part.name = extract_quotes(line, "name=");
 		if (part.name.empty())
 		{
 			set_status(400); // en-tete manquant, parsing multipart echoue
+			_client.set_status_code(400);
 			return;
 		}
 		part.filename = extract_quotes(line, "filename=");
@@ -585,6 +590,7 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	else
 	{
 		set_status(400);
+		_client.set_status_code(400);
 		return;
 	}
 
@@ -594,7 +600,10 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 		if (part.content_type.empty())
+		{
 			set_status(400);
+			_client.set_status_code(400);
+		}
 	}
 }
 
@@ -721,6 +730,7 @@ string  c_response::sanitize_filename(const string &filename, c_location *locati
 	if (extension.empty())
 	{
 		set_status(415);
+		_client.set_status_code(415);
 		return "";
 	}
 	if (name.empty())

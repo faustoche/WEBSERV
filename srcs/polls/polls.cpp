@@ -349,7 +349,10 @@ void	c_server::handle_client_write(int client_fd)
 	if (remaining == 0)
 	{
 		if (client->get_response_complete() && cgi->is_finished())
+		{
+			cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << client->get_status_code() << RESET << endl;
 			handle_fully_sent_response(client);
+		}
         return;
 	}
 
@@ -379,7 +382,10 @@ void	c_server::handle_client_write(int client_fd)
 
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
+		{
+			cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << client->get_status_code() << RESET << endl;
 			handle_fully_sent_response(client);
+		}
     }
 }
 

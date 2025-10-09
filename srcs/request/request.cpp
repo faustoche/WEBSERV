@@ -214,13 +214,13 @@ int c_request::parse_headers(string& headers)
 
 int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 {
-    this->_body.append(buffer, len);
 	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size && is_limited())
 	{
 		this->_status_code = 413;
 		this->_error = true;
 		return (1);
 	}
+	this->_body.append(buffer, len);
 	return (0);
 }
 
@@ -401,6 +401,23 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 							+ ") excesses announced client max body size (" + int_to_string(_client_max_body_size) + ")");
 		this->_status_code = 413;
 		this->_error = true;
+
+		// On vide le socket pour eviter de bloquer la connexion
+		_server.log_message("[DEBUG] Draining socket to avoid connection issues...");
+
+		// compter ce qui est deja dans le premier paquet
+		total_bytes = body_part.size();
+
+		//lire et jeter le reste des donnees
+		while (total_bytes < expected_length)
+		{
+			receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
+			if (receivedBytes <= 0)
+				break;
+			total_bytes += receivedBytes;
+		}
+		_server.log_message("[DEBUG] Socket drained. Total bytes discarded: " + int_to_string(total_bytes));
+		
 		return ;
 	}
 
