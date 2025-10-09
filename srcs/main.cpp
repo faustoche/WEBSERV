@@ -62,17 +62,11 @@ int main(int argc, char **argv)
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
 			servers[i].create_socket_for_each_port(servers[i].get_ports());
-			for (size_t i = 0; i < servers.size(); ++i)
+			vector<int> ports = servers[i].get_ports();
+			for (vector<int>::const_iterator it = ports.begin(); it != ports.end(); ++it)
 			{
-				std::vector<int> ports = servers[i].get_ports();
-				servers[i].create_socket_for_each_port(ports);
-
-				for (std::vector<int>::const_iterator it = ports.begin(); it != ports.end(); ++it)
-				{
-					std::cout << YELLOW << "🐶 Server " << i << " created and listening on port " << *it << RESET << std::endl;
-				}
+				cout << YELLOW << "🐶 Server " << i << " created and listening on port " << *it << RESET << std::endl;
 			}
-
 		}
 		run_multiserver(servers);
 	}
