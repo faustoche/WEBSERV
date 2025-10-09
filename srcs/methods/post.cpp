@@ -21,7 +21,6 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	// 		<< "Target: [" << request.get_target() << "]" << endl;
 	if (request.get_error() || request.get_status_code() != 200)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}

@@ -21,9 +21,15 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 	}
 
 	struct stat file_stat;
+	string dir = file_path.substr(0, file_path.find_last_of('/'));
 	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode))
 	{
 		build_error_response(403, version, request);
+		return ;
+	}
+	if (access(dir.c_str(), W_OK) != 0)
+	{
+		build_error_response(409, version, request);
 		return ;
 	}
 	if (access(file_path.c_str(), W_OK) != 0)

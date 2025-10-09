@@ -303,7 +303,6 @@ void c_server::handle_client_read(int client_fd)
 
 	if (client->get_state() != IDLE)
 	{
-		// request.print_full_request();
 		client->set_creation_time();
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);
@@ -384,7 +383,6 @@ void	c_server::handle_client_write(int client_fd)
 	}
 }
 
-// Il y a des choses a lire dans le pipe_out : POLLIN
 void	c_server::handle_cgi_read(c_cgi *cgi)
 {
 	char	buffer[BUFFER_SIZE];

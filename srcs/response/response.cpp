@@ -71,6 +71,11 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
+	if (method != "GET" && method != "POST" && method != "DELETE")
+	{
+		build_error_response(405, version, request);
+		return ;
+	}
 	if (method == "GET" && target == "/todo.html")
 	{
 		load_todo_page(version, request);
@@ -96,11 +101,6 @@ void	c_response::define_response_content(const c_request &request)
 		handle_delete_upload(request, version);
 		return;
 	}
-	if (method != "GET" && method != "POST" && method != "DELETE" && method != "PUT")
-	{
-		build_error_response(405, version, request);
-		return ;
-	}
 	if (version != "HTTP/1.1")
 	{
 		build_error_response(505, version, request);
@@ -111,7 +111,6 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)

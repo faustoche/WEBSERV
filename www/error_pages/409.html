@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <base href="/">
+  <meta charset="utf-8" />
+  <title>Error 409</title>
+  <style>
+    @font-face {
+			font-family: "ComicNeue";
+			src: url("/fonts/ComicNeue-Regular.otf") format("opentype");
+			font-weight: 400;
+			font-style: normal;
+		}
+
+		@font-face {
+			font-family: "ComicNeue";
+			src: url("../fonts/ComicNeue_Bold.otf") format("opentype");
+			font-weight: 700;
+			font-style: normal;
+		}
+    body{
+      margin:0;
+      font-family: "ComicNeue", cursive, sans-serif;
+      font-weight: 700;
+      background: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+      color:#fff;
+      text-align:center;
+    }
+    h1{
+      font-family: "ComicNeue", cursive, sans-serif;
+      font-weight: 700;
+      font-size:3rem;
+      color:yellow;
+      text-shadow:2px 2px 0 #000, 0 0 10px #ff00aa;
+      margin-top:2rem;
+      animation: flash 1s infinite alternate;
+    }
+    @keyframes flash{
+      from{color:yellow}
+      to{color:#ff66ff}
+    }
+    p{
+	  color:rgb(56, 36, 122);
+      font-size:1.2rem;
+      margin:1rem 0;
+    }
+    a{
+      color:rgb(75, 201, 178);
+      font-weight:bold;
+      text-decoration:underline;
+    }
+    img{
+      margin-top:1rem;
+      border:5px ridge #ff00aa;
+      max-width:300px;
+    }
+    .back-link {
+            display: inline-block;
+            background: rgb(21, 255, 0);
+            margin-top: 1rem;
+            color:rgb(0, 0, 0);
+            text-decoration: none;
+            border: 2px solid rgb(21, 255, 0);
+            padding: 10px 20px;
+            font-weight: 700;
+        }
+        .back-link:hover {
+            background: rgb(252, 248, 17);
+            border: 2px solid rgb(252, 248, 17);
+            color: #000000;
+      }
+  </style>
+</head>
+<body>
+  <h1>★ Error 409 ★</h1>
+  <p> Conflict :/ </p>
+  <img src="/images/error_409.jpg" alt="Chien">
+  <p><a href="/" class="back-link">← Go back to the main page</a></p>
+</body>
+</html>
