@@ -21,72 +21,72 @@ using namespace std;
 class  c_parser : public c_lexer {
 
 public :
-			c_parser(string const file);
-			~c_parser();
+	c_parser(string const file);
+	~c_parser();
 
-			// principal method
-			vector<c_server>    parse();
+	// principal method
+	vector<c_server>	parse();
 
-			// tokens
-			s_token         current_token() const;
-			string const &  get_value() const;
-			s_token         peek_token() const;
-			void            advance_token();
-			bool            is_at_end() const;
+	// tokens
+	s_token			current_token() const;
+	string const &	get_value() const;
+	s_token			peek_token() const;
+	void			advance_token();
+	bool			is_at_end() const;
 
 private :
-			vector<s_token>::iterator   _current;
-			string                      _error_msg;
+	vector<s_token>::iterator	_current;
+	string						_error_msg;
 
+	// loop for creation of all the servers
+	vector<c_server>	parse_config();
 
-			// loop for creation of all the servers
-			vector<c_server>    parse_config();
+	// blocks
+	c_server			parse_server_block();
+	void				parse_location_block(c_server & server);
 
-			// blocks
-			c_server            parse_server_block();
-			void                parse_location_block(c_server & server);
+	// directives
+	void				parse_server_directives(c_server & server);
+	void				parse_index_directive(c_server & server);
+	void				parse_listen_directive(c_server & server);
+	void				parse_server_name(c_server & server);
+	string				parse_ip(string const & value);
+	void				parse_server_cgi(c_server & server);
 
-			// directives
-			void                parse_server_directives(c_server & server);
-			void                parse_index_directive(c_server & server);
-			void                parse_listen_directive(c_server & server);
-			void                parse_server_name(c_server & server);
-			string              parse_ip(string const & value);
-			void                parse_server_cgi(c_server & server);
+	// locations
+	void				location_url_directory(c_server & server);
+	void				location_url_file(c_server & server);
+	void				location_directives(c_location & location);
+	void				parse_alias(c_location & location);
+	
+	// locations directives
+	void				parse_cgi(c_location & location); //modifier noms
+	void				location_indexes(c_location & location);
+	void				parse_methods(c_location & location);
+	void				parse_auto_index(c_location & location);
+	void				parse_upload_path(c_location & location);
+	void				parse_redirect(c_location & location);
+	void				loc_parse_error_page(c_location & location);
+	void				parse_allowed_extensions(c_location & location);
 
-			// locations
-			void                location_url_directory(c_server & server);
-			void                location_url_file(c_server & server);
-			void                location_directives(c_location & location);
-			void                parse_alias(c_location & location);
-			// locations directives
-			void                parse_cgi(c_location & location); //modifier noms
-			void                location_indexes(c_location & location);
-			void                parse_methods(c_location & location);
-			void                parse_auto_index(c_location & location);
-			void                parse_upload_path(c_location & location);
-			void                parse_redirect(c_location & location);
-			void                loc_parse_error_page(c_location & location);
-			void                parse_allowed_extensions(c_location & location);
+	// utils
+	void				expected_token_type(int expected_type) const;
+	bool				is_token_value(std::string key);
+	bool				is_token_type(int type);
+	size_t				convert_to_octet(string const & str, string const & suffix, size_t const i) const;
 
-			// utils
-			void                expected_token_type(int expected_type) const;
-			bool                is_token_value(std::string key);
-			bool                is_token_type(int type);
-			size_t              convert_to_octet(string const & str, string const & suffix, size_t const i) const;
+	// void    expected_token_value(int expected_type) const;
 
-			// void    expected_token_value(int expected_type) const;
+	// error handling
+	void	throw_error(string const & first, string const & second, string const & value);
+	// bool                has_error() const;
+	// string const &      get_error() const;
+	// void                clear_error();
 
-			// error handling
-			void    throw_error(string const & first, string const & second, string const & value);
-			// bool                has_error() const;
-			// string const &      get_error() const;
-			// void                clear_error();
-
-			template<typename C>
-			void                parse_body_size(C & servloc);
-			template<typename C>
-			void                parse_error_page(C & servloc);
+	template<typename C>
+	void	parse_body_size(C & servloc);
+	template<typename C>
+	void	parse_error_page(C & servloc);
 };
 
 template<typename C>
@@ -95,7 +95,7 @@ void            c_parser::parse_body_size(C & servloc)
 	advance_token();
 	expected_token_type(TOKEN_VALUE);
 	string  str = _current->value;
-	advance_token(); // skip value
+	advance_token();
 	expected_token_type(TOKEN_SEMICOLON);
 	advance_token();
 
@@ -156,7 +156,6 @@ void            c_parser::parse_error_page(C & servloc)
 	expected_token_type(TOKEN_VALUE);
 	if (_current->value[0] != '/' && _current->value[0] != '.')
 		throw invalid_argument("Invalid argument for error page ==> " + _current->value);
-	// verifier l'extension utilisee ??
 	path = _current->value;
 	servloc.add_error_page(codes, path);
 

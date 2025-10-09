@@ -23,12 +23,12 @@ class	c_client;
 class	c_cgi;
 class	c_location;
 
-struct	s_multipart // pour la gestion de POST pour l'upload de fichiers
+struct	s_multipart
 {
-	string	name; // description, file
-	string	filename; // vide si champ texte
-	string	content_type; // vide si champ texte
-	string	content; // donnee (texte ou binaire) 
+	string	name;
+	string	filename;
+	string	content_type;
+	string	content;
 	bool	is_file;
 };
 
@@ -110,3 +110,6 @@ private:
 	void						load_upload_page(const string &version, const c_request &request);
 	void						handle_delete_upload(const c_request &request, const string &version);
 };
+
+	bool	is_regular_file(const string& path);
+	bool	is_directory(const string& path);

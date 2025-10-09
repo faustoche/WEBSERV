@@ -24,7 +24,7 @@ bool    c_webserv_config::load_configuration()
 		c_parser  parser(_config_files);
 		this->_servers = parser.parse();
 		if(_servers.empty())
-			throw invalid_argument("server empty");
+			throw invalid_argument("Server empty");
 		return true;
 	}
 	catch(const std::exception& e)
@@ -33,12 +33,10 @@ bool    c_webserv_config::load_configuration()
 	}
 }
 
-
 vector<c_server> &  c_webserv_config::get_servers()
 {
 	return this->_servers;
 }
-
 
 /*-----------------  utils ---------------------*/
 

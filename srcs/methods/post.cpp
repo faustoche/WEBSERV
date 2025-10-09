@@ -54,6 +54,13 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
+	// pour tester la size_max
+	size_t max_size = 1 * 1024 * 1024; // 1MB
+    if (request.get_content_length() > max_size)
+    {
+        build_error_response(413, version, request);
+        return;
+    }
 	string body = request.get_body();
 	if (body.empty())
 	{
@@ -67,7 +74,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status() >= 400 ? get_status() : 400, version, request);
 		return ;
 	}
@@ -75,7 +81,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
 	if (get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status(), version, request);
 		return ;
 	}
@@ -100,7 +105,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			string saved_path = save_uploaded_file(part, location);
 			if (get_status() >= 400)
 			{
-				cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 				build_error_response(get_status(), version, request);
 				return;
 			}
@@ -205,10 +209,10 @@ string	c_response::extract_boundary(const string &content_type)
 
 	size_t pos = content_type.find("boundary=");
 	if (pos != string::npos)
-		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
+		boundary = content_type.substr(pos + 9);
 	else
 	{
-		set_status(400); // parsing multipart echoue
+		set_status(400);
 		return "";
 	}
 	return boundary;
@@ -230,7 +234,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
@@ -550,14 +553,14 @@ string const	c_response::url_decode(const string &body)
 		}
 		else if (body[i] == '%' && i + 2 < body.size())
 		{
-			bool	ishexa = true;
+			bool	is_hexa = true;
 			string hex_str = body.substr(i + 1, 2);
 			for (size_t j = 0; j < hex_str.size(); ++j)
 			{
 				if (!isxdigit(hex_str[j]))
-					ishexa = false;
+					is_hexa = false;
 			}
-			if (ishexa)
+			if (is_hexa)
 			{
 				int value = 0;
 				istringstream iss(hex_str);

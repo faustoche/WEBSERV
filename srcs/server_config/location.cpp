@@ -18,13 +18,9 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
 	_location_methods.push_back("DELETE");
 }
 
-
 /*-----------------  DESTRUCTOR -------------------*/
 
-c_location::~c_location()
-{
-
-}
+c_location::~c_location(){}
 
 /*----------------- MEMBERS METHODS  --------------*/
 
@@ -49,7 +45,8 @@ c_location const&    c_location::operator=(c_location const & rhs)
 }
 
 /*-------------------- getters --------------------*/
-string c_location::extract_interpreter(string const& extension) const
+
+string	c_location::extract_interpreter(string const& extension) const
 {
 	string empty_string = "";
 
@@ -65,7 +62,7 @@ string c_location::extract_interpreter(string const& extension) const
 
 /*-------------------- setters --------------------*/
 
-void    c_location::set_cgi(string extension, string path)
+void	c_location::set_cgi(string extension, string path)
 {
 	if (_cgi_extension.find(extension) != _cgi_extension.end())
 		return;
@@ -74,12 +71,12 @@ void    c_location::set_cgi(string extension, string path)
 
 /*--------------------- utils  --------------------*/
 
-void    c_location::add_index_file(string const & file)
+void	c_location::add_index_file(string const & file)
 {
 	_location_indexes.push_back(file);
 }
 
-void    c_location::add_allowed_extension(string const & extension)
+void	c_location::add_allowed_extension(string const & extension)
 {
 	_allowed_extensions.push_back(extension);
 }
@@ -90,7 +87,6 @@ void	c_location::add_error_page(vector<int> const & codes, string path)
 	for (size_t i = 0; i < codes.size(); i++)
 		_location_err_pages[codes[i]] = path;
 }
-
 
 void	c_location::print_indexes() const
 {
@@ -133,7 +129,7 @@ void	c_location::print_error_page() const
 	}
 }
 
-void    c_location::print_cgi() const
+void	c_location::print_cgi() const
 {
 	if (_cgi_extension.empty())
 		cout << "               No cgi defined" << endl;
@@ -141,13 +137,12 @@ void    c_location::print_cgi() const
 	{
 		for (map<string, string>::const_iterator it = _cgi_extension.begin(); it != _cgi_extension.end(); ++it)
 		{
-
 			cout << "		" << it->first << " " << it->second << " " << endl;
 		}
 	}
 }
 
-void    c_location::print_location() const
+void	c_location::print_location() const
 {
 	cout 
 			<< "            max body size: " << get_body_size() << " octets" << endl
@@ -181,19 +176,19 @@ void    c_location::print_location() const
 			print_error_page();
 }
 
-void    c_location::clear_cgi()
+void	c_location::clear_cgi()
 {
 	if (!_cgi_extension.empty())
 		_cgi_extension.clear();
 }
 
-void    c_location::clear_indexes()
+void	c_location::clear_indexes()
 {
 	if (!_location_indexes.empty())
 		_location_indexes.clear();
 }
 
-void    c_location::clear_err_pages()
+void	c_location::clear_err_pages()
 {
 	if (!_location_err_pages.empty())
 		_location_err_pages.clear();

@@ -11,50 +11,11 @@ void handle_stop(int sig)
 
 void handle_sigpipe(int sig) { if(sig) {}}
 
-void	c_server::create_socket()
-{
-	this->_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (this->_socket_fd < 0){
-		cerr << "Error: socket creation - " << errno << endl;
-		return ;
-	}
-
-	int socket_option = 1;
-	if (setsockopt(this->_socket_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option)) < 0) {
-		cerr << "Error: socket option - Reusable address - " << errno << endl;
-		close(this->_socket_fd);
-		return ;
-	}
-}
-
-void c_server::bind_and_listen()
-{
-	this->_socket_address = sockaddr_in();
-	this->_socket_address.sin_family = AF_INET;
-	this->_socket_address.sin_port = htons(8080);
-	this->_socket_address.sin_addr.s_addr = INADDR_ANY;
-	
-	if (bind(this->_socket_fd, (struct sockaddr *) &this->_socket_address, sizeof(this->_socket_address)) < 0)
-	{
-		cerr << "Error: Bind mode - " << errno << endl;
-		return ;
-	}
-	
-	if (listen(this->_socket_fd, SOMAXCONN) < 0){
-		cerr << "Error: Listening mode - " << errno << endl;
-		return ;
-	}
-}
-
-/* 
-* On check les flags du fd socket: rdonly, wronly, rdwr, append, sync, nonblock
-* FCNTL = file controle - > fonction générique pour manipuler des fd
-* Si un fd est ouvert en écriture/lecture avec append, alors flags aura O_RDWR et O_APPEND
-*/
+/* Checking the flags and adding the non-blocking flags */
 
 void c_server::set_non_blocking(int fd)
 {
-	int flags = fcntl(fd, F_GETFL, 0); // 
+	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags < 0)
 	{
 		cerr << "Error: F_GETFL - " << errno << endl;
@@ -66,6 +27,8 @@ void c_server::set_non_blocking(int fd)
 		return ;
 	}
 }
+
+/* Launching the main loop */
 
 void	run_multiserver(vector<c_server> &servers)
 {
@@ -96,25 +59,26 @@ int main(int argc, char **argv)
 		if (servers.empty())
 			throw invalid_argument("Error: No servers configurations");
 
-		servers.resize(1); //limite vecteur a 1 seul c_server
-		
-		webserv.print_configurations();
-	
-		// initialisation des serveurs
 		for (size_t i = 0; i < servers.size(); ++i)
 		{
-			servers[i].create_socket_for_each_port(servers[i].get_ports()); // Utilisera 8080 par défaut
-			cout << "Server " << i << " initialized" << endl;
-			// servers[i].create_socket();
-			// servers[i].bind_and_listen();
-			// servers[i].set_non_blocking(servers[i].get_socket_fd());
-			// cout << "Server " << i << " initialized on port " << servers[i].get_port() << endl;
+			servers[i].create_socket_for_each_port(servers[i].get_ports());
+			for (size_t i = 0; i < servers.size(); ++i)
+			{
+				std::vector<int> ports = servers[i].get_ports();
+				servers[i].create_socket_for_each_port(ports);
+
+				for (std::vector<int>::const_iterator it = ports.begin(); it != ports.end(); ++it)
+				{
+					std::cout << YELLOW << "🐶 Server " << i << " created and listening on port " << *it << RESET << std::endl;
+				}
+			}
+
 		}
 		run_multiserver(servers);
 	}
 	catch (exception & e)
 	{
-		cerr << RED << e.what() << RESET << endl; // a revoir 
+		cerr << RED << e.what() << RESET << endl;
 		return 1;
 	}
 	return 0;

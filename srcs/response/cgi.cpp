@@ -93,9 +93,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 	return (*this);
 }
 
-c_cgi::~c_cgi()
-{
-}
+c_cgi::~c_cgi(){}
 
 void    c_cgi::clear_context()
 {
@@ -127,7 +125,7 @@ void    c_cgi::append_read_buffer(const char* buffer, ssize_t bytes)
 	if (_read_buffer.size() + bytes > 10 * 1024 * 1024) 
 	{
 		_server.log_message("[ERROR] CGI output too large, killing process");
-		kill(this->get_pid(), SIGKILL); // ou close le fd
+		kill(this->get_pid(), SIGKILL);
 		return;
 	}
 	this->_read_buffer.append(buffer, bytes);
@@ -232,7 +230,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 	this->_loc = &loc;
 	char cwd[1024];
 
-	// Sauvegarder le répertoire courant
 	if (getcwd(cwd, sizeof(cwd)) == NULL) 
 	{
 		_server.log_message("[ERROR] getcwd failed");

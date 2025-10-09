@@ -38,8 +38,6 @@ void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 		}
 		set_non_blocking(socket_fd);
 		_multiple_ports[socket_fd] = port;
-		
-		cout << "✅ Socket created and listening on port " << port << endl;
 	}
 }
 
@@ -64,7 +62,7 @@ void	c_server::close_all_sockets_and_fd(void)
 		close(client_fd);
 	}
 	_clients.clear();
-	cout << GREEN << "✅ Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
+	cout << GREEN << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
 
 	for (map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
@@ -72,7 +70,7 @@ void	c_server::close_all_sockets_and_fd(void)
 		close(socket_fd);
 	}
 	_multiple_ports.clear();
-	cout << GREEN << "✅ Sockets closed!" << RESET << endl;
+	cout << GREEN << "🧦 Sockets closed!" << RESET << endl;
 	_poll_fds.clear();
 	cout << GREEN << "✅ SERVER CLOSED!" << RESET << endl;
 }
