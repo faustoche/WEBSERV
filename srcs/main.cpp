@@ -117,5 +117,5 @@ int main(int argc, char **argv)
 		cerr << RED << e.what() << RESET << endl; // a revoir 
 		return 1;
 	}
-    return 0;
+	return 0;
 }

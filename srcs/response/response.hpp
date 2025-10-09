@@ -77,6 +77,7 @@ private:
 	void	build_directory_listing_response(const string &dir_path, const string &version, const c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
+	void	check_method_and_headers(const c_request &request, string method, string target, string version, int status_code);
 
 	/***** POST method *****/
 	void						handle_post_request(const c_request &request, c_location *location, const string &version);

@@ -72,18 +72,18 @@ void c_server::setup_pollfd()
 
 	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); ++it) 
 	{
-    	int fd = it->first;
-    	c_cgi *cgi = it->second;
+		int fd = it->first;
+		c_cgi *cgi = it->second;
 
-    	struct pollfd cgi_pollfd;
-    	cgi_pollfd.fd = fd;
-    	cgi_pollfd.revents = 0;
+		struct pollfd cgi_pollfd;
+		cgi_pollfd.fd = fd;
+		cgi_pollfd.revents = 0;
 
-    	if (fd == cgi->get_pipe_in())
-    	    cgi_pollfd.events = POLLOUT;
-    	else if (fd == cgi->get_pipe_out())
-    	    cgi_pollfd.events = POLLIN;
-    	_poll_fds.push_back(cgi_pollfd);
+		if (fd == cgi->get_pipe_in())
+			cgi_pollfd.events = POLLOUT;
+		else if (fd == cgi->get_pipe_out())
+			cgi_pollfd.events = POLLIN;
+		_poll_fds.push_back(cgi_pollfd);
 	}
 
 	for (size_t i = 0; i < to_remove.size(); i++)
@@ -112,8 +112,7 @@ void c_server::setup_pollfd()
 */
 void c_server::handle_poll_events()
 {
-	// D'abord vérifier les processus CGI terminés (avant poll)
-    check_terminated_cgi_processes();
+	check_terminated_cgi_processes();
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
 	if (num_events < 0)
 	{
@@ -206,14 +205,14 @@ void c_server::handle_poll_events()
 			{
 				handle_client_write(fd);
 				if (client->get_write_buffer().empty() || client->get_response_complete())
-    			{
-    			    c_cgi* cgi = find_cgi_by_client(fd);
-    			    if (cgi && cgi->is_finished())
-    			    {
-    			        cleanup_cgi(cgi);
-    			        client->set_state(READING);
-    			    }
-    			}
+				{
+					c_cgi* cgi = find_cgi_by_client(fd);
+					if (cgi && cgi->is_finished())
+					{
+						cleanup_cgi(cgi);
+						client->set_state(READING);
+					}
+				}
 			}		
 		}
 	}
@@ -352,7 +351,7 @@ void	c_server::handle_client_write(int client_fd)
 	{
 		if (client->get_response_complete() && cgi->is_finished())
 			handle_fully_sent_response(client);
-        return;
+		return;
 	}
 
 	const char *data_to_send = write_buffer.c_str() + bytes_written;
@@ -369,9 +368,9 @@ void	c_server::handle_client_write(int client_fd)
 
 	client->set_bytes_written(bytes_written + bytes_sent);
 
-    if (client->get_bytes_written() >= write_buffer.length())
-    {
-        
+	if (client->get_bytes_written() >= write_buffer.length())
+	{
+		
 		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
 			log_message("[DEBUG] CGI " + int_to_string(cgi->get_pipe_out()) 
@@ -382,7 +381,7 @@ void	c_server::handle_client_write(int client_fd)
 		// keep-alive
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
 			handle_fully_sent_response(client);
-    }
+	}
 }
 
 // Il y a des choses a lire dans le pipe_out : POLLIN
@@ -476,8 +475,8 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	{
 		if (cgi->get_body_sent() > 0)
 			log_message("[DEBUG] request body fully sent to CGI " 
-    	                    + int_to_string(fd) 
-    	                    + ". Closing pipe_in.");
+							+ int_to_string(fd) 
+							+ ". Closing pipe_in.");
 		cgi->set_body_fully_sent_to_cgi();
 		_active_cgi.erase(fd);
 		remove_client(fd);
@@ -494,9 +493,9 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	if (bytes < 0)
 	{
 		log_message("[WARNING] recv() returned < 0 for CGI " 
-    	                    + int_to_string(fd) 
-    	                    + ". Will retry on next POLLIN.");
-    	return;
+							+ int_to_string(fd) 
+							+ ". Will retry on next POLLIN.");
+		return;
 	}
 
 	cgi->add_body_sent(bytes);
@@ -505,66 +504,66 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 
 void c_server::check_terminated_cgi_processes()
 {
-    pid_t pid;
-    int status;
-    
-    // Vérifier tous les processus enfants terminés
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
-    {
-        // Trouver le CGI correspondant
-        c_cgi* terminated_cgi = find_cgi_by_pid(pid);
+	pid_t pid;
+	int status;
+	
+	// Vérifier tous les processus enfants terminés
+	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
+	{
+		// Trouver le CGI correspondant
+		c_cgi* terminated_cgi = find_cgi_by_pid(pid);
 		if (this->_active_cgi.find(terminated_cgi->get_pipe_out()) != _active_cgi.end())
 		{
-        	if (!terminated_cgi)
-        	{
+			if (!terminated_cgi)
+			{
 				log_message("[WARN] Unkown CGI pid " + int_to_string(pid));
-        	    continue;
-        	}
+				continue;
+			}
 		
-        	// Analyser le statut de sortie
-        	if (WIFEXITED(status))
-        	{
-        	    int exit_code = WEXITSTATUS(status);
+			// Analyser le statut de sortie
+			if (WIFEXITED(status))
+			{
+				int exit_code = WEXITSTATUS(status);
 				log_message("[DEBUG] CGI process " + int_to_string(pid) 
 							+ " terminated exited with code: " + int_to_string(exit_code));
-        	    terminated_cgi->set_exit_status(exit_code);
+				terminated_cgi->set_exit_status(exit_code);
 				terminated_cgi->set_finished(true);
-        	}
+			}
 		}
 		else
 			return ;
-    }
+	}
 }
 
 void c_server::cleanup_cgi(c_cgi* cgi) 
 {
-    if (!cgi) return;
+	if (!cgi) return;
 
-    // 1. Fermer les pipes si encore ouverts
-    if (cgi->get_pipe_in() > 0) 
+	// 1. Fermer les pipes si encore ouverts
+	if (cgi->get_pipe_in() > 0) 
 	{
 		_active_cgi.erase(cgi->get_pipe_in());
-        remove_client(cgi->get_pipe_in());
+		remove_client(cgi->get_pipe_in());
 		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_in()) + " erased from active_cgi");
 		cgi->mark_stdin_closed();
-    }
+	}
 
-    if (cgi->get_pipe_out() > 0) 
+	if (cgi->get_pipe_out() > 0) 
 	{
 		 _active_cgi.erase(cgi->get_pipe_out());
-        remove_client(cgi->get_pipe_out());
+		remove_client(cgi->get_pipe_out());
 		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_out()) + " erased from active_cgi");
 		cgi->mark_stdout_closed();	
-    }
+	}
 
-    // 2. Attendre la fin du process enfant (si pas déjà récupéré)
-    int status;
-    waitpid(cgi->get_pid(), &status, WNOHANG);
+	// 2. Attendre la fin du process enfant (si pas déjà récupéré)
+	int status;
+	waitpid(cgi->get_pid(), &status, WNOHANG);
 
 	// cout << "CGI with PID " << cgi->get_pid() << " cleaned !" << endl;
 	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 
 	// 4. Libérer la mémoire de l’objet
-    delete cgi;
+	delete cgi;
 
 }

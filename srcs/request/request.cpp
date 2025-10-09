@@ -27,7 +27,7 @@ void	c_request::read_request()
 	while (request.find("\r\n\r\n") == string::npos)
 	{
 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
-        if (receivedBytes <= 0)
+		if (receivedBytes <= 0)
 		{
 			if (receivedBytes == 0)
 			{
@@ -36,11 +36,11 @@ void	c_request::read_request()
 			}
 			else if (receivedBytes < 0) 
 			{
-    			_server.log_message("[WARNING] recv() returned <0 for client " 
-    			                    + int_to_string(_socket_fd) 
-    			                    + ". Will retry on next POLLIN.");
+				_server.log_message("[WARNING] recv() returned <0 for client " 
+									+ int_to_string(_socket_fd) 
+									+ ". Will retry on next POLLIN.");
 				this->_request_fully_parsed = false;
-    			return;
+				return;
 			}
 		}
 		// buffer[receivedBytes] = '\0';
@@ -214,7 +214,7 @@ int c_request::parse_headers(string& headers)
 
 int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 {
-    this->_body.append(buffer, len);
+	this->_body.append(buffer, len);
 	if (this->_client_max_body_size > 0 && this->_body.size() > this->_client_max_body_size && is_limited())
 	{
 		this->_status_code = 413;
@@ -290,49 +290,49 @@ void c_request::fill_body_with_chunks(string &accumulator)
 	size_t			pos;
 
 	while ((pos = accumulator.find("\r\n")) != string::npos)
-    {
-        tmp = accumulator.substr(0, pos);
+	{
+		tmp = accumulator.substr(0, pos);
 		accumulator.erase(0, pos + 2); // supprimer \r\n
 
 		if (tmp.empty())
 			continue ;
 		this->_chunk_line_count++;
 
-        if (this->_chunk_line_count % 2 == 1)
-        {
-            // On lit la taille du chunk
-            this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
-            
-            // Si taille = 0, c'est le chunk final
-            if (this->_expected_chunk_size == 0)
-            {
-                this->_request_fully_parsed = true;
+		if (this->_chunk_line_count % 2 == 1)
+		{
+			// On lit la taille du chunk
+			this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
+			
+			// Si taille = 0, c'est le chunk final
+			if (this->_expected_chunk_size == 0)
+			{
+				this->_request_fully_parsed = true;
 				accumulator.clear();
-                return;
-            }
-        }
-        else
-        {
-            // On lit les données du chunk            
-            if (tmp.size() < this->_expected_chunk_size)
-            {
+				return;
+			}
+		}
+		else
+		{
+			// On lit les données du chunk            
+			if (tmp.size() < this->_expected_chunk_size)
+			{
 				accumulator.insert(0, tmp + "\r\n");
 				this->_chunk_line_count--;
-                return;
-            }
+				return;
+			}
 			if (tmp.size() > this->_expected_chunk_size)
 			{
 				_server.log_message("[ERROR] Invalid chunk size. Received: " 
 										+ int_to_string(tmp.size()) + " Expected: " 
 										+ int_to_string(_expected_chunk_size));
-                this->_status_code = 400;
+				this->_status_code = 400;
 				this->_error = true;
-                return;				
+				return;				
 			}
-            if (this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size))
+			if (this->fill_body_with_bytes(tmp.c_str(), this->_expected_chunk_size))
 				return ;
-        }
-    }
+		}
+	}
 }
 
 
@@ -364,7 +364,7 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (string(buffer) == "\0\r\n\r\n")
 			break;
-    	if (receivedBytes <= 0) 
+		if (receivedBytes <= 0) 
 		{
 			if (receivedBytes == 0) 
 			{
@@ -373,11 +373,11 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 			} 
 			else if (receivedBytes < 0) 
 			{
-    			_server.log_message("[WARNING] recv() returned <0 for client " 
-    			                    + int_to_string(socket_fd) 
-    			                    + ". Will retry on next POLLIN.");
+				_server.log_message("[WARNING] recv() returned <0 for client " 
+									+ int_to_string(socket_fd) 
+									+ ". Will retry on next POLLIN.");
 				this->_request_fully_parsed = false;
-    			return;
+				return;
 			}
 		}
 		this->_chunk_accumulator.append(buffer, receivedBytes);
@@ -419,7 +419,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{
-    		if (receivedBytes == 0)
+			if (receivedBytes == 0)
 			{
 				if (total_bytes == expected_length)
 					return ;
@@ -431,9 +431,9 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 			else if (receivedBytes < 0) 
 			{
-    			_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(socket_fd) + ". Will retry on next POLLIN.");
+				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(socket_fd) + ". Will retry on next POLLIN.");
 				this->_request_fully_parsed = false;
-    			return;
+				return;
 			}
 		}
 	
@@ -449,7 +449,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 			return ;
 		}
 
-    	if (this->fill_body_with_bytes(buffer, receivedBytes))
+		if (this->fill_body_with_bytes(buffer, receivedBytes))
 			return ;
 
 		if (total_bytes == expected_length)

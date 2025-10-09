@@ -62,34 +62,6 @@ void c_response::load_todo_page(const string &version, const c_request &request)
 	build_success_response("todo.html", version, request);
 }
 
-void c_response::handle_todo_form(const c_request &request, const string &version)
-{
-	map<string, string>form = parse_form_data(request.get_body());
-	string task;
-
-	map<string, string>::iterator it = form.find("task");
-	if (it != form.end())
-		task = it->second;
-	else
-		task = "";
-	if (task.empty())
-	{
-		build_error_response(400, version, request);
-		return ;
-	}
-
-	string filename = "./www/data/todo.txt";
-	ofstream file(filename.c_str(), ios::app);
-	if (!file.is_open())
-	{
-		build_error_response(500, version, request);
-		return ;
-	}
-	file << task << endl;
-	file.close();
-	load_todo_page(version, request);
-}
-
 void c_response::handle_delete_todo(const c_request &request, const string &version)
 {
 	string target = request.get_target();
@@ -148,8 +120,8 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 
 void c_response::load_upload_page(const string &version, const c_request &request)
 {
-    string html_template = load_file_content("./www/page_upload.html");
-    string files_html;
+	string html_template = load_file_content("./www/page_upload.html");
+	string files_html;
 
 	string upload_dir = "./www/upload/";
 	DIR *dir = opendir(upload_dir.c_str());
@@ -179,8 +151,8 @@ void c_response::load_upload_page(const string &version, const c_request &reques
 	if (pos != string::npos)
 		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 
-    _file_content = html_template;
-    build_success_response("page_upload.html", version, request);
+	_file_content = html_template;
+	build_success_response("page_upload.html", version, request);
 }
 
 void c_response::handle_delete_upload(const c_request &request, const string &version)

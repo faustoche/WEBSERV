@@ -159,3 +159,6 @@ string 		trim(const string &str);
 // string		sanitize_filename(const string &filename);
 // string		extract_extension(const string &filename, string &name);
 string		trim_underscore(const string &str);
+bool		create_directory(const string &path);
+bool		directory_exists(const string &path);
+bool		file_exists(const std::string &path);
