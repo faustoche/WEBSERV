@@ -27,8 +27,9 @@ WEBSERV		= $(addprefix $(SRCS_DIR)/, main.cpp\
 										server.cpp\
 										polls/polls.cpp\
 										polls/utils.cpp\
-										server/methods.cpp\
-										server/sockets.cpp\
+										polls/sockets.cpp\
+										methods/post.cpp\
+										methods/delete.cpp\
 										server_config/lexer.cpp\
 										server_config/parser.cpp\
 										server_config/location.cpp\

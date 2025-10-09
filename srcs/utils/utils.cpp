@@ -111,41 +111,6 @@ bool	create_directory(const string &path)
 	return (mkdir(path.c_str(), 0755) == 0);
 }
 
-string	get_unique_filename(const string &directory, string &filename)
-{
-	string full_path = directory + filename;
-	if (!file_exists(full_path))
-		return filename;
-	
-	size_t dot_pos = filename.find_last_of('.');
-	string name = filename.substr(0, dot_pos);
-	string extension = filename.substr(dot_pos);
-
-	int counter = 1;
-	string new_filename;
-
-	while (true)
-	{
-		ostringstream oss;
-		oss << counter;
-		new_filename = name + "_" + oss.str() + extension;
-		full_path = directory + new_filename;
-
-		if (!file_exists(full_path))
-			return new_filename;
-		counter++;
-		if (counter > 1000)
-		{
-			ostringstream oss_t;
-			oss_t << time(0);
-			return name + "_" + oss_t.str() + extension;
-		}
-	}
-}
-
-
-
-
 // string get_valid_index(vector<string> const & indexes) 
 // { 
 //     string valid_file; 
