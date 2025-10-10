@@ -1,7 +1,7 @@
 #include "clients.hpp"
 #include "server.hpp"
-#include <cstring>   // memset
-#include <unistd.h>  // close
+#include <cstring>
+#include <unistd.h>
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
@@ -38,6 +38,7 @@ c_client::c_client(int client_fd, string client_ip) : _fd(client_fd), _client_ip
 c_client::~c_client() {}
 
 /************ CLIENT CREATION ************/
+/* Add a file descriptor to the list handled by poll */
 
 void    c_server::add_fd(int fd, short events)
 {
@@ -50,6 +51,8 @@ void    c_server::add_fd(int fd, short events)
 	log_message("[DEBUG] fd " + int_to_string(fd) + " is now monitored by _poll_fds");
 }
 
+/* Creates new client. Set its socket to non-blocking */
+
 void c_server::add_client(int client_fd, string client_ip)
 {
 	_clients[client_fd] = c_client(client_fd, client_ip);
@@ -57,6 +60,8 @@ void c_server::add_client(int client_fd, string client_ip)
 	add_fd(client_fd, POLLIN);
 	log_message("[DEBUG] Client " + int_to_string(client_fd) + " can send a request : POLLIN");
 }
+
+/* Removes a client's fd from poll list, erase the fd from clients map and close the connection */
 
 void c_server::remove_client(int client_fd)
 {
@@ -91,6 +96,8 @@ c_client *c_server::find_client(int client_fd)
 	return (NULL);
 }
 
+/* Find the specific CHI process linked to the specific client */
+
 c_cgi   *c_server::find_cgi_by_client(int client_fd)
 {
 	for (map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); it++)
@@ -100,6 +107,8 @@ c_cgi   *c_server::find_cgi_by_client(int client_fd)
 	}
 	return (NULL);
 }
+
+/* Return client's fd linked to the given CGI */
 
 int c_server::find_client_fd_by_cgi(c_cgi* cgi)
 {

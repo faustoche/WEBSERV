@@ -35,7 +35,6 @@ c_server const &	c_server::operator=(c_server const & rhs)
 
 
 /*---------------------   CONFIGURATION FILE   ----------------------*/
-
 /*-------------------------   setters   -----------------------------*/
 
 void	c_server::set_indexes(vector<string> const & indexes)
@@ -85,8 +84,6 @@ void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 {
 	if (!cgi)
 		return ;
-
-	// Verifie si la cle existe
 	map<int, c_cgi*>::iterator it = _active_cgi.find(key_fd);
 	if (it != _active_cgi.end())
 		it->second = cgi;

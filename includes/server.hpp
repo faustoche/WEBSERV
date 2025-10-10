@@ -74,8 +74,6 @@ class c_server
 		int			get_port_from_socket(int socket_fd);
 		bool		is_listening_socket(int fd);
 
-		void 		create_socket();
-		void 		bind_and_listen();
 		void 		set_non_blocking(int fd);
 		void		add_client(int client_fd, string client_ip);
 		void		remove_client(int client_fd);

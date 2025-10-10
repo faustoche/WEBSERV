@@ -177,7 +177,7 @@
             <label>Choose a file :</label>
             <label for="fileInput" class="custom-file-label">BROWSE</label>
             <span class="file-name">No file chosen</span>
-            <input type="file" name="file" id="fileInput" required>
+            <input type="file" name="file" id="fileInput" accept="image/*,.pdf,.txt" required>
             
             <div class="button-group">
                 <button type="submit">SEND</button>
@@ -225,7 +225,7 @@
             }
         });
     </script>
-    <script>
+    <!-- <script>
         const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
         const uploadForm = document.querySelector(".upload-form");
 
@@ -233,12 +233,12 @@
             const files = fileInput.files;
             for (const file of files) {
                 if (file.size > MAX_FILE_SIZE) {
-                    event.preventDefault(); // pempche l'envoi
+                    event.preventDefault();
                     alert(`❌ The file "${file.name}" is too large. Max allowed size: 1 MB.`);
                     return;
                 }
             }
         });
-    </script>
+    </script> -->
 </body>
 </html>

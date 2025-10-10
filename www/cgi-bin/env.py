@@ -25,6 +25,11 @@ print("""
       color:#fff;
       text-align:center;
     }
+    ul {
+      text-align: left;
+      display: inline-block;
+      margin: 0 auto;
+    }
     .container {
       max-width: 600px;
       margin: 2rem auto;

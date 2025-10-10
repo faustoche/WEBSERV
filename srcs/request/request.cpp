@@ -47,6 +47,11 @@ void	c_request::read_request()
 		request.append(buffer, receivedBytes);
 	}
 	this->parse_request(request);
+	if (this->_error)
+	{
+		this->_request_fully_parsed = true;
+		return ;
+	}
 	c_location *matching_location = _server.find_matching_location(this->get_target());
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
 	{
@@ -128,9 +133,8 @@ int c_request::parse_start_line(string& start_line)
 	this->_method = start_line.substr(start, space_pos - start);
 	if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 	{
-		this->_status_code = 405;
+		this->_status_code = 501;
 		this->_error = true;
-		return (0);
 	}
 
 	/*- ---- Target ----- */

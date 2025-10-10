@@ -111,6 +111,25 @@ bool	create_directory(const string &path)
 	return (mkdir(path.c_str(), 0755) == 0);
 }
 
+bool	is_directory(const string& path)
+{
+	struct stat path_stat;
+
+	if (stat(path.c_str(), &path_stat) != 0)
+		return (false);
+	return (S_ISDIR(path_stat.st_mode));
+}
+
+bool	is_regular_file(const string& path)
+{
+	struct stat path_stat;
+
+	if (stat(path.c_str(), &path_stat) != 0)
+		return (false);
+	return (S_ISREG(path_stat.st_mode));
+}
+
+
 // string get_valid_index(vector<string> const & indexes) 
 // { 
 //     string valid_file; 

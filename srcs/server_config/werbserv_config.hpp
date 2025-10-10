@@ -19,7 +19,7 @@ public:
 	c_webserv_config(string const & file);
 	~c_webserv_config();
 
-	bool				load_configuration(); // appel du lexeur-parseur et configuration des _servers
+	bool				load_configuration();
 	vector<c_server> &	get_servers();
 	void				print_configurations();
 

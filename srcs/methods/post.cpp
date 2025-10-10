@@ -2,6 +2,7 @@
 
 
 /********************    POST    ********************/
+
 /* Content-Type
 --> formulaire classique = application/x-www-form-urlencoded
 --> formulaire avec fichiers ou champs multiples = multipart/form-data
@@ -9,26 +10,23 @@
 	separateur entre les differentes parties du body
  */
 
+/* Dispatch to the matching function based on content-type or target path */
+
 void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
 {
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	// cout << "=== DEBUG POST ===" << endl
-	// 		<< "Body recu: [" << body << "]" << endl
-	// 		<< "Content-Type: [" << content_type << "]" << endl
-	// 		<< "Target: [" << request.get_target() << "]" << endl;
 	if (request.get_error() || request.get_status_code() != 200)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(request.get_status_code(), version, request);
 		return ;
 	}
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
-	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
+	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 		handle_contact_form(request, version);
 	else if (content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, version, location);
@@ -53,8 +51,17 @@ allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
 max_file_size = 2 * 1024 * 1024  // 2 MB
 */
 
+/* Process file uploads, validate size and content, saves files and redirect */
+
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
+	// pour tester la size_max
+	size_t max_size = 1 * 1024 * 1024; // 1MB
+    if (request.get_content_length() > max_size)
+    {
+        build_error_response(413, version, request);
+        return;
+    }
 	string body = request.get_body();
 	if (body.empty())
 	{
@@ -68,7 +75,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status() >= 400 ? get_status() : 400, version, request);
 		return ;
 	}
@@ -76,7 +82,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
 	if (get_status() >= 400)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(get_status(), version, request);
 		return ;
 	}
@@ -101,7 +106,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			string saved_path = save_uploaded_file(part, location);
 			if (get_status() >= 400)
 			{
-				cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 				build_error_response(get_status(), version, request);
 				return;
 			}
@@ -132,6 +136,8 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		build_error_response(400, version, request);
 	}
 }
+
+/* Generate a unique filename if a file has the same name as a targfet directory*/
 
 string	get_unique_filename(const string &directory, string &filename)
 {
@@ -165,6 +171,8 @@ string	get_unique_filename(const string &directory, string &filename)
 	}
 }
 
+/* Save uploaded file to the directory */
+
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
 	string	uploaded_dir = location->get_upload_path();
@@ -192,7 +200,6 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	if (!file.is_open())
 	{
 		_server.log_message("[ERROR] the server cannot upload file " + final_path);
-		// cerr << "Error: the server can't upload the file " << final_path <<endl;
 		return "";
 	}
 	file.write(part.content.data(), part.content.size());
@@ -206,14 +213,16 @@ string	c_response::extract_boundary(const string &content_type)
 
 	size_t pos = content_type.find("boundary=");
 	if (pos != string::npos)
-		boundary = content_type.substr(pos + 9);// si PB trim espace ou / et guillemet
+		boundary = content_type.substr(pos + 9);
 	else
 	{
-		set_status(400); // parsing multipart echoue
+		set_status(400);
 		return "";
 	}
 	return boundary;
 }
+
+/* parse multipart body in single parts */
 
 vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
 {
@@ -231,7 +240,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
@@ -275,6 +283,8 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	return parts;
 }
 
+/* parse one multipart section, extract headers and content */
+
 s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
@@ -314,6 +324,8 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 
 	return part;
 }
+
+/* parse header lines inside a multipart section, extract filename and content-type */
 
 void	c_response::parse_header_section(const string &header_section, s_multipart &part)
 {
@@ -358,6 +370,7 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	}
 }
 
+/* extracts a single header line fr om a given position */
 
 string	c_response::extract_line(const string &header_section, const size_t &pos)
 {
@@ -369,6 +382,8 @@ string	c_response::extract_line(const string &header_section, const size_t &pos)
 	string line = header_section.substr(pos, end_pos - pos);
 	return line;
 }
+
+/* extract a "quoted" value */
 
 string	c_response::extract_quotes(const string &line, const string &type)
 {
@@ -432,7 +447,6 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	if (!file.is_open())
 	{
 		_server.log_message("[ERROR] error with the creation of file " + filename);
-		// cerr << "Error with the creation of the file " << filename << endl;
 		return false;
 	}
 
@@ -551,14 +565,14 @@ string const	c_response::url_decode(const string &body)
 		}
 		else if (body[i] == '%' && i + 2 < body.size())
 		{
-			bool	ishexa = true;
+			bool	is_hexa = true;
 			string hex_str = body.substr(i + 1, 2);
 			for (size_t j = 0; j < hex_str.size(); ++j)
 			{
 				if (!isxdigit(hex_str[j]))
-					ishexa = false;
+					is_hexa = false;
 			}
-			if (ishexa)
+			if (is_hexa)
 			{
 				int value = 0;
 				istringstream iss(hex_str);

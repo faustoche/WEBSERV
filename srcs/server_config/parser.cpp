@@ -9,12 +9,9 @@ c_parser::c_parser(string const file) : c_lexer(file), _error_msg("")
 
 /*-----------------  DESTRUCTOR -------------------*/
 
-c_parser::~c_parser()
-{}
-
+c_parser::~c_parser(){}
 
 /*----------------- MEMBERS METHODS  --------------*/
-
 /*------------   navigate through tokens --------------*/
 
 s_token c_parser::current_token() const
@@ -75,7 +72,6 @@ bool    c_parser::is_token_type(int type)
 	return false;
 }
 
-
 /*-----------------------   utils   ----------------------*/
 
 string      my_to_string(int int_str)
@@ -86,9 +82,6 @@ string      my_to_string(int int_str)
 	return str;
 
 }
-
-
-	
 
 // bool                c_parser::is_valid_port(string & port_str)
 // {
@@ -110,13 +103,12 @@ string      my_to_string(int int_str)
 // }
 
 
-
 /*----------------------------   LOCATION   -----------------------------*/
-
 /*---------------------   location : main function   -----------------------------*/
+
 void                c_parser::parse_location_block(c_server & server)
 {
-	advance_token(); // skip "location"
+	advance_token();
 
 	expected_token_type(TOKEN_VALUE);
 	if (_current->value[0] != '/')
@@ -126,7 +118,7 @@ void                c_parser::parse_location_block(c_server & server)
 	else
 		location_url_file(server);
 	expected_token_type(TOKEN_RBRACE);
-	advance_token(); // skip RBRACE
+	advance_token();
 }
 
 /*---------------------   location : directory as value   ----------------------*/
@@ -141,9 +133,9 @@ void                c_parser::location_url_directory(c_server & server)
 	location.set_body_size(server.get_body_size());
 	location.set_err_pages(server.get_err_pages());
 
-	advance_token(); // skip url location
+	advance_token();
 	expected_token_type(TOKEN_LBRACE);
-	advance_token(); // skip LBRACE
+	advance_token();
 
 	while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
 	{
@@ -158,6 +150,7 @@ void                c_parser::location_url_directory(c_server & server)
 }
 
 /*---------------------   location : file as value   ---------------------------*/
+
 void                c_parser::location_url_file(c_server & server)
 {
 	c_location  location;
@@ -167,9 +160,9 @@ void                c_parser::location_url_file(c_server & server)
 	location.set_body_size(server.get_body_size());
 	location.set_err_pages(server.get_err_pages());
 
-	advance_token(); // skip url location
+	advance_token();
 	expected_token_type(TOKEN_LBRACE);
-	advance_token(); // skip LBRACE
+	advance_token();
 
 	while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
 	{
@@ -184,6 +177,7 @@ void                c_parser::location_url_file(c_server & server)
 }
 
 /*------------------------   location : directives   ---------------------------*/
+
 void                c_parser::location_directives(c_location & location)
 {
 	int     flag_cgi = 0;
@@ -253,17 +247,17 @@ void                c_parser::parse_cgi(c_location & location)
 	string  extension;
 	string  path;
 
-	advance_token(); // skip directive
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 	extension = get_value();
-	advance_token(); // skip first value (suppose to be extension)
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 	path = get_value();
-	advance_token(); // skip second value (path)
+	advance_token();
 	expected_token_type(TOKEN_SEMICOLON);
-	advance_token(); //skip semicolon
+	advance_token();
 
-	if (extension != ".py" && extension != ".sh" && extension != ".php") // verifier toutes les extensions autorisees
+	if (extension != ".py" && extension != ".sh" && extension != ".php")
 		throw invalid_argument("Invalid extension for the CGI (.py, .sh or .php): " + extension);
 	if (path[0] != '/')
 		throw invalid_argument("Invalid path for the CGI (must begin with '/'): " + path);
@@ -276,7 +270,7 @@ void                c_parser::parse_cgi(c_location & location)
 
 void                c_parser::location_indexes(c_location & location)
 {
-	advance_token(); // skip directive
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 
 	while (is_token_type(TOKEN_VALUE))
@@ -296,7 +290,7 @@ void                c_parser::location_indexes(c_location & location)
 
 void                c_parser::parse_allowed_extensions(c_location & location)
 {
-	advance_token(); // skip directive
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 
 	while (is_token_type(TOKEN_VALUE))
@@ -313,10 +307,10 @@ void                c_parser::parse_allowed_extensions(c_location & location)
 
 void                c_parser::parse_alias(c_location & location)
 {
-	advance_token(); // skip directive
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 	string  alias = _current->value;
-	advance_token(); // skip value
+	advance_token();
 	expected_token_type(TOKEN_SEMICOLON);
 	advance_token();
 
@@ -345,7 +339,7 @@ void        c_parser::parse_upload_path(c_location & location)
 
 void        c_parser::parse_auto_index(c_location & location)
 {
-	advance_token(); // skip directive
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 
 	if (_current->value != "ON" && _current->value != "on"
@@ -356,7 +350,7 @@ void        c_parser::parse_auto_index(c_location & location)
 	else if (_current->value != "OFF" || _current->value != "off")
 		location.set_auto_index(false);
 
-	advance_token(); // skip value
+	advance_token();
 	expected_token_type(TOKEN_SEMICOLON);
 	advance_token();
 }
@@ -396,7 +390,7 @@ void        c_parser::parse_redirect(c_location & location)
 
 /*-----------------------   server : directives   ------------------------------*/
 
-string      c_parser::parse_ip(string const & value)
+string	c_parser::parse_ip(string const & value)
 {
 	if (value == "*")
 		return ("0.0.0.0");
@@ -424,12 +418,12 @@ string      c_parser::parse_ip(string const & value)
 	return value;
 }
 
-void                c_parser::parse_listen_directive(c_server & server)
+void	c_parser::parse_listen_directive(c_server & server)
 {
 	long    port = -1;
 	string  str_ip;
 
-	advance_token(); // skip keyword "listen"
+	advance_token();
 
 	if (get_value().find_first_not_of("0123456789") == string::npos)
 	{
@@ -458,15 +452,15 @@ void                c_parser::parse_listen_directive(c_server & server)
 	server.add_port(static_cast<int>(port));
 	server.set_ip(str_ip);
 
-	advance_token(); // skip ip+port
+	advance_token();
 	expected_token_type(TOKEN_SEMICOLON);
-	advance_token(); // skip semicolon
+	advance_token();
 }
 
-void                c_parser::parse_index_directive(c_server & server)
+void	c_parser::parse_index_directive(c_server & server)
 {
 	vector<string>  index_files;
-	advance_token(); // skip keyword "index"
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 
 	while (is_token_type(TOKEN_VALUE))
@@ -479,13 +473,13 @@ void                c_parser::parse_index_directive(c_server & server)
 
 	server.set_indexes(index_files);
 	expected_token_type(TOKEN_SEMICOLON);
-	advance_token(); // skip semicolon
+	advance_token();
 }
 
-void                c_parser::parse_server_name(c_server & server)
+void	c_parser::parse_server_name(c_server & server)
 {
 	vector<string>  temp_names;
-	advance_token(); // skip keyword "server_name"
+	advance_token();
 	expected_token_type(TOKEN_VALUE);
 
 	while (is_token_type(TOKEN_VALUE))
@@ -497,11 +491,10 @@ void                c_parser::parse_server_name(c_server & server)
 		throw invalid_argument("server_name directive requires at least one value");
 	server.set_name(temp_names);
 	expected_token_type(TOKEN_SEMICOLON);
-	advance_token(); // skip semicolon
+	advance_token();
 }
 
-
-void                c_parser::parse_server_directives(c_server & server)
+void	c_parser::parse_server_directives(c_server & server)
 {
 	if (is_token_value("index"))
 		parse_index_directive(server);
@@ -517,20 +510,18 @@ void                c_parser::parse_server_directives(c_server & server)
 		throw invalid_argument("Unexpected token in server block (not a valid directive): " + _current->value);
 }
 
-
 /*-------------------   parse server block ---------------------*/
 
-c_server            c_parser::parse_server_block()
+c_server	c_parser::parse_server_block()
 {
 	c_server    server;
 	bool        has_location = false;
 
-	advance_token(); // skip "server"
+	advance_token();
 	expected_token_type(TOKEN_LBRACE);
-	advance_token(); // skip "lbrace"
+	advance_token();
 	while (!is_token_type(TOKEN_RBRACE) && !is_at_end())
 	{
-
 		if (is_token_type(TOKEN_DIRECTIVE_KEYWORD))
 		{
 			// directives server doivent etre avant les blocs location
@@ -552,7 +543,6 @@ c_server            c_parser::parse_server_block()
 	advance_token();
 	if (server.get_ports().empty())
 		throw invalid_argument("No listening ports defined");
-
 	// if (!server.is_valid())
 	//     throw invalid_argument("Invalid server configuration: " + server.get_validation_error());
 	return server;
@@ -568,7 +558,7 @@ vector<c_server>    c_parser::parse_config()
 	while (!is_at_end())
 	{
 		s_token token = current_token();
-		if (is_token_value("server") && is_token_type(TOKEN_BLOC_KEYWORD)) // parser un par un les block server
+		if (is_token_value("server") && is_token_type(TOKEN_BLOC_KEYWORD))
 		{
 			c_server server = parse_server_block();
 			servers.push_back(server);
@@ -587,6 +577,7 @@ vector<c_server>    c_parser::parse_config()
 }
 
 /*-----------------   principal method -------------------*/
+
 vector<c_server>    c_parser::parse()
 {
 	try
@@ -599,18 +590,16 @@ vector<c_server>    c_parser::parse()
 		cerr << _error_msg << endl;
 		return vector<c_server>(); // revoir
 	}
-
 }
-
 
 /*-----------------------   utils -----------------------*/
 
-size_t            c_parser::convert_to_octet(string const & str, string const & suffix, size_t const i) const
+size_t	c_parser::convert_to_octet(string const & str, string const & suffix, size_t const i) const
 {
 	size_t limit = 0;
 	string number_part;
 
-	if (suffix.empty()) // pas de suffix donc chiffre deja en octet
+	if (suffix.empty())
 		number_part = str;
 	else
 		number_part = str.substr(0, i);
@@ -648,10 +637,9 @@ size_t            c_parser::convert_to_octet(string const & str, string const & 
 	return limit;
 }
 
-
 /*-----------------   error handling -------------------*/
 
-void                c_parser::throw_error(string const & first, string const & second, string const & value)
+void	c_parser::throw_error(string const & first, string const & second, string const & value)
 {
 	throw invalid_argument(first + second + value);
 }

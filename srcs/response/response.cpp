@@ -8,12 +8,9 @@ c_response::c_response(c_server& server, c_client &client) : _server(server), _c
 	this->_error = false;
 	this->_client_fd = _client.get_fd();
 	this->_status = 200;
-	// this->_client = _server.find_client(_client_fd);
 }
 
-c_response::~c_response()
-{}
-
+c_response::~c_response(){}
 
 /************ GETTERS ************/
 
@@ -29,32 +26,6 @@ const string& c_response::get_header_value(const string& key) const
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-/* Check to see what kind of response must be sent 
-* First, we clear everything and define variables
-* Second, we check that the method, versions and host are corrects
-* Third, we verify that the method is allowed according to the locations
-* We also check if the locations gave us redirections or not
-* We construct the correct path according to locations again
-*/
-
-bool	is_directory(const string& path)
-{
-	struct stat path_stat;
-
-	if (stat(path.c_str(), &path_stat) != 0)
-		return (false);
-	return (S_ISDIR(path_stat.st_mode));
-}
-
-bool	is_regular_file(const string& path)
-{
-	struct stat path_stat;
-
-	if (stat(path.c_str(), &path_stat) != 0)
-		return (false);
-	return (S_ISREG(path_stat.st_mode));
-}
-
 void	c_response::define_response_content(const c_request &request)
 {
 	_response.clear();
@@ -65,10 +36,14 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
 		build_error_response(status_code, version, request);
+		return ;
+	}
+	if (method != "GET" && method != "POST" && method != "DELETE")
+	{
+		build_error_response(405, version, request);
 		return ;
 	}
 	if (method == "GET" && target == "/todo.html")
@@ -96,11 +71,6 @@ void	c_response::define_response_content(const c_request &request)
 		handle_delete_upload(request, version);
 		return;
 	}
-	if (method != "GET" && method != "POST" && method != "DELETE" && method != "PUT")
-	{
-		build_error_response(405, version, request);
-		return ;
-	}
 	if (version != "HTTP/1.1")
 	{
 		build_error_response(505, version, request);
@@ -111,7 +81,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(status_code, version, request);
 		return ;
 	}
-	
+
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
@@ -150,9 +120,7 @@ void	c_response::define_response_content(const c_request &request)
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
 
 	if (is_regular_file(file_path))
-	{
 		_file_content = load_file_content(file_path);
-	}
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
@@ -261,8 +229,6 @@ string c_response::get_content_type(const string &file_path)
 		return ("text/plain"); 
 }
 
-/* READING PAGES */
-
 /* Reading the error pages*/
 
 string c_response::read_error_pages(int error_code)
@@ -282,7 +248,6 @@ string c_response::read_error_pages(int error_code)
 	return (fallback.str());
 }
 
-
 /************ BUILDING RESPONSES ************/
 
 /* Build the successfull request response */
@@ -292,15 +257,11 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	this->_status = request.get_status_code();
 	const string request_body = request.get_body();
 
-	// cout << "request_body: " << request_body << endl; 
 	if (cgi.get_interpreter().empty())
 		return ;
 
 	this->set_status(cgi.launch_cgi(request_body));
-
 }
-
-/* COde 303 avec redirection */
 
 void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
 {
