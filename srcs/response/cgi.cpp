@@ -292,24 +292,25 @@ void  c_cgi::vectorize_env()
 
 void    c_cgi::set_environment(const c_request &request)
 {
-	this->_socket_fd = request.get_socket_fd();
-	this->_map_env_vars["REQUEST_METHOD"] = request.get_method();
-	this->_map_env_vars["SCRIPT_NAME"] = this->_script_name;
-	this->_map_env_vars["PATH_INFO"] = this->_path_info;
-	this->_map_env_vars["TRANSLATED_PATH"] = this->_translated_path;
-	this->_map_env_vars["SCRIPT_FILENAME"] = this->_script_filename;
-	this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_content_length());
-	this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
-	this->_map_env_vars["QUERY_STRING"] = request.get_query();
-	this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
-	this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
-	this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
-	this->_map_env_vars["REDIRECT_STATUS"] = "200";
-	this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
-	this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
-	this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");
-	this->_map_env_vars["HTTP_COOKIE"] = request.get_header_value("Cookie");
-	this->_map_env_vars["HTTP_REFERER"] = request.get_header_value("Referer");
+    this->_socket_fd = request.get_socket_fd();
+    this->_map_env_vars["REQUEST_METHOD"] = request.get_method();
+    this->_map_env_vars["SCRIPT_NAME"] = this->_script_name;
+    this->_map_env_vars["PATH_INFO"] = this->_path_info;
+    this->_map_env_vars["TRANSLATED_PATH"] = this->_translated_path;
+    this->_map_env_vars["SCRIPT_FILENAME"] = this->_script_filename;
+    this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_content_length());
+    this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
+    this->_map_env_vars["QUERY_STRING"] = request.get_query();
+    this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
+    this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
+    this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
+    this->_map_env_vars["REDIRECT_STATUS"] = "200";
+    this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
+    this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
+    this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");
+    this->_map_env_vars["HTTP_COOKIE"] = request.get_header_value("Cookie");
+    this->_map_env_vars["HTTP_REFERER"] = request.get_header_value("Referer");
+    this->_map_env_vars["HTTP_HOST"] = request.get_header_value("Host");
 
 	this->vectorize_env();
 }
