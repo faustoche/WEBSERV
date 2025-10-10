@@ -139,13 +139,17 @@ void	c_response::define_response_content(const c_request &request)
 	{
 		if (request.get_path().find(".") == string::npos)
 		{
+			this->_is_cgi = false;
+			if (request.get_target() != "/cgi-bin/" && request.get_target() != "/cgi-bin")
+			{
+				build_error_response(404, version, request);
+				return ;
+			}
 			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 			{
-				this->_is_cgi = false;	
 				build_directory_listing_response(file_path, version, request);
 				return ;
 			}
-			build_error_response(404, version, request);
 		}
 
 		_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
@@ -156,6 +160,7 @@ void	c_response::define_response_content(const c_request &request)
 			_server.cleanup_cgi(cgi);
 			this->_is_cgi = false;
 			set_error();
+			cgi->set_exit_status(this->_client.get_status_code());
 			build_error_response(cgi->get_status_code(), version, request);
 			return ;
 		}
@@ -347,6 +352,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 {
 	string status;
 	string error_content;
+	(void)version;
 
 	switch (error_code)
 	{
@@ -405,6 +411,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 
 	_client.set_status_code(error_code);
 
+
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
 	if (it != err_pages.end())
@@ -443,8 +450,8 @@ void c_response::build_error_response(int error_code, const string version, cons
 	ostringstream oss;
 	oss << error_content.length();
 	
-	_response = version + " " + int_to_string(error_code) + " " + status + "\r\n";
-	_response += "Content-Type: text/html\r\n";
+	_response = "HTTP/1.1 " + int_to_string(error_code) + " " + status + "\r\n";
+	_response += "Content-Type: text/html; charset=UTF-8\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 

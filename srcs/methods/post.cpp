@@ -86,20 +86,12 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		return ;
 	}
 
-	// if (parts.empty()) // pour fichiers lourds parfois rentre parfois non
-	// {
-		// cout << PINK << __LINE__ << " / " << __FILE__ << endl;
-		// build_error_response(400, version, request);
-		// return ;
-	// }
-
 
 	// TRAITEMENT de chaque partie
 	// string 			description;
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
@@ -132,7 +124,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
 }

@@ -85,7 +85,7 @@ void	c_server::handle_fully_sent_response(c_client *client)
 {
 	int duration = client->get_last_modified() - client->get_creation_time();
 	log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
-				+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s");
+				+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s with status_code of " + int_to_string(client->get_status_code()));
 	log_access(client);
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
 				+ " can send a new request : POLLIN");

@@ -35,7 +35,37 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 	return (true);
 }
 
-void c_request::check_required_headers()
+bool	c_request::is_uri_valid()
+{
+	if (this->_target.empty())
+		return (false);
+
+	if (this->_target.find("//") != string::npos || this->_target.find("..") != string::npos)
+	{
+		cout << __FILE__ << " " << __LINE__ << endl;
+		return (false);
+	}
+
+	for (size_t i = 0; i < this->_path.size(); i++)
+	{
+		char c = this->_path[i];
+		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') || c == '/' || c == '-' || c == '_' || c == '.'  || c == '~'))
+			return (false);
+	}
+
+	for (size_t i = 0; i < this->_query.size(); i++)
+	{
+		char c = this->_query[i];
+		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+              (c >= '0' && c <= '9') || c == '&' || c == '=' || c == '$' ||
+              c == '?' || c == '-' || c == '_' || c == '.' || c == '~' || c == '%'))
+            return false;
+	}
+	return (true);
+}
+
+void	c_request::check_required_headers()
 {
 	bool has_content_length = this->_headers.count("Content-Length"); // body dont on connait la  taille
 	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding"); // on ne connait pas la taille du body donc chunck

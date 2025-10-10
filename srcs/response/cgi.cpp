@@ -93,7 +93,13 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 	return (*this);
 }
 
-c_cgi::~c_cgi(){}
+c_cgi::~c_cgi()
+{
+	if (this->get_pipe_in() > 0)
+		close(this->get_pipe_in());
+	if (this->get_pipe_out() > 0)
+		close(this->get_pipe_out());
+}
 
 void    c_cgi::clear_context()
 {
@@ -193,6 +199,9 @@ size_t c_cgi::identify_script_type(const string& path)
 			if (pos_script == string::npos)
 			{
 				_server.log_message("[ERROR] Unknown script type");
+				int client_fd = _server.find_client_fd_by_cgi(this);
+				c_client *client = _server.find_client(client_fd);
+				client->set_status_code(404);
 				return (string::npos);
 			}
 			 this->_script_name = path.substr(0, pos_script + 4);
@@ -208,9 +217,10 @@ size_t c_cgi::identify_script_type(const string& path)
 int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_filename)
 {
 	size_t ext_pos = identify_script_type(script_filename);
-
 	if (ext_pos == string::npos)
+	{
 		return(1);
+	}
 	string  root = loc.get_alias();
 	string  url_key = loc.get_url_key();
 	string  relative_path = this->_script_name.substr(url_key.size());
@@ -233,13 +243,14 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 	if (getcwd(cwd, sizeof(cwd)) == NULL) 
 	{
 		_server.log_message("[ERROR] getcwd failed");
-		return 1;
+		return (1);
 	}
 	std::string old_dir = cwd;
  
 	string extension = find_script_extension(target);
 
-	resolve_cgi_paths(loc, request.get_target());
+	if (resolve_cgi_paths(loc, request.get_target()))
+		return (1);
 	if (!this->_relative_argv.empty())
 	{
 		if (chdir("www/cgi-bin/") == 0)
