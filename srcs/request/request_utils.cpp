@@ -8,7 +8,7 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 	{
 		if ((value[i] < 32 && value[i] != '\t') || value[i] == 127)
 		{
-			cerr << "(Request) Error: Invalid char in header value: " << value << endl;
+			_server.log_message("[ERROR] Invalid char in header_value: " + key);
 			return (false);
 		}
 	}
@@ -19,7 +19,7 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 		{
 			if (!isdigit(value[i]))
 			{
-				cerr << "(Request) Error: Invalid content length: " << value << endl;
+				_server.log_message("[ERROR] Invalid Content_Length: " + value);
 				return (false);
 			}
 		}
@@ -29,27 +29,52 @@ bool    c_request::is_valid_header_value(string& key, const string& value)
 
 	if (value.size() > 4096)
 	{
-		cerr << "(Request) Error: Header field too large: " << value << endl;
+		_server.log_message("[ERROR] Header field too large: " + value);
 		return (false);
 	}
 	return (true);
 }
 
-void c_request::check_required_headers()
+bool	c_request::is_uri_valid()
 {
-	bool has_content_length = this->_headers.count("Content-Length"); // body dont on connait la  taille
-	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding"); // on ne connait pas la taille du body donc chunck
+	if (this->_target.empty())
+		return (false);
+
+	if (this->_target.find("//") != string::npos || this->_target.find("..") != string::npos)
+		return (false);
+
+	for (size_t i = 0; i < this->_path.size(); i++)
+	{
+		char c = this->_path[i];
+		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+			(c >= '0' && c <= '9') || c == '/' || c == '-' || c == '_' || c == '.'  || c == '~'))
+			return (false);
+	}
+
+	for (size_t i = 0; i < this->_query.size(); i++)
+	{
+		char c = this->_query[i];
+		if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+              (c >= '0' && c <= '9') || c == '&' || c == '=' || c == '$' ||
+              c == '?' || c == '-' || c == '_' || c == '.' || c == '~' || c == '%'))
+            return false;
+	}
+	return (true);
+}
+
+void	c_request::check_required_headers()
+{
+	bool has_content_length = this->_headers.count("Content-Length");
+	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding");
 
 	if (this->_method == "POST" && (has_content_length || has_transfer_encoding))
 	{
-		// cout << "Warning: Request has body!\n" << endl;
 		_server.log_message("[DEBUG] Request has a body");
 		this->_has_body = true;
 	}
 
 	if (this->_headers.count("Host") != 1)
 	{
-		// cerr << "(Request) Error: Header host" << endl;
 		_server.log_message("[ERROR] invalid header Host");
 		this->_error = true;
 		this->_status_code = 400;
@@ -62,14 +87,12 @@ void c_request::check_required_headers()
 			this->_error = true;
 			this->_status_code = 400;
 			_server.log_message("[ERROR] Missing header indicating body size");
-			// cerr << "(Request) Error: Missing header about body size" << endl;
 		}
 		if (has_content_length && has_transfer_encoding)
 		{
 			this->_error = true;
 			this->_status_code = 400;
 			_server.log_message("[ERROR] Misleading header body size");
-			// cerr << "(Request) Error: only one header required about body size" << endl;
 		}
 	}     
 }
@@ -114,7 +137,6 @@ void	c_request::print_full_request() const
 			cout << this->_body << endl;
 		}
 
-		// cout << "Status code: " << this->_status_code << endl;
 		cout << endl;
 	}
 }
@@ -141,37 +163,9 @@ void	c_request::init_request()
 	this->_client_max_body_size = 0; // limite systeme par defaut
 	this->_socket_fd = _client.get_fd();
 	this->_ip_client = _client.get_ip();
-	// this->_client = NULL;
 
 	for (map<string, string>::iterator it = _headers.begin(); it != _headers.end(); it++)
 		it->second = "";
 }
 
-// string  c_request::ft_trim(const string& str)
-// {
-//     size_t start = 0;
-//     size_t end = str.length();
-
-//     while (start < end && (str[start] == ' ' || str[start] == '\t'))
-//         start++;
-
-//     while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
-//         end--;
-	
-//     return (str.substr(start, end - start));
-// }
-
-// void debugLine(const std::string &s)
-// {
-//     std::cout << "DEBUG: [";
-//     for (size_t i = 0; i < s.size(); ++i)
-//     {
-//         unsigned char c = static_cast<unsigned char>(s[i]);
-//         if (isprint(c))
-//             std::cout << s[i];
-//         else
-//             std::cout << "\\x" << std::hex << (int)c << std::dec;
-//     }
-//     std::cout << "] (len=" << s.size() << ")" << std::endl;
-// }
 

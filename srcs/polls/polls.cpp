@@ -223,7 +223,7 @@ void	c_server::handle_new_connection(int listening_socket)
 			too_many_request.init_request();
 
 			c_response resp(*this, client);
-			resp.build_error_response(503, "HTTP/1.1", too_many_request);
+			resp.build_error_response(503, too_many_request);
 
 			const string &raw = resp.get_response();
 			send(client_fd, raw.c_str(), raw.size(), 0);
@@ -351,13 +351,13 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 	char	buffer[BUFFER_SIZE];
 	ssize_t	bytes_read = read(cgi->get_pipe_out(), buffer, BUFFER_SIZE);
 
+	if (bytes_read <= 0)
+		return ;
+
 	cgi->append_read_buffer(buffer, bytes_read);
 
 	c_client *client = find_client(cgi->get_client_fd());
 	if (!client)
-		return ;
-
-	if (bytes_read <= 0)
 		return ;
 
 	if (!cgi->headers_parsed())
@@ -395,18 +395,29 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	ssize_t bytes_read;
 
 	c_client *client = find_client(cgi->get_client_fd());
-	if (client && !cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
+	if (!client)
+		return ;
+
+	if (!cgi->headers_parsed() && cgi->get_read_buffer().size() > 0)
 	{
 		fill_cgi_response_headers("", cgi);
 		fill_cgi_response_body(cgi->get_read_buffer().data(), cgi->get_read_buffer().size(), cgi);
 	}
 
-	while (client &&  (bytes_read = read(fd, buffer, BUFFER_SIZE)) > 0)
+	while (true)
 	{
-		if (cgi->get_content_length() == 0)
-			transfer_with_chunks(buffer, bytes_read, cgi);
+		bytes_read = read(fd, buffer, BUFFER_SIZE);
+		if (bytes_read < 0)
+			return ;
+		if (bytes_read == 0)
+			break ;
 		else
-			transfer_by_bytes(cgi, buffer, bytes_read);
+		{
+			if (cgi->get_content_length() == 0)
+				transfer_with_chunks(buffer, bytes_read, cgi);
+			else
+				transfer_by_bytes(cgi, buffer, bytes_read);
+		}
 	}
 
 	if (cgi->get_content_length() == 0 && !client->get_response_complete())
@@ -498,7 +509,8 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 
 	if (cgi->get_pipe_in() > 0) 
 	{
-		_active_cgi.erase(cgi->get_pipe_in());
+		if (_active_cgi.find(cgi->get_pipe_in()) != _active_cgi.end())
+			_active_cgi.erase(cgi->get_pipe_in());
 		remove_client(cgi->get_pipe_in());
 		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_in()) + " erased from active_cgi");
 		cgi->mark_stdin_closed();
@@ -506,7 +518,8 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 
 	if (cgi->get_pipe_out() > 0) 
 	{
-		 _active_cgi.erase(cgi->get_pipe_out());
+		if (_active_cgi.find(cgi->get_pipe_out()) != _active_cgi.end())
+			_active_cgi.erase(cgi->get_pipe_out());		
 		remove_client(cgi->get_pipe_out());
 		log_message("[DEBUG] fd " + int_to_string(cgi->get_pipe_out()) + " erased from active_cgi");
 		cgi->mark_stdout_closed();	
@@ -515,5 +528,6 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 	int status;
 	waitpid(cgi->get_pid(), &status, WNOHANG);
 	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
+
 	delete cgi;
 }
