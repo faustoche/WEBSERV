@@ -65,12 +65,9 @@ void	c_response::define_response_content(const c_request &request)
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
 
-	cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
-
 	/***** VÉRIFICATIONS *****/
 	if (status_code != 200)
 	{
-		cout << RED << __LINE__ << " / " << __FILE__ << " --> status code = " << get_status() << RESET << endl;
 		build_error_response(status_code, version, request);
 		return ;
 	}
@@ -91,7 +88,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method == "GET" && target == "/page_upload.html")
     {
-		cout << PINK << __LINE__ << " / " << __FILE__ << RESET << endl;
         load_upload_page(version, request);
         return ;
     }
@@ -310,7 +306,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			string saved_path = save_uploaded_file(part, location);
 			if (get_status() >= 400)
 			{
-				cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 				build_error_response(get_status(), version, request);
 				return;
 			}
@@ -327,7 +322,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	if (uploaded_files.size() > 0)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		_response = version + " 303 See Other\r\n";
 		_response += "Location: /page_upload.html\r\n";
 		_response += "Content-Length: 0\r\n";
@@ -461,7 +455,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		if (get_status() >= 400)
 			break;
 
