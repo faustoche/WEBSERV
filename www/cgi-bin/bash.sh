@@ -8,5 +8,5 @@ echo "Content-Type: text/plain"
 echo ""
 
 # Corps de la réponse
-echo "Données reçues : $POST_DATA"
+echo "Data received : $POST_DATA"
 

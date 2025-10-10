@@ -137,9 +137,7 @@ void c_server::handle_poll_events()
 					continue ;
 
 				if ((pfd.revents & POLLOUT) && (fd == cgi->get_pipe_in()))
-				{
 					handle_cgi_write(cgi);
-				}
 
 				if ((pfd.revents & POLLIN) && (fd == cgi->get_pipe_out()))
 					handle_cgi_read(cgi);
