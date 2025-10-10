@@ -4,6 +4,7 @@
 
 void	c_response::handle_delete_request(const c_request &request, string file_path)
 {
+	cout << "file_path: " << file_path << endl;
 	if (file_path.find("..") != string::npos)
 	{
 		build_error_response(403, request);

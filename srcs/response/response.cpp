@@ -118,6 +118,12 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
+	char resolved_path[PATH_MAX];
+	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path))
+	{
+		build_error_response(403, request);
+		return ;
+	}
 
 	if (is_regular_file(file_path))
 		_file_content = load_file_content(file_path);
@@ -182,6 +188,7 @@ void	c_response::define_response_content(const c_request &request)
 			handle_delete_todo(request);
 			return;
 		}
+		cout << "file_path: " << file_path << endl;
 		handle_delete_request(request, file_path);
 		build_success_response(file_path, request);
 	}
