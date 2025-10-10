@@ -86,20 +86,11 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 		return ;
 	}
 
-	// if (parts.empty()) // pour fichiers lourds parfois rentre parfois non
-	// {
-		// cout << PINK << __LINE__ << " / " << __FILE__ << endl;
-		// build_error_response(400, version, request);
-		// return ;
-	// }
-
-
 	// TRAITEMENT de chaque partie
 	// string 			description;
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		s_multipart &part = parts[i];
 		if (part.is_file)
 		{
@@ -132,7 +123,6 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 		build_error_response(400, version, request);
 	}
 }
@@ -275,11 +265,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 			break;
 		
 		parts.push_back(single_part);
-		if (single_part.content.empty())
-			cout << PINK << __LINE__ << " / EMPTY / " << __FILE__ << endl;
 	}
-	if (parts.empty())
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	return parts;
 }
 
@@ -658,4 +644,55 @@ void c_response::handle_todo_form(const c_request &request, const string &versio
 	file << task << endl;
 	file.close();
 	load_todo_page(version, request);
+}
+
+/* GESTION DES UPLOADS */
+/* Load the upload page, list all the files already uploaded */
+
+void c_response::load_upload_page(const string &version, const c_request &request)
+{
+	string html_template = load_file_content("./www/page_upload.html");
+	string files_html;
+
+	/* recuperer max_body_size pour lenvoyer a la page HTML */
+	size_t max_body_size = request.get_client_max_body_size();
+	string max_body_size_str = int_to_string(max_body_size);
+
+	string upload_dir = "./www/upload/";
+	DIR *dir = opendir(upload_dir.c_str());
+	if (dir)
+	{
+		struct dirent *entry;
+		while ((entry = readdir(dir)) != NULL)
+		{
+			string filename = entry->d_name;
+			if (filename == "." || filename == "..")
+				continue;
+
+			files_html += "<div class=\"file-item\">";
+			files_html += "<div class=\"file-info\">";
+			files_html += "<span class=\"file-name-list\">" + filename + "</span>";
+			files_html += "</div>";
+			files_html += "<button class=\"delete-btn\" onclick=\"deleteFile('" + filename + "')\">DELETE</button>";
+			files_html += "</div>\n";
+		}
+		closedir(dir);
+	}
+	else
+	{
+		files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
+	}
+
+	/* remplacememtn du placeholder {{MAX_BODY_SIZE}}*/
+	size_t pos = html_template.find("{{MAX_BODY_SIZE}}");
+	if (pos != string::npos)
+		html_template.replace(pos, strlen("{{MAX_BODY_SIZE}}"), max_body_size_str);
+
+	/* remplacement des fichiers existants */
+	pos = html_template.find("{{FILES_HTML}}");
+	if (pos != string::npos)
+		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
+
+    _file_content = html_template;
+    build_success_response("page_upload.html", version, request);
 }

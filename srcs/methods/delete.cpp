@@ -126,44 +126,6 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	load_todo_page(version, request);
 }
 
-/* Load the upload page, list all the files already uploaded */
-
-void c_response::load_upload_page(const string &version, const c_request &request)
-{
-	string html_template = load_file_content("./www/page_upload.html");
-	string files_html;
-
-	string upload_dir = "./www/upload/";
-	DIR *dir = opendir(upload_dir.c_str());
-	if (dir)
-	{
-		struct dirent *entry;
-		while ((entry = readdir(dir)) != NULL)
-		{
-			string filename = entry->d_name;
-			if (filename == "." || filename == "..")
-				continue;
-
-			files_html += "<div class=\"file-item\">";
-			files_html += "<div class=\"file-info\">";
-			files_html += "<span class=\"file-name-list\">" + filename + "</span>";
-			files_html += "</div>";
-			files_html += "<button class=\"delete-btn\" onclick=\"deleteFile('" + filename + "')\">DELETE</button>";
-			files_html += "</div>\n";
-		}
-		closedir(dir);
-	}
-	else
-	{
-		files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
-	}
-	size_t pos = html_template.find("{{FILES_HTML}}");
-	if (pos != string::npos)
-		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
-
-	_file_content = html_template;
-	build_success_response("page_upload.html", version, request);
-}
 
 /* Handle file delete request after checking filename and access permissions */
 

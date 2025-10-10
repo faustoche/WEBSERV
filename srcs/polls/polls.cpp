@@ -92,8 +92,9 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
-	check_terminated_cgi_processes();
-	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 10000);
+	// D'abord vérifier les processus CGI terminés (avant poll)
+    check_terminated_cgi_processes();
+	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 100);
 	if (num_events < 0)
 	{
 		close_all_sockets_and_fd();
@@ -252,8 +253,12 @@ void c_server::handle_client_read(int client_fd)
 		return ;
 	}
 
+	/* a voir si ca pose PB car ca recree une request a chaque lecture et ne concerve pas les infos
+	le parsing doit pouvoir persister entre deux evenements poll() */
 	c_request request(*this, *client);
 	request.read_request();
+
+	// je rajoute ca pour traiter les doubles uploads
 	if (!request.is_request_fully_parsed())
 	{
 		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
@@ -265,7 +270,6 @@ void c_server::handle_client_read(int client_fd)
 		remove_client(client_fd);
 		return ;
 	}
-
 	if (client->get_state() != IDLE)
 	{
 		// request.print_full_request();
@@ -304,7 +308,9 @@ void	c_server::handle_client_write(int client_fd)
 	if (remaining == 0)
 	{
 		if (client->get_response_complete() && cgi->is_finished())
+		{
 			handle_fully_sent_response(client);
+		}
 		return;
 	}
 
@@ -332,7 +338,9 @@ void	c_server::handle_client_write(int client_fd)
 		}
 
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
+		{
 			handle_fully_sent_response(client);
+		}
 	}
 }
 

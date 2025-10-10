@@ -226,7 +226,8 @@
         });
     </script>
     <script>
-        const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+        // const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+        const MAX_FILE_SIZE = {{MAX_BODY_SIZE}};
         const uploadForm = document.querySelector(".upload-form");
 
         uploadForm.addEventListener("submit", (event) => {
