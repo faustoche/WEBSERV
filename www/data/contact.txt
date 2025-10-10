@@ -4,3 +4,4 @@
 [ Wed Oct  8 15:01:34 2025 ] email=vdsgr@dddd; message=dewcergfr; nom=dddd; 
 email=tata@hotgirl.fr; message=coucou les filles; nom=tata; 
 email=vbvcb@gmail.com; message=ljnkljm;ljm; nom=Faustine; 
+email=*-@gmail.com; message=\\\; nom=/*/-; 

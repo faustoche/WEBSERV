@@ -1,6 +1,5 @@
 #include "server.hpp"
-#include <iomanip>
-#include <sstream>
+
 
 /* Handles delete request by checking permissions, and removing specific files if allowed */
 
@@ -39,79 +38,6 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 		build_error_response(500, version, request);
 		return ;
 	}
-}
-
-string url_decode(const string &str)
-{
-    string ret;
-    for (string::size_type i = 0; i < str.length(); ++i)
-    {
-        if (str[i] == '%')
-        {
-            if (i + 2 < str.length())
-            {
-                char hex[3];
-                hex[0] = str[i+1];
-                hex[1] = str[i+2];
-                hex[2] = '\0';
-                char decoded = static_cast<char>(strtol(hex, NULL, 16));
-                ret += decoded;
-                i += 2;
-            }
-        }
-        else if (str[i] == '+')
-            ret += ' ';
-        else
-            ret += str[i];
-    }
-    return (ret);
-}
-
-string escape_html(const string &text)
-{
-    string escaped;
-    for (string::size_type i = 0; i < text.length(); ++i)
-    {
-        unsigned char c = static_cast<unsigned char>(text[i]);
-        switch (c)
-        {
-            case '&':  escaped += "&amp;";  break;
-            case '<':  escaped += "&lt;";   break;
-            case '>':  escaped += "&gt;";   break;
-            case '"':  escaped += "&quot;"; break;
-            case '\'': escaped += "&#39;";  break;
-            default:
-                if (c < 32 || c > 126)
-                {
-                    char buf[8];
-                    sprintf(buf, "\\x%02X", c);
-                    escaped += buf;
-                }
-                else
-                    escaped += text[i];
-        }
-    }
-    return (escaped);
-}
-
-string escape_html_attr(const string &text)
-{
-    string escaped;
-    for (string::size_type i = 0; i < text.length(); ++i)
-    {
-        unsigned char c = static_cast<unsigned char>(text[i]);
-        switch (c)
-        {
-            case '&':  escaped += "&amp;";  break;
-            case '<':  escaped += "&lt;";   break;
-            case '>':  escaped += "&gt;";   break;
-            case '"':  escaped += "&quot;"; break;
-            case '\'': escaped += "&#39;";  break;
-            default:
-                escaped += text[i];
-        }
-    }
-    return (escaped);
 }
 
 /* LOads the page, insert all the taks and build success response */

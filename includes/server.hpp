@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <iomanip>
+#include <sstream>
 #include <map>
 #include <vector>
 #include <poll.h>
@@ -149,7 +151,6 @@ string 		int_to_hex(size_t value);
 bool   		is_valid_header_name(const string& key_name);
 string 		ft_trim(const string& str);
 string		get_valid_index(const string & root, vector<string> const & indexes);
-// string		get_valid_index(vector<string> const & indexes);
 bool		is_executable_file(const string & path);
 bool        is_existing_file(const string & path);
 bool		is_readable_file(const string & path);
@@ -160,3 +161,6 @@ string		trim_underscore(const string &str);
 bool		create_directory(const string &path);
 bool		directory_exists(const string &path);
 bool		file_exists(const std::string &path);
+string		url_decode(const string &str);
+string		escape_html(const string &text);
+string		escape_html_attr(const string &text);
