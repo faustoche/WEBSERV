@@ -24,7 +24,7 @@ void c_server::setup_pollfd()
 
 		time_t now = time(NULL);
 		int timeout_value = TIMEOUT;
-		if (client.get_state() == PROCESSING || client.get_state() == SENDING)
+		if ((client.get_state() == PROCESSING || client.get_state() == SENDING))
 			timeout_value = TIMEOUT * 3;
 		if (now - client.get_last_modified() > timeout_value)
 		{
@@ -79,11 +79,11 @@ void c_server::setup_pollfd()
 		if (cgi)
 		{
 			log_message("[INFO] Killing CGI pid " + int_to_string(cgi->get_pid()) 
-							+ "linked to client" + int_to_string(i));
+							+ "linked to client" + int_to_string(to_remove[i]));
 			kill(cgi->get_pid(), SIGTERM);
 			cleanup_cgi(cgi);
 		}
-		log_message("[INFO] Closing client " + int_to_string(i) + " (timeout inactivity)");
+		log_message("[INFO] Closing client " + int_to_string(to_remove[i]) + " (timeout inactivity)");
 		remove_client(to_remove[i]);
 	}
 }
@@ -268,6 +268,7 @@ void c_server::handle_client_read(int client_fd)
 
 	if (client->get_state() != IDLE)
 	{
+		// request.print_full_request();
 		client->set_creation_time();
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);
