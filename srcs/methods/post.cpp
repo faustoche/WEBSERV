@@ -414,6 +414,7 @@ string	c_response::extract_after_points(const string &line)
 }
 
 /*******************   contact form    *******************/
+/* */
 
 void	c_response::handle_contact_form(const c_request &request, const string &version)
 {
