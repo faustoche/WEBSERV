@@ -26,7 +26,6 @@ void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 
 		if (bind(socket_fd, (struct sockaddr*)&socket_address, sizeof(socket_address)) < 0)
 		{
-			cout << "ici" << endl;
 			cerr << "Error: bind for port " << port << " - " << errno << endl;
 			close (socket_fd);
 			continue ;

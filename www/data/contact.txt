@@ -5,3 +5,4 @@
 email=tata@hotgirl.fr; message=coucou les filles; nom=tata; 
 email=vbvcb@gmail.com; message=ljnkljm;ljm; nom=Faustine; 
 email=*-@gmail.com; message=\\\; nom=/*/-; 
+email=faustine@gmail.com; message=test pour la page de contact; nom=Faustine; 
