@@ -36,7 +36,7 @@ void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer, size_t bytes)
 	
 	if (client)
 	{
-	    client->get_write_buffer().append(buffer, 0, bytes);
+		client->get_write_buffer().append(buffer, 0, bytes);
 		client->append_response_body_size(buffer.size());
 	}
 	if (client->get_response_body_size() == cgi->get_content_length() && cgi->get_content_length() > 0)
@@ -53,11 +53,11 @@ void	c_server::transfer_with_chunks(const char *buffer, size_t bytes, c_cgi *cgi
 
 	std::string chunk;
 
-    chunk = int_to_hex(bytes) + "\r\n";
+	chunk = int_to_hex(bytes) + "\r\n";
 	chunk.append(buffer, bytes);
 	chunk.append("\r\n");
 
-    client->get_write_buffer().append(chunk);
+	client->get_write_buffer().append(chunk);
 }
 
 void	c_server::fill_cgi_response_headers(string headers, c_cgi *cgi)

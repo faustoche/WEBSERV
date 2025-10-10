@@ -14,7 +14,7 @@ while (ob_get_level()) ob_end_flush();
   <style>
     @font-face {
       font-family: "ComicNeue";
-      src: url("../fonts/ComicNeue-Regular.otf") format("opentype");
+      src: url("/fonts/ComicNeue-Regular.otf") format("opentype");
       font-weight: 400;
       font-style: normal;
     }

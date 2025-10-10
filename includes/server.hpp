@@ -44,7 +44,7 @@ class c_server
 		map<int, c_client>		_clients;
 		vector<struct pollfd>	_poll_fds;
 		map<int, c_cgi*>		_active_cgi;
-		map<int, int>		_multiple_ports; // on stocke socket_fd + port
+		map<int, int>			_multiple_ports; // on stocke socket_fd + port
 
 		// CONFIGURATION FILE
 	    string							_ip; // reflechir si pas de directive listen -> valeur par defaut ?
@@ -74,8 +74,6 @@ class c_server
 		int			get_port_from_socket(int socket_fd);
 		bool		is_listening_socket(int fd);
 
-		void 		create_socket();
-		void 		bind_and_listen();
 		void 		set_non_blocking(int fd);
 		void		add_client(int client_fd, string client_ip);
 		void		remove_client(int client_fd);
@@ -159,3 +157,6 @@ string 		trim(const string &str);
 // string		sanitize_filename(const string &filename);
 // string		extract_extension(const string &filename, string &name);
 string		trim_underscore(const string &str);
+bool		create_directory(const string &path);
+bool		directory_exists(const string &path);
+bool		file_exists(const std::string &path);

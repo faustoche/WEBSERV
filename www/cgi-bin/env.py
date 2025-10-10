@@ -25,6 +25,11 @@ print("""
       color:#fff;
       text-align:center;
     }
+    ul {
+      text-align: left;
+      display: inline-block;
+      margin: 0 auto;
+    }
     .container {
       max-width: 600px;
       margin: 2rem auto;
@@ -48,28 +53,29 @@ print("""
     img {
       margin-top:1rem;
       border:5px ridge #ff00aa;
-      max-width:300px;
+      width:500px;
+      height: auto;
     }
     .back-link {
-            display: inline-block;
-            background: rgb(21, 255, 0);
-            margin-top: 1rem;
-            color:rgb(0, 0, 0);
-            text-decoration: none;
-            border: 2px solid rgb(21, 255, 0);
-            padding: 10px 20px;
-            font-weight: 700;
-        }
-        .back-link:hover {
-            background: rgb(252, 248, 17);
-            border: 2px solid rgb(252, 248, 17);
-            color: #000000;
+      display: inline-block;
+      background: rgb(21, 255, 0);
+      margin-top: 1rem;
+      color:rgb(0, 0, 0);
+      text-decoration: none;
+      border: 2px solid rgb(21, 255, 0);
+      padding: 10px 20px;
+      font-weight: 700;
+    }
+    .back-link:hover {
+      background: rgb(252, 248, 17);
+      border: 2px solid rgb(252, 248, 17);
+      color: #000000;
       }
   </style>
 </head>
 <body>
   <h1 id="title">★ Trying to do some HTML with CGI ★</h1>
-  <img id="image" src="https://images.ctfassets.net/denf86kkcx7r/2Ghp9VQgpJxmXD14Bb3mva/43352c7e00f45cf55c464ef46f8d44ac/quelle-est-esperance-vie-chiens-13?fm=webp&w=913" alt="Dog sleeping">
+  <img id="image" src="/images/good_dog.jpg" alt="Dog smiling">
 
   <div class="container">
     <h1>Environment variables !</h1>
@@ -93,7 +99,8 @@ for key in [
     "HTTP_USER_AGENT",
     "HTTP_ACCEPT_LANGUAGE",
     "HTTP_COOKIE",
-    "HTTP_REFERER"
+    "HTTP_REFERER",
+    "HTTP_HOST",
     ]:
     value = os.environ.get(key, "")
     if value:

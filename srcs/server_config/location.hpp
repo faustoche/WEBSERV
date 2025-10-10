@@ -88,11 +88,11 @@ private:		// remplacer "root" par alias
 EXEMPLE =
 		
 		server {
-    		root ./www; //definit en dur
+			root ./www; //definit en dur
 
-    		location /images/ {
-    		    alias ./www/media;
-    			}
+			location /images/ {
+				alias ./www/media;
+				}
 		}
 
 			
@@ -111,14 +111,14 @@ location_root --> remplacer le nom par parse_alias
 EXEMPLE (chemin ou fichier):
 
 			location /images/ {
-    		    alias ./www/media;
-    			}
+				alias ./www/media;
+				}
 
 				OU
 
 			location /images/photo.png {
-    		    alias ./www/media;
-    			}
+				alias ./www/media;
+				}
 
 CAS D'UN DOSSIER apres "location"
 Si l'url correspond a un dossier -> le serveur va chercher le fichier index du dossier
@@ -134,16 +134,16 @@ Schéma de résolution d’une requête HTTP
 Config :
 
 server {
-    root /var/www/html;
+	root /var/www/html;
 
-    location /images/ {
-        autoindex on;
-        index gallery.html index.html;
-    }
+	location /images/ {
+		autoindex on;
+		index gallery.html index.html;
+	}
 
-    location /images/logo.png {
-        allow_methods GET;
-    }
+	location /images/logo.png {
+		allow_methods GET;
+	}
 }
 	
 Requête GET /images/logo.png :

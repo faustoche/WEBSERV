@@ -40,11 +40,11 @@ void c_request::check_required_headers()
 	bool has_content_length = this->_headers.count("Content-Length"); // body dont on connait la  taille
 	bool has_transfer_encoding = this->_headers.count("Transfer-Encoding"); // on ne connait pas la taille du body donc chunck
 
-    if (this->_method == "POST" && (has_content_length || has_transfer_encoding))
+	if (this->_method == "POST" && (has_content_length || has_transfer_encoding))
 	{
 		// cout << "Warning: Request has body!\n" << endl;
 		_server.log_message("[DEBUG] Request has a body");
-        this->_has_body = true;
+		this->_has_body = true;
 	}
 
 	if (this->_headers.count("Host") != 1)
@@ -76,16 +76,16 @@ void c_request::check_required_headers()
 
 void    c_request::check_port()
 {
-    char *end;
-    size_t pos = this->get_header_value("Host").find_first_of(':');
+	char *end;
+	size_t pos = this->get_header_value("Host").find_first_of(':');
 
-    if (pos == string::npos)
-        this->_port = 80;
-    else
-    {
-        string port = this->_headers["Host"].substr(pos + 1);
-        this->_port = strtod(port.c_str(), &end);
-    }
+	if (pos == string::npos)
+		this->_port = 80;
+	else
+	{
+		string port = this->_headers["Host"].substr(pos + 1);
+		this->_port = strtod(port.c_str(), &end);
+	}
 }
 
 /************ UTILS ************/
@@ -157,7 +157,7 @@ void	c_request::init_request()
 
 //     while (end > start && (str[end - 1] == ' ' || str[end - 1] == '\t'))
 //         end--;
-    
+	
 //     return (str.substr(start, end - start));
 // }
 
