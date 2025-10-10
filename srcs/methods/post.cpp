@@ -2,6 +2,7 @@
 
 
 /********************    POST    ********************/
+
 /* Content-Type
 --> formulaire classique = application/x-www-form-urlencoded
 --> formulaire avec fichiers ou champs multiples = multipart/form-data
@@ -9,16 +10,14 @@
 	separateur entre les differentes parties du body
  */
 
+/* Dispatch to the matching function based on content-type or target path */
+
 void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
 {
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
-	// cout << "=== DEBUG POST ===" << endl
-	// 		<< "Body recu: [" << body << "]" << endl
-	// 		<< "Content-Type: [" << content_type << "]" << endl
-	// 		<< "Target: [" << request.get_target() << "]" << endl;
 	if (request.get_error() || request.get_status_code() != 200)
 	{
 		build_error_response(request.get_status_code(), version, request);
@@ -27,7 +26,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 	if (target == "/test_post")
 		handle_test_form(request, version);
-	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)// sauvegarde des donnees (upload)
+	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 		handle_contact_form(request, version);
 	else if (content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, version, location);
@@ -51,6 +50,8 @@ Exemple config :
 allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
 max_file_size = 2 * 1024 * 1024  // 2 MB
 */
+
+/* Process file uploads, validate size and content, saves files and redirect */
 
 void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
 {
@@ -136,6 +137,8 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 }
 
+/* Generate a unique filename if a file has the same name as a targfet directory*/
+
 string	get_unique_filename(const string &directory, string &filename)
 {
 	string full_path = directory + filename;
@@ -168,6 +171,8 @@ string	get_unique_filename(const string &directory, string &filename)
 	}
 }
 
+/* Save uploaded file to the directory */
+
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
 	string	uploaded_dir = location->get_upload_path();
@@ -195,7 +200,6 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	if (!file.is_open())
 	{
 		_server.log_message("[ERROR] the server cannot upload file " + final_path);
-		// cerr << "Error: the server can't upload the file " << final_path <<endl;
 		return "";
 	}
 	file.write(part.content.data(), part.content.size());
@@ -217,6 +221,8 @@ string	c_response::extract_boundary(const string &content_type)
 	}
 	return boundary;
 }
+
+/* parse multipart body in single parts */
 
 vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
 {
@@ -277,6 +283,8 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 	return parts;
 }
 
+/* parse one multipart section, extract headers and content */
+
 s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
 	s_multipart	part;
@@ -316,6 +324,8 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 
 	return part;
 }
+
+/* parse header lines inside a multipart section, extract filename and content-type */
 
 void	c_response::parse_header_section(const string &header_section, s_multipart &part)
 {
@@ -360,6 +370,7 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	}
 }
 
+/* extracts a single header line fr om a given position */
 
 string	c_response::extract_line(const string &header_section, const size_t &pos)
 {
@@ -371,6 +382,8 @@ string	c_response::extract_line(const string &header_section, const size_t &pos)
 	string line = header_section.substr(pos, end_pos - pos);
 	return line;
 }
+
+/* extract a "quoted" value */
 
 string	c_response::extract_quotes(const string &line, const string &type)
 {
@@ -434,7 +447,6 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	if (!file.is_open())
 	{
 		_server.log_message("[ERROR] error with the creation of file " + filename);
-		// cerr << "Error with the creation of the file " << filename << endl;
 		return false;
 	}
 

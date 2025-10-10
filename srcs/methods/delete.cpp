@@ -1,11 +1,6 @@
 #include "server.hpp"
 
-/*
-* Checking if we can delete files without any problem.
-* Unable further files
-* Does the file exist? Do we have access? Does removing the file worked?
-* DOes the directory exist? Do we have access? -> checking permissions with stat
-*/
+/* Handles delete request by checking permissions, and removing specific files if allowed */
 
 void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
 {
@@ -44,6 +39,8 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 	}
 }
 
+/* LOads the page, insert all the taks and build success response */
+
 void c_response::load_todo_page(const string &version, const c_request &request)
 {
 	string filename = "./www/data/todo.txt";
@@ -67,6 +64,8 @@ void c_response::load_todo_page(const string &version, const c_request &request)
 	_file_content = todo_html;
 	build_success_response("todo.html", version, request);
 }
+
+/* Delete a specific task from the todo list and reload the updated page */
 
 void c_response::handle_delete_todo(const c_request &request, const string &version)
 {
@@ -122,7 +121,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	load_todo_page(version, request);
 }
 
-/* GESTION DES UPLOADS */
+/* Load the upload page, list all the files already uploaded */
 
 void c_response::load_upload_page(const string &version, const c_request &request)
 {
@@ -161,6 +160,8 @@ void c_response::load_upload_page(const string &version, const c_request &reques
 	build_success_response("page_upload.html", version, request);
 }
 
+/* Handle file delete request after checking filename and access permissions */
+
 void c_response::handle_delete_upload(const c_request &request, const string &version)
 {
 	string target = request.get_target();
@@ -180,7 +181,7 @@ void c_response::handle_delete_upload(const c_request &request, const string &ve
 
 	string filename = "./www/upload/" + file_to_delete;
 
-	if (file_to_delete.find("..") != string::npos || file_to_delete.find("todo.txt") != string::npos)
+	if (file_to_delete.find("..") != string::npos)
 	{
 		build_error_response(403, version, request);
 		return ;
