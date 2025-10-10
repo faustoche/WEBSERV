@@ -315,7 +315,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
     this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
-    this->_map_env_vars["REDIRECT_STATUS"] = "200";
+    this->_map_env_vars["REDIRECT_STATUS"] = request.get_status_code();
     this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
     this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
     this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");
@@ -400,10 +400,8 @@ int c_cgi::launch_cgi(const string &body)
 		if (!this->_relative_argv.empty())
 		{
 			if (chdir("www/cgi-bin/") != 0) 
-			{
-				// perror("chdir failed");
 				exit(1);
-			}
+
 			char *argv[4];
 			argv[0] = const_cast<char*>(this->_interpreter.c_str());
 			argv[1] = const_cast<char*>(this->_relative_script_name.c_str());
@@ -419,7 +417,6 @@ int c_cgi::launch_cgi(const string &body)
 			argv[2] = NULL;
 			execve(this->_interpreter.c_str(), argv, &envp[0]);
 		}
-
 		exit(1);
 	}
 

@@ -137,9 +137,7 @@ void	c_response::define_response_content(const c_request &request)
 			return ;
 		}
 		if (_server.get_indexes().empty())
-		{
 			build_error_response(404, request);
-		}
 	}
 	if (this->_is_cgi)
 	{
@@ -188,14 +186,11 @@ void	c_response::define_response_content(const c_request &request)
 			handle_delete_todo(request);
 			return;
 		}
-		cout << "file_path: " << file_path << endl;
 		handle_delete_request(request, file_path);
 		build_success_response(file_path, request);
 	}
 	else
-	{
 		build_success_response(file_path, request);
-	}
 }
 
 /* Proceed to load the file content. Nothing else to say. */
