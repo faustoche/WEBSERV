@@ -64,6 +64,20 @@ void	c_server::close_all_sockets_and_fd(void)
 	_clients.clear();
 	cout << GREEN << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
 
+	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); )
+	{
+	    std::map<int, c_cgi*>::iterator to_delete = it++;
+	    if (to_delete->second)
+		{
+			pid_t pid = to_delete->second->get_pid();
+            kill(pid, SIGTERM);
+            waitpid(pid, NULL, 0);
+	        delete to_delete->second;
+		}
+	    _active_cgi.erase(to_delete);
+	}
+	cout << GREEN << "🧬 Active CGI has been cleaned !" << RESET << endl;
+
 	for (map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
 	{
 		int socket_fd = it->first;

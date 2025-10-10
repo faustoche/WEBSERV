@@ -43,7 +43,6 @@ void	c_request::read_request()
 				return;
 			}
 		}
-		// buffer[receivedBytes] = '\0';
 		request.append(buffer, receivedBytes);
 	}
 	this->parse_request(request);
@@ -64,10 +63,10 @@ void	c_request::read_request()
 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
 	
 
-	if (!this->_error)
+	// if (!this->_error)
 		this->_request_fully_parsed = true;
-	else
-		return ;
+	// else
+	// 	return ;
 }
 
 int c_request::parse_request(const string& raw_request)
@@ -92,7 +91,9 @@ int c_request::parse_request(const string& raw_request)
 
 	
 	this->parse_start_line(line);
-	
+	if (this->_error == true)
+		return (1);
+		
 	/*---- ETAPE 2: headers -----*/
 	while (getline(stream, line, '\n'))
 	{
@@ -151,7 +152,6 @@ int c_request::parse_start_line(string& start_line)
 	tmp = start_line.substr(start, space_pos - start);
 	this->_target = tmp;
 
-	
 	size_t	question_pos;
 	if ((question_pos = tmp.find('?')) != string::npos)
 	{
@@ -162,6 +162,12 @@ int c_request::parse_start_line(string& start_line)
 	{
 		this->_path = start_line.substr(start, space_pos - start);
 		this->_query = "";
+	}
+	if (!is_uri_valid())
+	{
+		this->_status_code = 400;
+		this->_error = true;
+		return (1);
 	}
 
 	/*- ---- Version ----- */
