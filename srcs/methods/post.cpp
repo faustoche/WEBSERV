@@ -440,7 +440,7 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	char *str_time = ctime(&now);
 	str_time[strlen(str_time) - 1] = '\0';
 
-	// file << "[ " << str_time << " ] ";
+	file << "[ " << str_time << " ] ";
 	for (map<string, string>::const_iterator it = data.begin(); it != data.end(); it++)
 	{
 		file << it->first << "=" << it->second << "; ";
