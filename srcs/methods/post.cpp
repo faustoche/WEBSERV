@@ -12,7 +12,7 @@
 
 /* Dispatch to the matching function based on content-type or target path */
 
-void	c_response::handle_post_request(const c_request &request, c_location *location, const string &version)
+void	c_response::handle_post_request(const c_request &request, c_location *location)
 {
 	string	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
@@ -20,20 +20,20 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 	if (request.get_error() || request.get_status_code() != 200)
 	{
-		build_error_response(request.get_status_code(), version, request);
+		build_error_response(request.get_status_code(), request);
 		return ;
 	}
 
 	if (target == "/test_post")
-		handle_test_form(request, version);
+		handle_test_form(request);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
-		handle_contact_form(request, version);
+		handle_contact_form(request);
 	else if (content_type.find("multipart/form-data") != string::npos)
-		handle_upload_form_file(request, version, location);
+		handle_upload_form_file(request, location);
 	else if (target == "/post_todo")
-		handle_todo_form(request, version);
+		handle_todo_form(request);
 	else
-		build_error_response(404, version, request);
+		build_error_response(404, request);
 }
 
 /********************   upload file   ********************/
@@ -53,20 +53,20 @@ max_file_size = 2 * 1024 * 1024  // 2 MB
 
 /* Process file uploads, validate size and content, saves files and redirect */
 
-void	c_response::handle_upload_form_file(const c_request &request, const string &version, c_location *location)
+void	c_response::handle_upload_form_file(const c_request &request, c_location *location)
 {
 	// pour tester la size_max
 	size_t max_size = 1 * 1024 * 1024; // 1MB
     if (request.get_content_length() > max_size)
     {
-        build_error_response(413, version, request);
+        build_error_response(413, request);
         return;
     }
 	string body = request.get_body();
 	if (body.empty())
 	{
 		_server.log_message("[ERROR] Empty body for upload request");
-		build_error_response(400, version, request);
+		build_error_response(400, request);
 		return ;
 	}
 	string content_type = request.get_header_value("Content-Type");
@@ -75,14 +75,14 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
-		build_error_response(get_status() >= 400 ? get_status() : 400, version, request);
+		build_error_response(get_status() >= 400 ? get_status() : 400, request);
 		return ;
 	}
 
 	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
 	if (get_status() >= 400)
 	{
-		build_error_response(get_status(), version, request);
+		build_error_response(get_status(), request);
 		return ;
 	}
 
@@ -97,12 +97,12 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 			string saved_path = save_uploaded_file(part, location);
 			if (get_status() >= 400)
 			{
-				build_error_response(get_status(), version, request);
+				build_error_response(get_status(), request);
 				return;
 			}
 			if (saved_path.empty())
 			{
-				build_error_response(500, version, request);
+				build_error_response(500, request);
 				return ;
 			}
 			uploaded_files.push_back(saved_path);
@@ -113,7 +113,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	if (uploaded_files.size() > 0)
 	{
-		_response = version + " 303 See Other\r\n";
+		_response = "HTTP/1.1 303 See Other\r\n";
 		_response += "Location: /page_upload.html\r\n";
 		_response += "Content-Length: 0\r\n";
 		_response += "Connection: keep-alive\r\n";
@@ -123,7 +123,7 @@ void	c_response::handle_upload_form_file(const c_request &request, const string 
 	}
 	else
 	{
-		build_error_response(400, version, request);
+		build_error_response(400, request);
 	}
 }
 
@@ -401,28 +401,27 @@ string	c_response::extract_after_points(const string &line)
 
 /*******************   contact form    *******************/
 
-void	c_response::handle_contact_form(const c_request &request, const string &version)
+void	c_response::handle_contact_form(const c_request &request)
 {
-	(void)version;
 	string body = request.get_body();
 	map<string, string> form_data = parse_form_data(request.get_body());
 
 	if (form_data["nom"].empty() || form_data["email"].empty())
 	{
-		build_error_response(400, version, request);
+		build_error_response(400, request);
 		return;
 	}
 
 	if (save_contact_data(form_data))
 	{
-		_response = version + " 303 See Other\r\n";
+		_response = "HTTP/1.1 303 See Other\r\n";
 		_response += "Location: /contact_success.html\r\n";
 		_response += "Content-Length: 0\r\n";
 		_response += "\r\n";
 		return;
 	}
 	else
-		build_error_response(500, version, request);
+		build_error_response(500, request);
 }
 
 bool	c_response::save_contact_data(const map<string, string> &data)
@@ -512,16 +511,16 @@ string  c_response::sanitize_filename(const string &filename, c_location *locati
 
 /********************    test form    ********************/
 
-void	c_response::handle_test_form(const c_request &request, const string &version)
+void	c_response::handle_test_form(const c_request &request)
 {
 	map<string, string> form_data = parse_form_data(request.get_body());
 	// cout << GREEN << "=== DONNEES PARSEES ===" << endl;
 	// for (map<string, string>::iterator it = form_data.begin(); it != form_data.end(); it++)
 	// 	cout << it->first << " = [ " << it->second << " ]" << endl;
-	create_form_response(form_data, request, version);
+	create_form_response(form_data, request);
 }
 
-void	c_response::create_form_response(const map<string, string> &form, const c_request &request, const string &version)
+void	c_response::create_form_response(const map<string, string> &form, const c_request &request)
 {
 	string html = "<!DOCTYPE html>\n<html><head><title>Formulaire recu</title></head>\n<body>\n";
 	html += "<h1>Donnees recues :</h1>\n<ul>\n";
@@ -532,7 +531,7 @@ void	c_response::create_form_response(const map<string, string> &form, const c_r
 	}
 	html += "</ul>\n<a href=\"/post_test.html\">Nouveau formulaire</a>\n</body></html>";
 	_file_content = html;
-	build_success_response("response.html", version, request);
+	build_success_response("response.html", request);
 }
 
 /****************   utils for test form   ****************/
@@ -617,7 +616,7 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 /***** TODO ******/
 
 
-void c_response::handle_todo_form(const c_request &request, const string &version)
+void c_response::handle_todo_form(const c_request &request)
 {
 	map<string, string>form = parse_form_data(request.get_body());
 	string task;
@@ -629,7 +628,7 @@ void c_response::handle_todo_form(const c_request &request, const string &versio
 		task = "";
 	if (task.empty())
 	{
-		build_error_response(400, version, request);
+		build_error_response(400, request);
 		return ;
 	}
 
@@ -637,18 +636,18 @@ void c_response::handle_todo_form(const c_request &request, const string &versio
 	ofstream file(filename.c_str(), ios::app);
 	if (!file.is_open())
 	{
-		build_error_response(500, version, request);
+		build_error_response(500, request);
 		return ;
 	}
 	file << task << endl;
 	file.close();
-	load_todo_page(version, request);
+	load_todo_page(request);
 }
 
 /* GESTION DES UPLOADS */
 /* Load the upload page, list all the files already uploaded */
 
-void c_response::load_upload_page(const string &version, const c_request &request)
+void c_response::load_upload_page(const c_request &request)
 {
 	string html_template = load_file_content("./www/page_upload.html");
 	string files_html;
@@ -693,5 +692,5 @@ void c_response::load_upload_page(const string &version, const c_request &reques
 		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 
     _file_content = html_template;
-    build_success_response("page_upload.html", version, request);
+    build_success_response("page_upload.html", request);
 }

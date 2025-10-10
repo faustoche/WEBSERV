@@ -38,47 +38,47 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (status_code != 200)
 	{
-		build_error_response(status_code, version, request);
+		build_error_response(status_code, request);
 		return ;
 	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
-		build_error_response(405, version, request);
+		build_error_response(405, request);
 		return ;
 	}
 	if (method == "GET" && target == "/todo.html")
 	{
-		load_todo_page(version, request);
+		load_todo_page(request);
 		return ;
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
-		handle_delete_todo(request, version);
+		handle_delete_todo(request);
 		return;
 	}
 	if (method == "POST" && target == "/post_todo")
 	{
-		handle_todo_form(request, version);
+		handle_todo_form(request);
 		return;
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
-		load_upload_page(version, request);
+		load_upload_page(request);
 		return ;
 	}
 	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
 	{
-		handle_delete_upload(request, version);
+		handle_delete_upload(request);
 		return;
 	}
 	if (version != "HTTP/1.1")
 	{
-		build_error_response(505, version, request);
+		build_error_response(505, request);
 		return ;
 	}
 	if (headers.find("Host") == headers.end())
 	{
-		build_error_response(status_code, version, request);
+		build_error_response(status_code, request);
 		return ;
 	}
 
@@ -95,7 +95,7 @@ void	c_response::define_response_content(const c_request &request)
 			if (_server.get_indexes().empty())
 			{
 				_server.log_message("[ERROR] No location found for target " + target);
-				build_error_response(404, version, request);
+				build_error_response(404, request);
 				return ;
 			}
 		}
@@ -103,7 +103,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (!_server.is_method_allowed(matching_location, method))
 	{
-		build_error_response(405, version, request);
+		build_error_response(405, request);
 		return ;	
 	}
 
@@ -112,7 +112,7 @@ void	c_response::define_response_content(const c_request &request)
 		pair<int, string> redirect = matching_location->get_redirect();
 		if (redirect.first != 0 && !redirect.second.empty())
 		{
-			build_redirect_response(redirect.first, redirect.second, version, request);
+			build_redirect_response(redirect.first, redirect.second, request);
 			return ;
 		}
 	}
@@ -127,12 +127,12 @@ void	c_response::define_response_content(const c_request &request)
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
 			this->_is_cgi = false;
-			build_directory_listing_response(file_path, version, request);
+			build_directory_listing_response(file_path, request);
 			return ;
 		}
 		if (_server.get_indexes().empty())
 		{
-			build_error_response(404, version, request);
+			build_error_response(404, request);
 		}
 	}
 	if (this->_is_cgi)
@@ -142,12 +142,12 @@ void	c_response::define_response_content(const c_request &request)
 			this->_is_cgi = false;
 			if (request.get_target() != "/cgi-bin/" && request.get_target() != "/cgi-bin")
 			{
-				build_error_response(404, version, request);
+				build_error_response(404, request);
 				return ;
 			}
 			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 			{
-				build_directory_listing_response(file_path, version, request);
+				build_directory_listing_response(file_path, request);
 				return ;
 			}
 		}
@@ -161,7 +161,7 @@ void	c_response::define_response_content(const c_request &request)
 			this->_is_cgi = false;
 			set_error();
 			cgi->set_exit_status(this->_client.get_status_code());
-			build_error_response(cgi->get_status_code(), version, request);
+			build_error_response(cgi->get_status_code(), request);
 			return ;
 		}
 		build_cgi_response(*cgi, request);
@@ -172,22 +172,22 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
-		handle_post_request(request, matching_location, version);
+		handle_post_request(request, matching_location);
 		return;
 	}
 	else if (method == "DELETE")
 	{
 		if (target == "/delete_todo")
 		{
-			handle_delete_todo(request, version);
+			handle_delete_todo(request);
 			return;
 		}
-		handle_delete_request(request, version, file_path);
-		build_success_response(file_path, version, request);
+		handle_delete_request(request, file_path);
+		build_success_response(file_path, request);
 	}
 	else
 	{
-		build_success_response(file_path, version, request);
+		build_success_response(file_path, request);
 	}
 }
 
@@ -268,10 +268,9 @@ void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 	this->set_status(cgi.launch_cgi(request_body));
 }
 
-void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
+void	c_response::buid_upload_success_response(const c_request &request)
 {
-	(void)file_path;
-	_response = version + " 303 See other\r\n";
+	_response = "HTTP/1.1 303 See other\r\n";
 	_response += "Location: /page_upload.html\r\n";
 	
 	string connection;
@@ -317,11 +316,11 @@ void	c_response::buid_upload_success_response(const string &file_path, const str
 // 	_file_content.clear();
 // }
 
-void c_response::build_success_response(const string &file_path, const string version, const c_request &request)
+void c_response::build_success_response(const string &file_path, const c_request &request)
 {
 	if (_file_content.empty())
 	{
-		build_error_response(404, version, request);
+		build_error_response(404, request);
 		return ;
 	}
 	
@@ -331,7 +330,7 @@ void c_response::build_success_response(const string &file_path, const string ve
 	ostringstream oss;
 	oss << content_size;
 
-	_response = version + " 200 OK\r\n";
+	_response = "HTTP/1.1 200 OK\r\n";
 	_response += "Content-Type: " + get_content_type(file_path) + "\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
@@ -348,11 +347,10 @@ void c_response::build_success_response(const string &file_path, const string ve
 
 /* Build basic error response for some cases. */
 
-void c_response::build_error_response(int error_code, const string version, const c_request &request)
+void c_response::build_error_response(int error_code, const c_request &request)
 {
 	string status;
 	string error_content;
-	(void)version;
 
 	switch (error_code)
 	{
@@ -468,7 +466,7 @@ void c_response::build_error_response(int error_code, const string version, cons
 
 /* Build the response in case of redirection's error with the locations. */
 
-void	c_response::build_redirect_response(int code, const string &location, const string &version, const c_request &request)
+void	c_response::build_redirect_response(int code, const string &location, const c_request &request)
 {
 	string status;
 	switch (code)
@@ -497,7 +495,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	
 	ostringstream oss;
 	oss << content.length();
-	_response = version + " " + int_to_string(code) + " " + status + "\r\n";
+	_response = "HTTP/1.1 " + int_to_string(code) + " " + status + "\r\n";
 	_response += "Location: " + location + "\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";
@@ -517,7 +515,7 @@ void	c_response::build_redirect_response(int code, const string &location, const
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
 
-void c_response::build_directory_listing_response(const string &dir_path, const string &version, const c_request &request)
+void c_response::build_directory_listing_response(const string &dir_path, const c_request &request)
 {
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
@@ -542,7 +540,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 	ostringstream oss;
 	oss << content.length();
 
- 	(void)version;
 	_response = "HTTP/1.1 200 OK\r\n";
 	_response += "Content-Type: text/html\r\n";
 	_response += "Content-Length: " + oss.str() + "\r\n";

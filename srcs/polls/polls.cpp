@@ -223,7 +223,7 @@ void	c_server::handle_new_connection(int listening_socket)
 			too_many_request.init_request();
 
 			c_response resp(*this, client);
-			resp.build_error_response(503, "HTTP/1.1", too_many_request);
+			resp.build_error_response(503, too_many_request);
 
 			const string &raw = resp.get_response();
 			send(client_fd, raw.c_str(), raw.size(), 0);
