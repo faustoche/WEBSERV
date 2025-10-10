@@ -55,7 +55,7 @@ RM			= rm -rf
 all:    $(NAME)
 
 $(NAME): includes/colors.hpp $(OBJS_DIR) $(OBJS) $(LOGS_DIR)
-	@echo "\033[1;33m  COMPILING WEBSERV \n"
+	@echo "\033[1;33m  Compiling Webserv using the flags:\033[0m $(CFLAGS) \n"
 	@$(CC) $(OBJS) $(CFLAGS) -o $(NAME) -s
 	@echo "\033[1;32m ./$(NAME) created\n"
 	@$ rm -f logs/access.log logs/error.log

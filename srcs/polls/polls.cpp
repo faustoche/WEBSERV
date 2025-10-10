@@ -127,7 +127,7 @@ void c_server::handle_poll_events()
 				c_cgi* cgi = _active_cgi[fd];
 				// on ajoute cette vérification pour les race conditions problables
 				// eviter le segfault si on accede a un CGI deja delete
-				if (!cgi || cgi->is_finished())
+				if (!cgi)
 				{
 					log_message("[DEBUG] CGI already finished, skipping poll event for fd " + int_to_string(fd));
 					continue ;
