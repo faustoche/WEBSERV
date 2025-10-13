@@ -79,6 +79,8 @@ class c_request
 
 		const map<string, string>	&get_headers() const { return _headers; }
 
+
+
 	private:
 		c_server&			_server;
 		int					_socket_fd;
@@ -91,6 +93,7 @@ class c_request
 		string				_body;
 		map<string, string>	_headers;
 		c_client&			_client;
+		bool				_is_reading_request;
 
 		int					_status_code;
 		int					_port;

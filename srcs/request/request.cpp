@@ -16,38 +16,52 @@ c_request::~c_request()
 
 void	c_request::read_request()
 {
-	char	buffer[BUFFER_SIZE];
-	int		receivedBytes;
-	string	request = "";
+	char buffer[BUFFER_SIZE];
+	int receivedBytes;
 	
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
-
+	
+	// on récupère ce qu;on a deja lu
+	string request = _client.get_read_buffer();
+	
+	// on lit jusauqau headers
 	while (request.find("\r\n\r\n") == string::npos)
 	{
+		memset(buffer, 0, BUFFER_SIZE);
 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
-		if (receivedBytes <= 0)
+		
+		if (receivedBytes < 0)
 		{
-			if (receivedBytes == 0)
-			{
-				_client.set_state(IDLE);
-				return ;
-			}
-			else if (receivedBytes < 0) 
-			{
-				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
-				this->_request_fully_parsed = false;
-				return;
-			}
+			//vu que le socket est en non bloquant on patiente en attendant le prochain pollin
+			_server.log_message("[DEBUG] No data available yet for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
+			_client.append_to_read_buffer(request);  // on garxe en memoire ce qu'on a lu pour le prochain pollin
+			this->_request_fully_parsed = false;
+			return;
 		}
+		else if (receivedBytes == 0)
+		{
+			// fermeture clean
+			_server.log_message("[INFO] Client " + int_to_string(_socket_fd) + " closed connection");
+			_client.set_state(DISCONNECTED);
+			this->_request_fully_parsed = false;
+			return;
+		}
+		
+		// on a tout recu
 		request.append(buffer, receivedBytes);
 	}
+	
+	// c'est tout bon du coup on nettroie
+	_client.clear_read_buffer();
+	
 	this->parse_request(request);
 	if (this->_error)
 	{
 		this->_request_fully_parsed = true;
-		return ;
+		return;
 	}
+	
 	c_location *matching_location = _server.find_matching_location(this->get_target());
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
 	{
@@ -55,10 +69,59 @@ void	c_request::read_request()
 	}
 	if (this->_client_max_body_size == 0)
 		_client_max_body_size = 100 * 1024 * 1024;
-
+	
 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
 	this->_request_fully_parsed = true;
 }
+
+
+// void	c_request::read_request()
+// {
+// 	char	buffer[BUFFER_SIZE];
+// 	int		receivedBytes;
+// 	string	request = "";
+	
+// 	this->init_request();
+// 	this->_socket_fd = _client.get_fd();
+
+// 	while (request.find("\r\n\r\n") == string::npos)
+// 	{
+// 		_server.log_message("[DEBUG ----------------- ERROR 400] Actual body size : " + int_to_string(_body.size()));
+// 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
+// 		if (receivedBytes <= 0)
+// 		{
+// 			if (receivedBytes == 0)
+// 			{
+// 				_client.set_state(IDLE);
+// 				return ;
+// 			}
+// 			else if (receivedBytes < 0) 
+// 			{
+// 				_server.log_message("[DEBUG ----------------- ERROR 400] Actual body size : " + int_to_string(receivedBytes));
+// 				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
+// 				this->_request_fully_parsed = false;
+// 				return;
+// 			}
+// 		}
+// 		request.append(buffer, receivedBytes);
+// 	}
+// 	this->parse_request(request);
+// 	if (this->_error)
+// 	{
+// 		this->_request_fully_parsed = true;
+// 		return ;
+// 	}
+// 	c_location *matching_location = _server.find_matching_location(this->get_target());
+// 	if (matching_location != NULL && matching_location->get_body_size() > 0)
+// 	{
+// 		this->set_client_max_body_size(matching_location->get_body_size());
+// 	}
+// 	if (this->_client_max_body_size == 0)
+// 		_client_max_body_size = 100 * 1024 * 1024;
+
+// 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
+// 	this->_request_fully_parsed = true;
+// }
 
 int c_request::parse_request(const string& raw_request)
 {
