@@ -73,6 +73,7 @@ private:
 	string	read_error_pages(int error_code);
 	void	build_success_response(const string &file_path, const c_request &request);
 	void    build_cgi_response(c_cgi & cgi, const c_request &request);
+	int		handle_cgi_response(const c_request &request, c_location *loc, const string& file_path);
 	void	build_redirect_response(int code, const string &location, const c_request &request);
 	void	build_directory_listing_response(const string &dir_path, const c_request &request);
 	string	load_file_content(const string &file_path);

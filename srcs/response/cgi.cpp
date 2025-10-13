@@ -197,9 +197,7 @@ size_t c_cgi::identify_script_type(const string& path)
 			if (pos_script == string::npos)
 			{
 				_server.log_message("[ERROR] Unknown script type");
-				int client_fd = _server.find_client_fd_by_cgi(this);
-				c_client *client = _server.find_client(client_fd);
-				client->set_status_code(404);
+				this->set_exit_status(404);
 				return (string::npos);
 			}
 			 this->_script_name = path.substr(0, pos_script + 4);
@@ -221,8 +219,17 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 	}
 	string  root = loc.get_alias();
 	string  url_key = loc.get_url_key();
+
 	string  relative_path = this->_script_name.substr(url_key.size());
 	this->_script_filename = root + relative_path;
+
+	char resolved_path[PATH_MAX];
+	if (!this->_script_filename.empty() && !realpath(this->_script_filename.c_str(), resolved_path))
+	{
+		this->set_exit_status(403);
+		return (1);
+	}
+
 	this->_relative_script_name = this->_script_name.substr(url_key.size());
 	if (!this->_path_info.empty())
 	{
@@ -312,7 +319,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
     this->_map_env_vars["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_map_env_vars["REMOTE_ADDR"] = request.get_ip_client();
-    this->_map_env_vars["REDIRECT_STATUS"] = request.get_status_code();
+    this->_map_env_vars["REDIRECT_STATUS"] = int_to_string(this->_status_code);
     this->_map_env_vars["HTTP_ACCEPT"] = request.get_header_value("Accept");
     this->_map_env_vars["HTTP_USER_AGENT"] = request.get_header_value("User-Agent");
     this->_map_env_vars["HTTP_ACCEPT_LANGUAGE"] = request.get_header_value("Accept-Language");
