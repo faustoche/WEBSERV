@@ -25,6 +25,7 @@ const string& c_response::get_header_value(const string& key) const
 }
 
 /************ FILE CONTENT MANAGEMENT ************/
+
 bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target)
 {
 	if (method == "GET" && target == "/todo.html")
@@ -55,7 +56,7 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 	return (false);
 }
 
-bool	c_response::validate_http_requirements(const c_request &request)
+bool	c_response::validate_http(const c_request &request)
 {
 	string version = request.get_version();
 	std::map<string, string> headers = request.get_headers();
@@ -123,7 +124,7 @@ void	c_response::define_response_content(const c_request &request)
 	if (handle_special_routes(request, method, target))
 		return ;
 	
-	if (!validate_http_requirements(request))
+	if (!validate_http(request))
 		return ;
 
 	c_location *matching_location = _server.find_matching_location(target);
