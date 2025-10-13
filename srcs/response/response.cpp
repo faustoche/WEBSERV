@@ -148,7 +148,11 @@ void	c_response::define_response_content(const c_request &request)
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
-		cout << "file_path: " << file_path << endl;
+		if (!is_existing_file(file_path))
+		{
+			build_error_response(404, request);
+			return ;
+		}
 		build_error_response(403, request);
 		return ;
 	}
@@ -169,37 +173,8 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (this->_is_cgi)
 	{
-		if (request.get_path().find(".") == string::npos)
-		{
-			this->_is_cgi = false;
-			if (request.get_target() != "/cgi-bin/" && request.get_target() != "/cgi-bin")
-			{
-				build_error_response(404, request);
-				return ;
-			}
-			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
-			{
-				build_directory_listing_response(file_path, request);
-				return ;
-			}
-		}
-
-		_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
-		c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
-		
-		if (cgi->init_cgi(request, *matching_location, request.get_target()))
-		{
-			_server.cleanup_cgi(cgi);
-			this->_is_cgi = false;
-			set_error();
-			build_error_response(cgi->get_status_code(), request);
+		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
-		}
-		build_cgi_response(*cgi, request);
-		
-		this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
-		this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
-		return ;
 	}
 	else if (method == "POST")
 	{
@@ -218,6 +193,40 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else
 		build_success_response(file_path, request);
+}
+
+int	c_response::handle_cgi_response(const c_request &request, c_location *loc, const string& file_path)
+{
+	if (request.get_path().find(".") == string::npos)
+	{
+		this->_is_cgi = false;
+		if (request.get_target() != "/cgi-bin/" && request.get_target() != "/cgi-bin")
+		{
+			build_error_response(404, request);
+			return (1);
+		}
+		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		{
+			build_directory_listing_response(file_path, request);
+			return (1);
+		}
+	}
+	_server.log_message("[DEBUG] PROCESS CGI IDENTIFIED FOR FD " + int_to_string(_client_fd));
+	c_cgi* cgi = new c_cgi(this->_server, this->_client_fd);
+	
+	if (cgi->init_cgi(request, *loc, request.get_target()))
+	{
+		_server.cleanup_cgi(cgi);
+		this->_is_cgi = false;
+		set_error();
+		build_error_response(cgi->get_status_code(), request);
+		return (1);
+	}
+	build_cgi_response(*cgi, request);
+	
+	this->_server.set_active_cgi(cgi->get_pipe_out(), cgi);
+	this->_server.set_active_cgi(cgi->get_pipe_in(), cgi);
+	return (0);
 }
 
 /* Proceed to load the file content. Nothing else to say. */
