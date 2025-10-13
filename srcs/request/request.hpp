@@ -89,18 +89,15 @@ class c_request
 		string				_query;
 		string				_path;
 		string				_body;
-		// string              _buffered_data;
 		map<string, string>	_headers;
 		c_client&			_client;
 
 		int					_status_code;
 		int					_port;
-	
 		bool				_request_fully_parsed;
 		bool				_error;
 		bool				_has_body;
 		bool				_disconnected;
-
 		int					_chunk_line_count;
 		string				_chunk_accumulator;
 		size_t				_content_length;

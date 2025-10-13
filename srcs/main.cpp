@@ -31,18 +31,28 @@ void c_server::set_non_blocking(int fd)
 /* Launching the main loop */
 
 void	run_multiserver(vector<c_server> &servers)
-{
+{	
 	while (g_terminate)
 	{
+		bool has_fatal_error = false;
 		for (size_t i = 0; i < servers.size(); ++i)		
 		{
 			servers[i].setup_pollfd();
 			servers[i].handle_poll_events();
+			if (servers[i].get_fatal_error())
+			{
+				has_fatal_error = true;
+				break ;
+			}
+		}
+		if (has_fatal_error)
+		{
+			cout << PINK << "[ERROR] Poll failed. Stopping all servers." << RESET << endl;
+			break ;
 		}
 	}
 	for (size_t i = 0; i < servers.size(); ++i)	
 		servers[i].close_all_sockets_and_fd();
-	// si termine faire un tour des serveurs pour fermer tous les fds
 }
 
 int main(int argc, char **argv)

@@ -1,18 +1,5 @@
 #include "lexer.hpp"
 
-
-/* 
-creer tokens pour
-mots cles
-valeurs
-delimiteurs {} ;
- */
-
- // mettre tout dans une string
- // tokenizer
- // creer un parser qui lit et construit la classe
- // 
-
 /*-----------------  CONSTRUCTOR -------------------*/
 
 c_lexer::c_lexer(string const filename) : _content(""), _pos(0), _current_line(1), _current_column(1)
@@ -25,10 +12,7 @@ c_lexer::c_lexer(string const filename) : _content(""), _pos(0), _current_line(1
 
 /*-----------------  DESTRUCTOR --------------------*/
 
-c_lexer::~c_lexer()
-{
-
-}
+c_lexer::~c_lexer(){}
 
 /*-----------  PRIVATE MEMBER FUNCTION ------------*/
 
@@ -83,7 +67,6 @@ void    c_lexer::advance()
 {
 	if(!is_at_end())
 	{
-		// cout << _content[_pos] << " line = " << _current_line << " col = " << _current_column << endl;
 		char c = this->_content[_pos];
 		this->_pos++;
 		if (c == '\n')
@@ -131,18 +114,12 @@ bool    c_lexer::is_bloc_keyword(string const & word) const
 
 bool    c_lexer::is_directive_keyword(string const & word) const
 {
-	/* list avec des find ? */
 	if (word == "listen" || word == "index" || word == "cgi" || word == "autoindex"
 		|| word == "redirect" || word == "alias" || word == "methods" || word == "upload_path"
 		|| word == "error_page" || word == "server_name" || word == "client_max_body_size" || word == "allowed_extensions")
 		return true ;
 	return false ;
 }
-
-// bool    c_lexer::is_value()
-// {
-
-// }
 
 void    c_lexer::get_next_token()
 {
@@ -153,21 +130,17 @@ void    c_lexer::get_next_token()
 		this->_tokens.push_back(s_token(TOKEN_EOF, "\0", this->_current_line, this->_current_column));
 		return ;
 	}
-		// return s_token(TOKEN_EOF, "\0", this->_current_line, this->_current_column);
 	
 	int line = this->_current_line;
 	int column = this->_current_column;
 
 	char c = current_char();
 
-	// cout << line << column << c << endl;
-
 	if (c == '{')
 	{
 		this->advance();
 		this->_tokens.push_back(s_token(TOKEN_LBRACE, "{", line, column));
 		return ;
-		// return s_token(TOKEN_LBRACE, "{", line, column);
 	}
 	if (c == '}')
 	{
@@ -187,7 +160,7 @@ void    c_lexer::get_next_token()
 		return ;
 	}
 
-	string word = read_word(); // avance sur le _content
+	string word = read_word();
 	if (is_bloc_keyword(word))
 	{
 		this->_tokens.push_back(s_token(TOKEN_BLOC_KEYWORD, word, line, column));
@@ -221,8 +194,6 @@ void    c_lexer::init_list_of_tokens()
 		get_next_token();
 	}
 }
-
-
 
 /*--------------------  getters ------------------*/
 

@@ -1,6 +1,5 @@
 #include "server.hpp"
 
-
 /* Handles delete request by checking permissions, and removing specific files if allowed */
 
 void	c_response::handle_delete_request(const c_request &request, string file_path)

@@ -92,13 +92,19 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
-	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 100);
 	if (num_events < 0)
 	{
-		// si on garde ce close, alors on a toujours les messages de cloture en double
-		close_all_sockets_and_fd();
+		if (errno == EINTR)
+		{
+			log_message("[INFO] Poll interrupted by signal");
+			return ;
+		}
+		cout << RED_BOLD << endl << "Error: Poll failed. Stopping all servers." << RESET << endl;
+		log_message("[ERROR] Poll failed. Stopping all server.");
+		this->_fatal_error = 1;
+		close(this->_socket_fd);
 		return ;
 	}
 	if (num_events == 0)
@@ -127,8 +133,6 @@ void c_server::handle_poll_events()
 			if (_active_cgi.count(fd))
 			{
 				c_cgi* cgi = _active_cgi[fd];
-				// on ajoute cette vérification pour les race conditions problables
-				// eviter le segfault si on accede a un CGI deja delete
 				if (!cgi)
 				{
 					log_message("[DEBUG] CGI already finished, skipping poll event for fd " + int_to_string(fd));
@@ -242,7 +246,6 @@ void	c_server::handle_new_connection(int listening_socket)
 		add_client(new_fds[i].first, new_fds[i].second);
 }
 
-
 /* Check if the client exist, read the request and create the appropriate response. Fill the writing buffer */
 
 void c_server::handle_client_read(int client_fd)
@@ -254,12 +257,9 @@ void c_server::handle_client_read(int client_fd)
 		return ;
 	}
 
-	/* a voir si ca pose PB car ca recree une request a chaque lecture et ne concerve pas les infos
-	le parsing doit pouvoir persister entre deux evenements poll() */
 	c_request request(*this, *client);
 	request.read_request();
 
-	// je rajoute ca pour traiter les doubles uploads
 	if (!request.is_request_fully_parsed())
 	{
 		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
@@ -273,7 +273,6 @@ void c_server::handle_client_read(int client_fd)
 	}
 	if (client->get_state() != IDLE)
 	{
-		// request.print_full_request();
 		client->set_creation_time();
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);

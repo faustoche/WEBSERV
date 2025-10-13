@@ -176,7 +176,7 @@ void	c_response::define_response_content(const c_request &request)
 				build_error_response(404, request);
 				return ;
 			}
-			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+			if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 			{
 				build_directory_listing_response(file_path, request);
 				return ;
@@ -315,36 +315,6 @@ void	c_response::buid_upload_success_response(const c_request &request)
 	_file_content.clear();
 }
 
-/* Code 201 - créée */
-
-// void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
-// {
-// 	(void)file_path;
-// 	_response = version + " 201 Created\r\n";
-// 	_response += "Content-Type: text/html\r\n";
-	
-
-// 	string connection;
-// 	try {
-// 		connection = request.get_header_value("Connection");
-// 	} catch (...) {
-// 		connection = "keep-alive";
-// 	}
-
-// 	_response += "Connection: " + connection + "\r\n";
-// 	_response += "Server: webserv/1.0\r\n";
-
-// 	string body = "Location: /upload_success.html\r\n";
-
-// 	ostringstream oss;
-// 	oss << body.size();
-// 	_response += "Content-Length: " + oss.str() + "\r\n";
-// 	_response += "\r\n";
-// 	_response += body;
-
-// 	_file_content.clear();
-// }
-
 void c_response::build_success_response(const string &file_path, const c_request &request)
 {
 	if (_file_content.empty())
@@ -437,7 +407,6 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	}
 
 	_client.set_status_code(error_code);
-
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);

@@ -7,9 +7,8 @@ c_location::c_location() : _location_root("./"), _auto_index(false), _is_directo
 {
 	_url_key = "";
 	_upload_path = "";
-	_location_body_size = 1048576; // 1Mo en octet
+	_location_body_size = 1048576;
 	_location_root = "";
-	// _location_path = "";
 	_auto_index = false;
 	_upload_path = "";
 	_cgi_extension.clear();
@@ -163,14 +162,8 @@ void	c_location::print_location() const
 				cout << "OFF";
 	cout << endl
 			<< "            upload path: " << get_upload_path() << endl
-			// << "Redirect = " << get_redirect() << endl
 			<< "            CGI extensions:" << endl;
 			print_cgi();
-	// cout    << "            is directory: ";
-	//         if (get_bool_is_directory())
-	//             cout << "yes";
-	//         else
-	//             cout << "no";
 	cout
 			<< "            Error pages = " << endl;
 			print_error_page();

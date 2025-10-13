@@ -17,7 +17,7 @@ c_client::c_client() : _fd(-1), _client_ip(""), _state(READING)
     _creation_time = time(NULL);
     _last_modified = time(NULL);
     _last_request.clear();
-    _status_code = 200; // modifie avant a 0
+    _status_code = 200;
 }
 
 c_client::c_client(int client_fd, string client_ip) : _fd(client_fd), _client_ip(client_ip), _state(READING)
@@ -37,7 +37,8 @@ c_client::c_client(int client_fd, string client_ip) : _fd(client_fd), _client_ip
 
 c_client::~c_client() {}
 
-/************ CLIENT CREATION ************/
+/************ FUNCTIONS ************/
+
 /* Add a file descriptor to the list handled by poll */
 
 void    c_server::add_fd(int fd, short events)
@@ -131,9 +132,4 @@ c_cgi   *c_server::find_cgi_by_pid(pid_t pid)
 		}
 	}
 	return (NULL);
-}
-
-void    c_server::clear_write_buffer()
-{
-	
 }

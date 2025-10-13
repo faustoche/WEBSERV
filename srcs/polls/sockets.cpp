@@ -62,7 +62,7 @@ void	c_server::close_all_sockets_and_fd(void)
 		close(client_fd);
 	}
 	_clients.clear();
-	cout << GREEN << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
+	cout << GREEN << endl << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
 
 	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); )
 	{

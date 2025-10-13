@@ -57,7 +57,6 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
 	this->_start_time = other._start_time;
 }
 
-
 c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 {
 	if (this != &rhs)
@@ -135,7 +134,6 @@ void    c_cgi::append_read_buffer(const char* buffer, ssize_t bytes)
 		return;
 	}
 	this->_read_buffer.append(buffer, bytes);
-
 }
 
 void    c_cgi::consume_read_buffer(size_t n) 
@@ -289,7 +287,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 		return (1);
 
 	set_environment(request);
-
 	return (0);
 }
 
@@ -378,20 +375,15 @@ int c_cgi::launch_cgi(const string &body)
 		return (500);
 	}
 
-	/**** Processus enfant ****/
 	if (this->_pid == 0)
 	{
-		/* Redirection stdin depuis le pipe d'entree: permet au parent d'envoyer le body au cgi */
 		dup2(server_to_cgi[0], STDIN_FILENO);
 		close(server_to_cgi[0]);
 		close(this->_pipe_in);
-
-		/* Redirection stdout vers le pipe de sortie: permet au cgi de renvoyer la reponse au server */
 		dup2(cgi_to_server[1], STDOUT_FILENO);
 		close(cgi_to_server[1]);
 		close(this->_pipe_out);
 	 
-		/**** Convertir en tableau de char* pour execve ****/
 		vector<char*> envp;
 		for (size_t i = 0; i < this->_vec_env_vars.size(); i++)
 			envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
@@ -420,7 +412,6 @@ int c_cgi::launch_cgi(const string &body)
 		exit(1);
 	}
 
-	/**** Processus parent ****/
 	close(server_to_cgi[0]);
 	close(cgi_to_server[1]);
 
