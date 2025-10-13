@@ -75,7 +75,6 @@ string      get_valid_index(string const & root, vector<string> const & indexes)
 	return "";
 }
 
-
 string  trim(const string &str)
 {
 	size_t start = str.find_first_not_of(" \t\r\n");

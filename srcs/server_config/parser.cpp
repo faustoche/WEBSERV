@@ -14,26 +14,26 @@ c_parser::~c_parser(){}
 /*----------------- MEMBERS METHODS  --------------*/
 /*------------   navigate through tokens --------------*/
 
-s_token c_parser::current_token() const
+s_token	c_parser::current_token() const
 {
 	if (is_at_end())
 		return s_token(TOKEN_EOF, "", 0, 0);
 	return *(this->_current);
 }
 
-string const &  c_parser::get_value() const
+string	const &  c_parser::get_value() const
 {
 	return this->_current->value;
 }
 
-s_token c_parser::peek_token() const
+s_token	c_parser::peek_token() const
 {
 	if (this->_current + 1 >= c_lexer::_tokens.end())
 		return s_token(TOKEN_EOF, "", 0, 0);
 	return *(this->_current + 1);
 }
 
-void    c_parser::advance_token()
+void	c_parser::advance_token()
 {
 	if (!is_at_end())
 		this->_current++;
@@ -82,26 +82,6 @@ string      my_to_string(int int_str)
 	return str;
 
 }
-
-// bool                c_parser::is_valid_port(string & port_str)
-// {
-//     try
-//     {
-//         int port = stoi(port_str);
-//         return (port > 0 && port <= 65535);
-//     }
-//     catch (...)
-//     {
-//         return false ;
-//     }
-// }
-
-// bool                c_parser::is_valid_path(string & const path)
-// {
-//     // revoir
-//     return !path.empty() && (path[0] == '/' || path.find("./") == 0);
-// }
-
 
 /*----------------------------   LOCATION   -----------------------------*/
 /*---------------------   location : main function   -----------------------------*/
@@ -218,7 +198,7 @@ void                c_parser::location_directives(c_location & location)
 		return;
 }
 
-void                c_parser::parse_methods(c_location & location)
+void	c_parser::parse_methods(c_location & location)
 {
 	vector<string>  tmp_methods;
 
@@ -429,9 +409,6 @@ void	c_parser::parse_listen_directive(c_server & server)
 	{
 		port = strtol(get_value().c_str(), NULL, 10);
 		str_ip = "0.0.0.0";
-		// si pas de precision -> ecouter sur toutes les interfaces disponibles
-		// (toutes les adresses IP locales en meme temps)
-		// 127.0.0.1 --> ecoute uniquement sur localhost (acces seulement depuis notre machine)
 	}
 	else
 	{
@@ -524,9 +501,8 @@ c_server	c_parser::parse_server_block()
 	{
 		if (is_token_type(TOKEN_DIRECTIVE_KEYWORD))
 		{
-			// directives server doivent etre avant les blocs location
 			if (has_location)
-				throw invalid_argument("Server directive is forbidden after location block"); // + *(_current)->value
+				throw invalid_argument("Server directive is forbidden after location block");
 			parse_server_directives(server);
 		}
 		else if (is_token_type(TOKEN_BLOC_KEYWORD) && is_token_value("location"))
@@ -543,8 +519,6 @@ c_server	c_parser::parse_server_block()
 	advance_token();
 	if (server.get_ports().empty())
 		throw invalid_argument("No listening ports defined");
-	// if (!server.is_valid())
-	//     throw invalid_argument("Invalid server configuration: " + server.get_validation_error());
 	return server;
 
 }
@@ -588,7 +562,7 @@ vector<c_server>    c_parser::parse()
 	{
 		_error_msg = e.what();
 		cerr << _error_msg << endl;
-		return vector<c_server>(); // revoir
+		return vector<c_server>();
 	}
 }
 

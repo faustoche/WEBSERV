@@ -67,8 +67,6 @@ void	c_server::add_location(string const & path, c_location const & loc)
 {
 	if (path.empty())
 		throw invalid_argument("Path for location is empty");
-	// if (is_valid(loc)) // verifier si location est valide ?
-	// 	throw invalid_argument("Invalid location");
 	this->_location_map[path] = loc;
 }
 
@@ -90,7 +88,6 @@ void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 	else
 		_active_cgi.insert(make_pair(key_fd, cgi));
 }
-
 
 /*-------------------------   debug   -----------------------------*/
 
@@ -160,7 +157,6 @@ void	c_server::print_config() const
 			<< it->first
 			<< endl;
 		it->second.print_location();
-		// it->second.print_error_page();
 		cout << RESET;
 		i++;
 	}

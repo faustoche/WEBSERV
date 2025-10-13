@@ -10,10 +10,7 @@ c_webserv_config::c_webserv_config(string const & file) : _config_files(file)
 
 /*-----------------  DESTRUCTOR -------------------*/
 
-c_webserv_config::~c_webserv_config()
-{
-
-}
+c_webserv_config::~c_webserv_config(){}
 
 /*-------------  MEMBERS FUNCTIONS ----------------*/
 
