@@ -25,6 +25,82 @@ const string& c_response::get_header_value(const string& key) const
 }
 
 /************ FILE CONTENT MANAGEMENT ************/
+bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target)
+{
+	if (method == "GET" && target == "/todo.html")
+	{
+		load_todo_page(request);
+		return (true);
+	}
+	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
+	{
+		handle_delete_todo(request);
+		return (true);
+	}
+	if (method == "POST" && target == "/post_todo")
+	{
+		handle_todo_form(request);
+		return (true);
+	}
+	if (method == "GET" && target == "/page_upload.html")
+	{
+		load_upload_page(request);
+		return (true);
+	}
+	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
+	{
+		handle_delete_upload(request);
+		return (true);
+	}
+	return (false);
+}
+
+bool	c_response::validate_http_requirements(const c_request &request)
+{
+	string version = request.get_version();
+	std::map<string, string> headers = request.get_headers();
+	
+	if (version != "HTTP/1.1")
+	{
+		build_error_response(505, request);
+		return (false);
+	}
+	if (headers.find("Host") == headers.end())
+	{
+		build_error_response(request.get_status_code(), request);
+		return (false);
+	}
+	return (true);
+}
+
+bool	c_response::validate_location(c_location *matching_location, const string &target, const c_request &request)
+{
+	if (matching_location == NULL)
+	{
+		string full_path = _server.get_root() + target;
+		if (is_directory(full_path) && _server.get_indexes().empty())
+		{
+			_server.log_message("[ERROR] No location found for target " + target);
+			build_error_response(404, request);
+			return (false);
+		}
+	}
+	return (true);
+}
+
+bool	c_response::handle_redirect(c_location *matching_location, const c_request &request)
+{
+	if (matching_location != NULL)
+	{
+		pair<int, string> redirect = matching_location->get_redirect();
+		if (redirect.first != 0 && !redirect.second.empty())
+		{
+			build_redirect_response(redirect.first, redirect.second, request);
+			return (true);
+		}
+	}
+	return (false);
+}
 
 void	c_response::define_response_content(const c_request &request)
 {
@@ -33,8 +109,6 @@ void	c_response::define_response_content(const c_request &request)
 	int status_code = request.get_status_code();
 	string method = request.get_method();
 	string target = request.get_target();
-	string version = request.get_version();
-	std::map<string, string> headers = request.get_headers();
 
 	if (status_code != 200)
 	{
@@ -46,60 +120,19 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(405, request);
 		return ;
 	}
-	if (method == "GET" && target == "/todo.html")
-	{
-		load_todo_page(request);
+	if (handle_special_routes(request, method, target))
 		return ;
-	}
-	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
-	{
-		handle_delete_todo(request);
-		return;
-	}
-	if (method == "POST" && target == "/post_todo")
-	{
-		handle_todo_form(request);
-		return;
-	}
-	if (method == "GET" && target == "/page_upload.html")
-	{
-		load_upload_page(request);
+	
+	if (!validate_http_requirements(request))
 		return ;
-	}
-	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
-	{
-		handle_delete_upload(request);
-		return;
-	}
-	if (version != "HTTP/1.1")
-	{
-		build_error_response(505, request);
-		return ;
-	}
-	if (headers.find("Host") == headers.end())
-	{
-		build_error_response(status_code, request);
-		return ;
-	}
 
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
 
-	if (matching_location == NULL) 
-	{
-		string full_path = _server.get_root() + target;
-		if (is_directory(full_path))
-		{
-			if (_server.get_indexes().empty())
-			{
-				_server.log_message("[ERROR] No location found for target " + target);
-				build_error_response(404, request);
-				return ;
-			}
-		}
-	}
+	if (!validate_location(matching_location, target, request))
+		return ;
 
 	if (!_server.is_method_allowed(matching_location, method))
 	{
@@ -107,15 +140,8 @@ void	c_response::define_response_content(const c_request &request)
 		return ;	
 	}
 
-	if (matching_location != NULL)
-	{
-		pair<int, string> redirect = matching_location->get_redirect();
-		if (redirect.first != 0 && !redirect.second.empty())
-		{
-			build_redirect_response(redirect.first, redirect.second, request);
-			return ;
-		}
-	}
+	if (handle_redirect(matching_location, request))
+		return ;
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
 	char resolved_path[PATH_MAX];

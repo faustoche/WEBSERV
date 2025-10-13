@@ -97,6 +97,7 @@ void c_server::handle_poll_events()
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 100);
 	if (num_events < 0)
 	{
+		// si on garde ce close, alors on a toujours les messages de cloture en double
 		close_all_sockets_and_fd();
 		return ;
 	}
