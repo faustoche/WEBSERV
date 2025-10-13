@@ -302,7 +302,8 @@ string c_response::read_error_pages(int error_code)
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
 	this->_status = request.get_status_code();
-	const string request_body = request.get_body();
+	// const string request_body = request.get_body();
+	vector<char> request_body = request.get_body();
 
 	if (cgi.get_interpreter().empty())
 		return ;

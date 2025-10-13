@@ -87,7 +87,7 @@ private:
 
 	/***** POST method *****/
 	void						handle_post_request(const c_request &request, c_location *location);
-	map<string, string> const	parse_form_data(const string &body);
+	map<string, string> const	parse_form_data(const vector<char>& body);
 	string const				url_decode(const string &body);
 	void						create_form_response(const map<string, string> &form, const c_request &request);
 	void						handle_test_form(const c_request &request);
@@ -98,7 +98,7 @@ private:
 	void 						load_todo_page(const c_request &request);
 	void						handle_todo_form(const c_request &request);
 	void						handle_upload_form_file(const c_request &request, c_location *location);
-	vector<s_multipart> const	parse_multipart_data(const string &body, const string &boundary); // return une reference ?
+	vector<s_multipart> const	parse_multipart_data(vector<char>& body, const string &boundary); // return une reference ?
 	s_multipart const			parse_single_part(const string &raw_part);
 	void						parse_header_section(const string &header_section, s_multipart &part);
 	string						extract_line(const string &header_section, const size_t &pos);

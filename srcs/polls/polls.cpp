@@ -446,7 +446,7 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	if (cgi->is_body_fully_sent_to_cgi())
 		return ;
 
-	size_t	remaining = cgi->get_body_to_send().length() - cgi->get_body_sent();
+	size_t	remaining = cgi->get_body_to_send().size() - cgi->get_body_sent();
 	int 	fd = cgi->get_pipe_in();
 
 	if (remaining == 0)
@@ -462,7 +462,8 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 		return ;
 	}
 
-	ssize_t bytes = write(fd, cgi->get_body_to_send().c_str() + cgi->get_body_sent(), remaining);
+	const std::vector<char>& body = cgi->get_body_to_send();
+	ssize_t bytes = write(fd, body.data() + cgi->get_body_sent(), remaining);
 
 	if (bytes < 0)
 	{

@@ -137,7 +137,8 @@ void	c_request::print_full_request() const
 		if (this->_has_body)
 		{
 			cout << "************* BODY ***************" << endl;
-			cout << this->_body << endl;
+			for (size_t i = 0; i < this->_body.size(); i++)
+				cout << this->_body[i] << endl;
 		}
 
 		cout << endl;

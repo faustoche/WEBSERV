@@ -16,7 +16,7 @@ class c_cgi
 		~c_cgi();
 
 		int				init_cgi(const c_request &request, const c_location &loc, string file_path);
-		int				launch_cgi(const string &body);
+		int				launch_cgi(vector<char>& body);
 		int				resolve_cgi_paths(const c_location &loc, const string& filename);
 		void			set_environment(const c_request &request);
 		void			set_script_filename(const string& filename) { this->_script_filename = filename; };
@@ -43,7 +43,7 @@ class c_cgi
 		void			set_content_length(size_t bytes) { _content_length = bytes; };
 		// void            set_body_size(size_t bytes) { _body_size = bytes; };
 		const size_t&	get_body_size() { return _body_size; };
-		const string&	get_body_to_send() const { return _body_to_send; };
+		const vector<char>&	get_body_to_send() const { return _body_to_send; };
 		const size_t&	get_body_sent() const { return _body_sent; };
 		// void            mark_request_fully_sent() { _request_fully_sent_to_cgi = true; };
 		void			mark_stdin_closed() { _pipe_in = -1; };
@@ -68,7 +68,7 @@ class c_cgi
 		int					_pipe_in;
 		int					_pipe_out;
 		pid_t				_pid;
-		string				_body_to_send;
+		vector<char>		_body_to_send;
 		size_t				_body_sent;
 		string				_write_buffer; //body a envoyer
 		string				_read_buffer; // reponse CGI accumulee

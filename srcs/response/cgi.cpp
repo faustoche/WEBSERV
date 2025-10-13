@@ -51,7 +51,7 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
 	this->_relative_argv = other._relative_argv;
 	this->_relative_script_name = other._relative_script_name;
 	this->_request_fully_sent_to_cgi = other._request_fully_sent_to_cgi;
-	this->_body_to_send = other._body_sent;
+	this->_body_to_send = other._body_to_send;
 	this->_body_sent = other._body_sent;
 	this->_body_fully_sent = other._body_fully_sent;
 	this->_start_time = other._start_time;
@@ -85,7 +85,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 		this->_relative_argv = rhs._relative_argv;
 		this->_relative_script_name = rhs._relative_script_name;
 		this->_request_fully_sent_to_cgi = rhs._request_fully_sent_to_cgi;
-		this->_body_to_send = rhs._body_sent;
+		this->_body_to_send = rhs._body_to_send;
 		this->_body_sent = rhs._body_sent;
 		this->_body_fully_sent = rhs._body_fully_sent;
 		this->_start_time = rhs._start_time;
@@ -343,7 +343,7 @@ string make_absolute(const string &path)
 	return (path);
 }
 
-int c_cgi::launch_cgi(const string &body)
+int c_cgi::launch_cgi(vector<char>& body)
 {
 	int server_to_cgi[2];
 	int cgi_to_server[2];

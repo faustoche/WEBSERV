@@ -56,7 +56,7 @@ void	c_request::read_request()
 	}
 	this->parse_request(request);
 	
-	cout << __FILE__ << " " << __LINE__ << endl;
+	// cout << __FILE__ << " " << __LINE__ << endl;
 	if (this->_error)
 	{
 		cout << __FILE__ << " " << __LINE__ << endl;
@@ -74,9 +74,10 @@ void	c_request::read_request()
 	
 	/* -----Lire le body -----*/
 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
+	cout << "taille du body lu dans la request: " << this->_body.size() << endl;
 	cout << __FILE__ << " " << __LINE__ << endl;
 
-	this->_request_fully_parsed = true;
+	// this->_request_fully_parsed = true;
 }
 
 int c_request::parse_request(const string& raw_request)
@@ -87,14 +88,14 @@ int c_request::parse_request(const string& raw_request)
 	/*---- ETAPE 1: start-line -----*/
 	if (!getline(stream, line, '\n'))
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
+		// cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 	} 
 
 	if (line.empty() || line[line.size() - 1] != '\r')
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
+		// cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (1);
@@ -111,7 +112,7 @@ int c_request::parse_request(const string& raw_request)
 	{
 		if (line[line.size() - 1] != '\r')
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
+			// cout << __FILE__ << " " << __LINE__ << endl;
 			this->_status_code = 400;
 			this->_error = true;
 			return (1);
@@ -141,7 +142,7 @@ int c_request::parse_start_line(string& start_line)
 	/*- ---- Method ----- */
 	if (space_pos == string::npos)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
+		// cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (0);
@@ -159,7 +160,7 @@ int c_request::parse_start_line(string& start_line)
 
 	if (space_pos == string::npos)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
+		// cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (0);
@@ -296,7 +297,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			}
 			if (tmp.size() > this->_expected_chunk_size)
 			{
-				cout << __FILE__ << " " << __LINE__ << endl;
+				// cout << __FILE__ << " " << __LINE__ << endl;
 				_server.log_message("[ERROR] Invalid chunk size. Received: " 
 										+ int_to_string(tmp.size()) + " Expected: " 
 										+ int_to_string(_expected_chunk_size));
@@ -410,6 +411,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 	while (total_bytes < expected_length)
 	{
+		// cout << __FILE__ << " " << __LINE__ << endl;
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0); // faut-il conditionner l'appel a recv
 		if (receivedBytes <= 0)
 		{
@@ -449,7 +451,10 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 			return ;
 
 		if (total_bytes == expected_length)
+		{
+			this->_request_fully_parsed = true;
 			break;
+		}
 	}
 }
 
@@ -475,10 +480,13 @@ void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, str
 			cout << __FILE__ << " " << __LINE__ << endl;
 			return ;
 		}
+		return ;
 	}
-	cout << __FILE__ << " " << __LINE__ << endl;
-	// else
-	// 	this->_request_fully_parsed = true;
+	else
+	{
+		cout << __FILE__ << " " << __LINE__ << endl;
+		this->_request_fully_parsed = true;
+	}
 }
 
 /************ SETTERS & GETTERS ************/
