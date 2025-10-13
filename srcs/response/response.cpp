@@ -216,7 +216,9 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 	
 	if (cgi->init_cgi(request, *loc, request.get_target()))
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		_server.cleanup_cgi(cgi);
+		
 		this->_is_cgi = false;
 		set_error();
 		build_error_response(cgi->get_status_code(), request);

@@ -78,6 +78,7 @@ void c_server::setup_pollfd()
 		c_cgi *cgi = find_cgi_by_client(to_remove[i]);
 		if (cgi)
 		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			log_message("[INFO] Killing CGI pid " + int_to_string(cgi->get_pid()) 
 							+ "linked to client" + int_to_string(to_remove[i]));
 			kill(cgi->get_pid(), SIGTERM);
@@ -177,7 +178,7 @@ void c_server::handle_poll_events()
 				{
 					kill(cgi->get_pid(), SIGTERM);
 					cleanup_cgi(cgi);
-					close_all_sockets_and_fd();
+					// close_all_sockets_and_fd();
 				}
 				remove_client(fd);
 			}	
@@ -478,6 +479,7 @@ void c_server::check_terminated_cgi_processes()
 	pid_t pid;
 	int status;
 	
+	// cout << __FILE__ << " " << __LINE__ << endl;
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
 	{
 		c_cgi* terminated_cgi = find_cgi_by_pid(pid);
@@ -527,7 +529,14 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 	}
 
 	int status;
-	waitpid(cgi->get_pid(), &status, WNOHANG);
+	pid_t result = waitpid(cgi->get_pid(), &status, WNOHANG);
+	if (result == 0)
+	{
+		log_message("[DEBUG] CGI PID " + int_to_string(cgi->get_pid()) + " still alive after SIGTERM, forcing SIGKILL");
+    	kill(cgi->get_pid(), SIGKILL);
+    	waitpid(cgi->get_pid(), &status, 0);
+	}
+	// cout << __FILE__ << " " << __LINE__ << endl;
 	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 
 	delete cgi;
