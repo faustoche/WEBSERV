@@ -3,17 +3,17 @@
 
 /* Handles delete request by checking permissions, and removing specific files if allowed */
 
-void	c_response::handle_delete_request(const c_request &request, const string &version, string file_path)
+void	c_response::handle_delete_request(const c_request &request, string file_path)
 {
+	cout << "file_path: " << file_path << endl;
 	if (file_path.find("..") != string::npos)
 	{
-		build_error_response(403, version, request);
+		build_error_response(403, request);
 		return ;
 	}
 	if (!is_existing_file(file_path))
 	{
-		cout << ">>> file_path = [" << file_path << "]" << std::endl;
-		build_error_response(404, version, request);
+		build_error_response(404, request);
 		return ;
 	}
 
@@ -21,29 +21,29 @@ void	c_response::handle_delete_request(const c_request &request, const string &v
 	string dir = file_path.substr(0, file_path.find_last_of('/'));
 	if (stat(file_path.c_str(), &file_stat) == 0 && S_ISDIR(file_stat.st_mode))
 	{
-		build_error_response(403, version, request);
+		build_error_response(403, request);
 		return ;
 	}
 	if (access(dir.c_str(), W_OK) != 0)
 	{
-		build_error_response(409, version, request);
+		build_error_response(409, request);
 		return ;
 	}
 	if (access(file_path.c_str(), W_OK) != 0)
 	{
-		build_error_response(403, version, request);
+		build_error_response(403, request);
 		return ;
 	}
 	if (remove(file_path.c_str()) != 0)
 	{
-		build_error_response(500, version, request);
+		build_error_response(500, request);
 		return ;
 	}
 }
 
 /* LOads the page, insert all the taks and build success response */
 
-void c_response::load_todo_page(const string &version, const c_request &request)
+void c_response::load_todo_page(const c_request &request)
 {
 	string filename = "./www/data/todo.txt";
 	string todo_html = load_file_content("./www/todo.html");
@@ -68,12 +68,12 @@ void c_response::load_todo_page(const string &version, const c_request &request)
 	if (pos != string::npos)
 		todo_html.replace(pos, strlen("{{TASKS_HTML}}"), tasks_html);
 	_file_content = todo_html;
-	build_success_response("todo.html", version, request);
+	build_success_response("todo.html", request);
 }
 
 /* Delete a specific task from the todo list and reload the updated page */
 
-void c_response::handle_delete_todo(const c_request &request, const string &version)
+void c_response::handle_delete_todo(const c_request &request)
 {
 	string target = request.get_target();
 	string task_to_delete;
@@ -85,7 +85,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	}
 	else
 	{
-		build_error_response(400, version, request);
+		build_error_response(400, request);
 		return ;
 	}
 
@@ -93,7 +93,7 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	ifstream infile(filename.c_str());
 	if (!infile.is_open())
 	{
-		build_error_response(500, version, request);
+		build_error_response(500, request);
 		return ;
 	}
 	
@@ -117,14 +117,14 @@ void c_response::handle_delete_todo(const c_request &request, const string &vers
 	ofstream outfile(filename.c_str(), ios::trunc);
 	if (!outfile.is_open())
 	{
-		build_error_response(500, version, request);
+		build_error_response(500, request);
 		return ;
 	}
 
 	for (size_t i = 0; i < tasks.size(); i++)
 		outfile << tasks[i] << endl;
 	outfile.close();
-	load_todo_page(version, request);
+	load_todo_page(request);
 }
 
 /* Load the upload page, list all the files already uploaded */
@@ -168,7 +168,7 @@ void c_response::load_upload_page(const string &version, const c_request &reques
 
 /* Handle file delete request after checking filename and access permissions */
 
-void c_response::handle_delete_upload(const c_request &request, const string &version)
+void c_response::handle_delete_upload(const c_request &request)
 {
 	string target = request.get_target();
 	string file_to_delete;
@@ -181,7 +181,7 @@ void c_response::handle_delete_upload(const c_request &request, const string &ve
 	}
 	else
 	{
-		build_error_response(400, version, request);
+		build_error_response(400, request);
 		return ;
 	}
 
@@ -189,17 +189,17 @@ void c_response::handle_delete_upload(const c_request &request, const string &ve
 
 	if (file_to_delete.find("..") != string::npos)
 	{
-		build_error_response(403, version, request);
+		build_error_response(403, request);
 		return ;
 	}
 	
 	if (remove(filename.c_str()) != 0)
 	{
 		_server.log_message("[ERROR] file not found or cannot be deleted: " + filename);
-		build_error_response(404, version, request);
+		build_error_response(404, request);
 		return ;
 	}
 	
 	_server.log_message("[INFO] ✅ FILE DELETED: " + filename);
-	load_upload_page(version, request);
+	load_upload_page(request);
 }

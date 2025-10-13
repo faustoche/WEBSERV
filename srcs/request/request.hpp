@@ -50,6 +50,7 @@ class c_request
 		void	check_port();
 		bool	is_valid_header_value(string& key, const string& value);
 		bool	is_limited() const { return _client_max_body_size > 0; };
+		bool	is_uri_valid();
 		
 		void	print_full_request() const;
 		void	init_request();

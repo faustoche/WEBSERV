@@ -40,6 +40,9 @@ void	run_multiserver(vector<c_server> &servers)
 			servers[i].handle_poll_events();
 		}
 	}
+	for (size_t i = 0; i < servers.size(); ++i)	
+		servers[i].close_all_sockets_and_fd();
+	// si termine faire un tour des serveurs pour fermer tous les fds
 }
 
 int main(int argc, char **argv)
