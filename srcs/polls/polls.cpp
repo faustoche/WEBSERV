@@ -274,11 +274,13 @@ void c_server::handle_client_read(int client_fd)
 	}
 	if (client->get_state() != IDLE)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		// request.print_full_request();
 		client->set_creation_time();
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);
 		response.define_response_content(request);
+		cout << __FILE__ << " " << __LINE__ << endl;
 		if (response.get_is_cgi())
 		{
 			client->set_state(PROCESSING);

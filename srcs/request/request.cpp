@@ -23,19 +23,25 @@ void	c_request::read_request()
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
 
+	cout << __FILE__ << " " << __LINE__ << endl;
 	/* ----- Lire jusqu'a la fin des headers ----- */
 	while (request.find("\r\n\r\n") == string::npos)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
+		cout << __FILE__ << " " << __LINE__ << endl;
 		if (receivedBytes <= 0)
 		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			if (receivedBytes == 0)
 			{
+				cout << __FILE__ << " " << __LINE__ << endl;
 				_client.set_state(IDLE);
 				return ;
 			}
 			else if (receivedBytes < 0) 
 			{
+				cout << __FILE__ << " " << __LINE__ << endl;
 				_server.log_message("[WARNING] recv() returned <0 for client " 
 									+ int_to_string(_socket_fd) 
 									+ ". Will retry on next POLLIN.");
@@ -43,17 +49,24 @@ void	c_request::read_request()
 				return;
 			}
 		}
+		cout << __FILE__ << " " << __LINE__ << endl;
+		cout << "Received bytes: " << receivedBytes << endl;
 		request.append(buffer, receivedBytes);
+		cout << __FILE__ << " " << __LINE__ << endl;
 	}
 	this->parse_request(request);
+	
+	cout << __FILE__ << " " << __LINE__ << endl;
 	if (this->_error)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_request_fully_parsed = true;
 		return ;
 	}
 	c_location *matching_location = _server.find_matching_location(this->get_target());
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->set_client_max_body_size(matching_location->get_body_size());
 	}
 	if (this->_client_max_body_size == 0)
@@ -61,10 +74,9 @@ void	c_request::read_request()
 	
 	/* -----Lire le body -----*/
 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
-	
+	cout << __FILE__ << " " << __LINE__ << endl;
 
 	this->_request_fully_parsed = true;
-
 }
 
 int c_request::parse_request(const string& raw_request)
@@ -75,12 +87,14 @@ int c_request::parse_request(const string& raw_request)
 	/*---- ETAPE 1: start-line -----*/
 	if (!getline(stream, line, '\n'))
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 	} 
 
 	if (line.empty() || line[line.size() - 1] != '\r')
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (1);
@@ -97,6 +111,7 @@ int c_request::parse_request(const string& raw_request)
 	{
 		if (line[line.size() - 1] != '\r')
 		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			this->_status_code = 400;
 			this->_error = true;
 			return (1);
@@ -126,6 +141,7 @@ int c_request::parse_start_line(string& start_line)
 	/*- ---- Method ----- */
 	if (space_pos == string::npos)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (0);
@@ -143,6 +159,7 @@ int c_request::parse_start_line(string& start_line)
 
 	if (space_pos == string::npos)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (0);
@@ -163,6 +180,7 @@ int c_request::parse_start_line(string& start_line)
 	}
 	if (!is_uri_valid())
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		this->_error = true;
 		return (1);
@@ -173,7 +191,7 @@ int c_request::parse_start_line(string& start_line)
 	this->_version = start_line.substr(start);
 	if (this->_version.empty())
 	{
-		
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
 		return (0);
 	}
@@ -199,17 +217,22 @@ int c_request::parse_headers(string& headers)
 	key = headers.substr(0, pos);
 	if (!is_valid_header_name(key))
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		_server.log_message("[ERROR] invalid header name: " + key);
 		this->_status_code = 400;
 	}
 
 	pos++;
 	if (headers[pos] != 32)
+	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_status_code = 400;
+	}
 
 	value = ft_trim(headers.substr(pos + 1));
 	if (!is_valid_header_value(key, value))
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		_server.log_message("[ERROR] invalid header value: " + value);
 		this->_status_code = 400;
 	}
@@ -230,7 +253,8 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 		this->_request_fully_parsed = true;
 		return (1);
 	}
-	this->_body.append(buffer, len);
+	// this->_body.append(buffer, len);
+	this->_body.insert(this->_body.end(), buffer, buffer + len);
 	return (0);
 }
 
@@ -272,6 +296,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			}
 			if (tmp.size() > this->_expected_chunk_size)
 			{
+				cout << __FILE__ << " " << __LINE__ << endl;
 				_server.log_message("[ERROR] Invalid chunk size. Received: " 
 										+ int_to_string(tmp.size()) + " Expected: " 
 										+ int_to_string(_expected_chunk_size));
@@ -323,6 +348,7 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 			} 
 			else if (receivedBytes < 0) 
 			{
+				cout << __FILE__ << " " << __LINE__ << endl;
 				_server.log_message("[WARNING] recv() returned <0 for client " 
 									+ int_to_string(socket_fd) 
 									+ ". Will retry on next POLLIN.");
@@ -399,6 +425,7 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 			else if (receivedBytes < 0) 
 			{
+				cout << __FILE__ << " " << __LINE__ << endl;
 				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(socket_fd) + ". Will retry on next POLLIN.");
 				this->_request_fully_parsed = false;
 				return;
@@ -429,19 +456,27 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, string request)
 {
+	cout << __FILE__ << " " << __LINE__ << endl;
 	if (this->_has_body)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		if (this->get_content_length())
 		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			this->read_body_with_length(socket_fd, buffer, request);
 		}
 		else
+		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			this->read_body_with_chunks(socket_fd, buffer, request);
+		}
 		if (this->_error)
+		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			return ;
-		if (this->_error)
-			return ;
+		}
 	}
+	cout << __FILE__ << " " << __LINE__ << endl;
 	// else
 	// 	this->_request_fully_parsed = true;
 }

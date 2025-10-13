@@ -113,6 +113,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (status_code != 200)
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(status_code, request);
 		return ;
 	}
@@ -178,6 +179,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		handle_post_request(request, matching_location);
 		return;
 	}
@@ -448,7 +450,7 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	}
 
 	_client.set_status_code(error_code);
-
+	cout << __FILE__ << " " << __LINE__ << endl;
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
@@ -508,6 +510,7 @@ void c_response::build_error_response(int error_code, const c_request &request)
 
 void	c_response::build_redirect_response(int code, const string &location, const c_request &request)
 {
+	cout << __FILE__ << " " << __LINE__ << endl;
 	string status;
 	switch (code)
 	{

@@ -85,6 +85,7 @@ void c_response::handle_delete_todo(const c_request &request)
 	}
 	else
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 		return ;
 	}
@@ -142,6 +143,7 @@ void c_response::handle_delete_upload(const c_request &request)
 	}
 	else
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 		return ;
 	}
