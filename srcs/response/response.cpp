@@ -146,8 +146,9 @@ void	c_response::define_response_content(const c_request &request)
 
 	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
 	char resolved_path[PATH_MAX];
-	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path))
+	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
+		cout << "file_path: " << file_path << endl;
 		build_error_response(403, request);
 		return ;
 	}
@@ -191,7 +192,6 @@ void	c_response::define_response_content(const c_request &request)
 			_server.cleanup_cgi(cgi);
 			this->_is_cgi = false;
 			set_error();
-			cgi->set_exit_status(this->_client.get_status_code());
 			build_error_response(cgi->get_status_code(), request);
 			return ;
 		}
