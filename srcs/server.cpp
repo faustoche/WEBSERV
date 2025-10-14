@@ -7,7 +7,7 @@ c_server::c_server()
 	// _names.push_back("default server");
 	// _ip = "0.0.0.0";
 	// _port = 80;
-	_root = "."; // dossier courrant --> comparer utilisation avec default_root
+	_root = "./www"; // dossier courrant --> comparer utilisation avec default_root
 	// ne pas definir d'index par defaut
 	_body_size = 1048576; // 1Mo en octet
 	_fatal_error = false;
