@@ -153,6 +153,7 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, request);
 			return ;
 		}
+		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(403, request);
 		return ;
 	}
@@ -658,7 +659,6 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 }
 
 /* Convert the url given into a real file path to access all of the informations */
-
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
 	if (location == NULL)

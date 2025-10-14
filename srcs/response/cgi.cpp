@@ -226,6 +226,7 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 	string  relative_path = this->_script_name.substr(url_key.size());
 	this->_script_filename = root + relative_path;
 
+
 	char resolved_path[PATH_MAX];
 	if (!this->_script_filename.empty() && !realpath(this->_script_filename.c_str(), resolved_path))
 	{
@@ -236,14 +237,36 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 	this->_relative_script_name = this->_script_name.substr(url_key.size());
 	if (!this->_path_info.empty())
 	{
-		this->_relative_argv = ".." + this->_path_info;
+		this->_relative_argv = "./www" + this->_path_info;
+		// changer en loc.get_root()
 		this->_translated_path = "./www" + this->_path_info;
 	}
 	return(0);
 }
 
+bool	c_cgi::is_argv_in_allowed_directory(const string& argv, const string& allowed_data_dir)
+{
+	char	resolved_path[PATH_MAX];
+	char	resolved_dir[PATH_MAX];
+
+	if (!realpath(argv.c_str(), resolved_path))
+		return (false);
+
+	if (!realpath(allowed_data_dir.c_str(), resolved_dir))
+		return (false);
+
+	string	path = resolved_path;
+	string	directory = resolved_dir;
+
+	if (path.rfind(directory, 0) == 0)
+		return (true);
+
+	return (false);
+}
+
 int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string target)
 {
+	
 	this->_status_code = request.get_status_code();
 	this->_loc = &loc;
 	char cwd[1024];
@@ -259,38 +282,15 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 
 	if (resolve_cgi_paths(loc, request.get_target()))
 		return (1);
-	if (!this->_relative_argv.empty())
+
+	string allowed_data_dir = "./www/data/"; // à retirer en allant checher directement dans la location
+	if (!this->_relative_argv.empty() && !is_argv_in_allowed_directory(this->_relative_argv, allowed_data_dir))
 	{
-		if (chdir("www/cgi-bin/") == 0)
-		{
-			ifstream file_checker(this->_relative_argv.c_str());
-			if (!file_checker.is_open())
-			{
-				if (chdir(old_dir.c_str()) != 0)
-					_server.log_message("[ERROR] chdir failed");
-				this->_status_code = 404;
-				return (1);
-			}
-			else
-			{
-				file_checker.close();
-				if (chdir(old_dir.c_str()) != 0)
-				{
-					_server.log_message("[ERROR] chdir failed");
-					return (1);
-				}
-			}
-		}
-		if (this->_relative_argv.find("data") == string::npos)
-		{
-			if (chdir(old_dir.c_str()) != 0)
-				_server.log_message("[ERROR] chdir failed");
-			this->_status_code = 403;
-			clear_context();
-			_server.log_message("[WARN] CGI's argument is outside data file");
-			return (1);
-		}
+		this->_status_code = 403;
+		_server.log_message("[WARN] CGI's argument is outside allowed directory");
+		return (1);
 	}
+
 	if (extension.size() > 0)
 		this->_interpreter = loc.extract_interpreter(extension);
 	if (this->_interpreter.empty())
@@ -405,10 +405,13 @@ int c_cgi::launch_cgi(vector<char>& body)
 			envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
 		envp.push_back(NULL);
 
+		
 		if (!this->_relative_argv.empty())
 		{
-			if (chdir("www/cgi-bin/") != 0) 
+			if (chdir(_loc->get_alias().c_str()) != 0) 
 				exit(1);
+
+			this->_relative_argv = "../" + this->_relative_argv.substr(5); // à adapter en fonction du root
 
 			char *argv[4];
 			argv[0] = const_cast<char*>(this->_interpreter.c_str());

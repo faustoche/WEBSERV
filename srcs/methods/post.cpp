@@ -111,7 +111,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 			string saved_path = save_uploaded_file(part, location);
 			if (get_status() >= 400)
 			{
-				cout << __FILE__ << " " << __LINE__ << endl;
 				build_error_response(get_status(), request);
 				return;
 			}
@@ -139,7 +138,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 	}
 	else
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 	}
 }
@@ -452,7 +450,6 @@ void	c_response::handle_contact_form(const c_request &request)
 
 	if (form_data["nom"].empty() || form_data["email"].empty())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 		return;
 	}
@@ -685,7 +682,6 @@ void c_response::handle_todo_form(const c_request &request)
 		task = "";
 	if (task.empty())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 		return ;
 	}

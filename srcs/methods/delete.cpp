@@ -5,7 +5,6 @@
 
 void	c_response::handle_delete_request(const c_request &request, string file_path)
 {
-	cout << "file_path: " << file_path << endl;
 	if (file_path.find("..") != string::npos)
 	{
 		build_error_response(403, request);
@@ -85,7 +84,6 @@ void c_response::handle_delete_todo(const c_request &request)
 	}
 	else
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 		return ;
 	}
@@ -143,7 +141,6 @@ void c_response::handle_delete_upload(const c_request &request)
 	}
 	else
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(400, request);
 		return ;
 	}

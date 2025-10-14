@@ -61,6 +61,7 @@ class c_cgi
 		void			clear_context();
 		void			close_cgi();
 		size_t			identify_script_type(const string& path);
+		bool			is_argv_in_allowed_directory(const string& argv, const string& allowed_data_dir);
 
 	private:
 		c_server&			_server;

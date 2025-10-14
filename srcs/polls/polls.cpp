@@ -79,7 +79,7 @@ void c_server::setup_pollfd()
 		if (cgi)
 		{
 			log_message("[INFO] Killing CGI pid " + int_to_string(cgi->get_pid()) 
-							+ "linked to client" + int_to_string(to_remove[i]));
+							+ " linked to client" + int_to_string(to_remove[i]));
 			kill(cgi->get_pid(), SIGTERM);
 			cleanup_cgi(cgi);
 		}
@@ -479,7 +479,6 @@ void c_server::check_terminated_cgi_processes()
 	pid_t pid;
 	int status;
 	
-	// cout << __FILE__ << " " << __LINE__ << endl;
 	while ((pid = waitpid(-1, &status, WNOHANG)) > 0)
 	{
 		c_cgi* terminated_cgi = find_cgi_by_pid(pid);

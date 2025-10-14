@@ -40,6 +40,7 @@ public:
 
 		// Getters			
 		string const &						get_url_key() const {return _url_key; };
+		string const &						get_root() const { return _location_root; };
 		string const &						get_alias() const {return _location_root; };
 		vector<string> const &				get_indexes() const {return _location_indexes; };
 		vector<string> const &				get_methods() const {return _location_methods; };
