@@ -87,14 +87,7 @@ void	c_server::handle_fully_sent_response(c_client *client)
 	log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
 				+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s with status_code of " + int_to_string(client->get_status_code()));
 	log_access(client);
-	// if (client->get_status_code() == 413)
-	// {
-	// 	log_message("[INFO] Connection: closed detected for 413. Shutting down client");
-	// 	remove_client(client->get_fd());
-	// 	return ;
-	// }
-	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
-				+ " can send a new request : POLLIN");
+	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " can send a new request : POLLIN");
 	client->set_bytes_written(0);
 	client->clear_read_buffer();
 	client->clear_write_buffer();
