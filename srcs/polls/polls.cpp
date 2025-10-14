@@ -277,6 +277,7 @@ void c_server::handle_client_read(int client_fd)
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);
 		response.define_response_content(request);
+		client->clear_read_buffer();
 		if (response.get_is_cgi())
 		{
 			client->set_state(PROCESSING);
@@ -373,8 +374,7 @@ void	c_server::handle_client_write(int client_fd)
 	client->set_bytes_written(bytes_written + bytes_sent);
 
 	if (client->get_bytes_written() >= write_buffer.length())
-	{
-		
+	{	
 		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
 			log_message("[DEBUG] CGI " + int_to_string(cgi->get_pipe_out()) + " linked to client " + int_to_string(client_fd) + " is not finished...");
@@ -570,7 +570,7 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 	}
 
 	int status;
-	waitpid(cgi->get_pid(), &status, WNOHANG);
+	waitpid(cgi->get_pid(), &status, WNOHANG); 
 	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 
 	delete cgi;

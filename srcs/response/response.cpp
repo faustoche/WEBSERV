@@ -363,56 +363,39 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	switch (error_code)
 	{
 		case 400:
-			status = "Bad Request";
-			break;
+			status = "Bad Request"; break;
 		case 401:
-			status = "Unauthorized";
-			break;
+			status = "Unauthorized"; break;
 		case 403:
-			status = "Forbidden";
-			break;
+			status = "Forbidden"; break;
 		case 404:
-			status = "Not Found";
-			break;
+			status = "Not Found";break;
 		case 405:
-			status = "Method Not Allowed";
-			break;
+			status = "Method Not Allowed";break;
 		case 408:
-			status = "Request Timeout";
-			break;
+			status = "Request Timeout";break;
 		case 413:
-			status = "Payload Too Large";
-			break;
+			status = "Payload Too Large";break;
 		case 414:
-			status = "URI Too Long";
-			break;
+			status = "URI Too Long";break;
 		case 415:
-			status = "Unsupported Media Type";
-			break;
+			status = "Unsupported Media Type";break;
 		case 429:
-			status = "Too Many Request";
-			break;
+			status = "Too Many Request";break;
 		case 500:
-			status = "Internal Server Error";
-			break;
+			status = "Internal Server Error";break;
 		case 501:
-			status = "Not Implemented";
-			break;
+			status = "Not Implemented";break;
 		case 502:
-			status = "Bad Gateway";
-			break;
+			status = "Bad Gateway";break;
 		case 503:
-			status = "Service Unavailable";
-			break;
+			status = "Service Unavailable";break;
 		case 504:
-			status = "Gateway Timeout";
-			break;
+			status = "Gateway Timeout";break;
 		case 505:
-			status = "HTTP Version Not Supported";
-			break;
+			status = "HTTP Version Not Supported";break;
 		default:
-			status = "Internal Server Error";
-			break;
+			status = "Internal Server Error";break;
 	}
 
 	_client.set_status_code(error_code);
@@ -460,12 +443,16 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection;
-	connection = request.get_header_value("Connection");
-	if (connection.empty())
-		connection = "keep-alive";
-
-	_response += "Connection: " + connection + "\r\n";
+	string connection_header = "keep-alive";
+	if (error_code == 413)
+		connection_header = "close";
+	else
+	{
+		string client_connection = request.get_header_value("Connection");
+		if (!client_connection.empty())
+			connection_header = client_connection;
+	}
+	_response += "Connection: " + connection_header + "\r\n";
 	_response += "\r\n";
 	_response += error_content;
 	_file_content.clear();
@@ -479,21 +466,16 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	switch (code)
 	{
 		case 301:
-			status = "Moved Permanently";
-			break ;
+			status = "Moved Permanently";break ;
 		case 302:
-			status = "Found";
-			break ;
+			status = "Found";break ;
 		case 307:
-			status = "Temporary Redirect";
-			break ;
+			status = "Temporary Redirect";break ;
 		case 308:
-			status = "Permanent Redirect";
-			break ;
+			status = "Permanent Redirect";break ;
 		default:
 			status = "Found";
-			code = 302;
-			break ;
+			code = 302;break ;
 	}
 
 	string content = "<html><body><h1>" + int_to_string(code) + " - " + status + "</h1>"

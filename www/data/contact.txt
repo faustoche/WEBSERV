@@ -4,3 +4,5 @@
 [ Mon Oct 13 10:32:55 2025 ] email=lili@gmail.com; message=coucou; nom=Lili; 
 [ Mon Oct 13 10:35:21 2025 ] email=oli@gmail.com; message=coucou; nom=Oli; 
 [ Mon Oct 13 11:49:48 2025 ] email=fsdfds@gmail.com; message=sadasdas; nom=sdfsad; 
+[ Mon Oct 13 16:27:10 2025 ] email=vbvcb@gmail.com; message=sccvsdv; nom=fdsfsd; 
+[ Mon Oct 13 16:36:50 2025 ] email=faustine@gmail.com; message=Test pour les messages; nom=Faustine; 

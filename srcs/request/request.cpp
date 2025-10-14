@@ -14,6 +14,7 @@ c_request::~c_request()
 
 /************ REQUEST ************/
 
+
 void	c_request::read_request()
 {
 	char buffer[BUFFER_SIZE];
@@ -22,10 +23,9 @@ void	c_request::read_request()
 	this->init_request();
 	this->_socket_fd = _client.get_fd();
 	
-	// on récupère ce qu;on a deja lu
 	string request = _client.get_read_buffer();
+	_client.clear_read_buffer();
 	
-	// on lit jusauqau headers
 	while (request.find("\r\n\r\n") == string::npos)
 	{
 		memset(buffer, 0, BUFFER_SIZE);
@@ -33,27 +33,20 @@ void	c_request::read_request()
 		
 		if (receivedBytes < 0)
 		{
-			//vu que le socket est en non bloquant on patiente en attendant le prochain pollin
 			_server.log_message("[DEBUG] No data available yet for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
-			_client.append_to_read_buffer(request);  // on garxe en memoire ce qu'on a lu pour le prochain pollin
+			_client.append_to_read_buffer(request);
 			this->_request_fully_parsed = false;
 			return;
 		}
 		else if (receivedBytes == 0)
 		{
-			// fermeture clean
 			_server.log_message("[INFO] Client " + int_to_string(_socket_fd) + " closed connection");
 			_client.set_state(DISCONNECTED);
 			this->_request_fully_parsed = false;
 			return;
 		}
-		
-		// on a tout recu
 		request.append(buffer, receivedBytes);
 	}
-	
-	// c'est tout bon du coup on nettroie
-	_client.clear_read_buffer();
 	
 	this->parse_request(request);
 	if (this->_error)
@@ -69,11 +62,20 @@ void	c_request::read_request()
 	}
 	if (this->_client_max_body_size == 0)
 		_client_max_body_size = 100 * 1024 * 1024;
-	
-	this->determine_body_reading_strategy(_socket_fd, buffer, request);
-	this->_request_fully_parsed = true;
-}
 
+	if (this->get_has_body() == false)
+	{
+		this->_request_fully_parsed = true;
+		return;
+	}
+	this->determine_body_reading_strategy(_socket_fd, buffer, request);
+
+	if (this->_error)
+	{
+		this->_request_fully_parsed = true;
+		return;
+	}
+}
 
 // void	c_request::read_request()
 // {
@@ -86,7 +88,6 @@ void	c_request::read_request()
 
 // 	while (request.find("\r\n\r\n") == string::npos)
 // 	{
-// 		_server.log_message("[DEBUG ----------------- ERROR 400] Actual body size : " + int_to_string(_body.size()));
 // 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
 // 		if (receivedBytes <= 0)
 // 		{
@@ -97,7 +98,6 @@ void	c_request::read_request()
 // 			}
 // 			else if (receivedBytes < 0) 
 // 			{
-// 				_server.log_message("[DEBUG ----------------- ERROR 400] Actual body size : " + int_to_string(receivedBytes));
 // 				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
 // 				this->_request_fully_parsed = false;
 // 				return;
@@ -411,7 +411,10 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		total_bytes += body_part.size();
 
 		if (total_bytes >= expected_length)
+		{
+			this->_request_fully_parsed = true;
 			return;
+		}
 	}
 
 	while (total_bytes < expected_length)
@@ -453,6 +456,8 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		if (total_bytes == expected_length)
 			break;
 	}
+	if (total_bytes == expected_length)
+		this->_request_fully_parsed = true;
 }
 
 
