@@ -130,7 +130,12 @@
 
     <script>
         function deleteTask(taskText) {
-            fetch('/delete_todo?task=' + encodeURIComponent(taskText), {
+            let encodedTask = encodeURIComponent(taskText);
+            encodedTask = encodedTask.replace(/!/g, '%21');
+            encodedTask = encodedTask.replace(/\*/g, '%2A');
+            encodedTask = encodedTask.replace(/\(/g, '%28');
+            encodedTask = encodedTask.replace(/\)/g, '%29');
+            fetch('/delete_todo?task=' + encodedTask, {
                 method: 'DELETE'
             })
             .then(response => response.text())

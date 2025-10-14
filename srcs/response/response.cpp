@@ -144,7 +144,13 @@ void	c_response::define_response_content(const c_request &request)
 	if (handle_redirect(matching_location, request))
 		return ;
 
-	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
+	/// j'ai rajouté ca 
+	string root = _server.get_root();
+	if (root.empty() || root == "." || root == "./")
+		root = "./www";
+	string file_path = _server.convert_url_to_file_path(matching_location, target, root);
+	// jusqu'ici 
+	///string file_path = _server.convert_url_to_file_path(matching_location, target, _server.get_root());
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
@@ -156,7 +162,33 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(403, request);
 		return ;
 	}
+	/////// je rajoute d'ici 
+	if (is_directory(file_path))
+	{
+		// on recupere liste fichiers index dans la locations
+		vector<string> indexes;
+		if (matching_location && !matching_location->get_indexes().empty())
+			indexes = matching_location->get_indexes();
+		else
+			indexes = _server.get_indexes();
+		
+		// on cehrche le preimeir index qui existe
+		for (size_t i = 0; i < indexes.size(); ++i)
+		{
+			string index_path = file_path;
+			if (index_path[index_path.length() - 1] != '/')
+				index_path += "/";
+			index_path += indexes[i];
 
+			// maj file path si ca existe
+			if (is_existing_file(index_path))
+			{
+				file_path = index_path;
+				break;
+			}
+		}
+	}
+	////// a ici
 	if (is_regular_file(file_path))
 		_file_content = load_file_content(file_path);
 
@@ -387,6 +419,12 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	{
 		string error_path = it->second;
 		
+		// if (!error_path.empty() && error_path[0] == '/')
+		// {
+		// 	string root = _server.get_root();
+		// 	error_path = root + error_path;
+		// }
+
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
@@ -595,11 +633,18 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 {
 	if (location == NULL)
 	{
-		string index = get_valid_index(_root, this->get_indexes());
+		string index = get_valid_index(default_root, this->get_indexes());
 		if (request_path == "/")
 			return (default_root + "/" + index);
 		return (default_root + request_path);
 	}
+	// if (location == NULL)
+	// {
+	// 	string index = get_valid_index(_root, this->get_indexes());
+	// 	if (request_path == "/")
+	// 		return (default_root + "/" + index);
+	// 	return (default_root + request_path);
+	// }
 
 	string location_root = location->get_alias();
 	string location_key = location->get_url_key();
