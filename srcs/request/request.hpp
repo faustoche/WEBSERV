@@ -39,11 +39,12 @@ class c_request
 		int		parse_request(const string& str);
 		int		parse_start_line(string& str);
 		int		parse_headers(string& str);
-		void	determine_body_reading_strategy(int socket_fd, char* buffer, string request);
-		void	read_body_with_length(int socket_fd, char* buffer, string request);
-		void	read_body_with_chunks(int socket_fd, char* buffer, string request);
+		void	determine_body_reading_strategy(int socket_fd, char* buffer, vector<char>& request);
+		void	read_body_with_length(int socket_fd, char* buffer, vector<char>& request);
+		void	read_body_with_chunks(int socket_fd, char* buffer, vector<char>& request);
 		int		fill_body_with_bytes(const char *buffer, size_t len);
 		void	fill_body_with_chunks(string &accumulator);
+		size_t	find_end_of_headers_pos(vector<char>& request);
 		void	clear();
 
 		void	check_required_headers();

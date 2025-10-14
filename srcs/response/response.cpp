@@ -113,7 +113,6 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (status_code != 200)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(status_code, request);
 		return ;
 	}
@@ -179,7 +178,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		handle_post_request(request, matching_location);
 		return;
 	}
@@ -218,12 +216,10 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 	
 	if (cgi->init_cgi(request, *loc, request.get_target()))
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
+		build_error_response(cgi->get_status_code(), request);
 		_server.cleanup_cgi(cgi);
-		
 		this->_is_cgi = false;
 		set_error();
-		build_error_response(cgi->get_status_code(), request);
 		return (1);
 	}
 	build_cgi_response(*cgi, request);
@@ -451,7 +447,6 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	}
 
 	_client.set_status_code(error_code);
-	cout << __FILE__ << " " << __LINE__ << endl;
 
 	map<int, string> const &err_pages = _server.get_err_pages();
 	map<int, string>::const_iterator it = err_pages.find(error_code);
@@ -511,7 +506,6 @@ void c_response::build_error_response(int error_code, const c_request &request)
 
 void	c_response::build_redirect_response(int code, const string &location, const c_request &request)
 {
-	cout << __FILE__ << " " << __LINE__ << endl;
 	string status;
 	switch (code)
 	{

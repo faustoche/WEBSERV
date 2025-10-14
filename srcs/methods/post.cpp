@@ -20,7 +20,6 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 	if (request.get_error() || request.get_status_code() != 200)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(request.get_status_code(), request);
 		return ;
 	}
@@ -28,14 +27,17 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	if (target == "/test_post")
 		handle_test_form(request);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
+	{
 		handle_contact_form(request);
+	}
 	else if (content_type.find("multipart/form-data") != string::npos)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		handle_upload_form_file(request, location);
 	}
 	else if (target == "/post_todo")
+	{
 		handle_todo_form(request);
+	}
 	else
 		build_error_response(404, request);
 }
@@ -69,7 +71,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 	vector<char> body = request.get_body();
 	if (body.empty())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		_server.log_message("[ERROR] Empty body for upload request");
 		build_error_response(400, request);
 		return ;
@@ -80,16 +81,13 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(get_status() >= 400 ? get_status() : 400, request);
 		return ;
 	}
 
-	cout << "Request fully parsed ? " << request.is_request_fully_parsed() << endl;
 	vector<s_multipart> parts = parse_multipart_data(body, boundary);
 	if (get_status() >= 400)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(get_status(), request);
 		return ;
 	}
@@ -137,6 +135,7 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		_response += "Server: webserv/1.0\r\n\r\n";
 
 		_server.log_message("[INFO] ✅ Upload done. Redirection to /page_upload.html");
+		_client.set_last_modified();
 	}
 	else
 	{
@@ -224,9 +223,7 @@ string	c_response::extract_boundary(const string &content_type)
 		boundary = content_type.substr(pos + 9);
 	else
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		set_status(400);
-		cout << __FILE__ << " " << __LINE__ << endl;
 		return "";
 	}
 	return boundary;
@@ -259,31 +256,14 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 		pos = found_pos + delimiter.size();
 	}
 
-	
-	cout << "boudary_pos.size(): " << boundary_pos.size() << endl;
-
-	cout << "Body size: " << body.size() << endl;
-	cout << "Boundary: [" << delimiter << "]" << endl;
-	cout << "First 200 bytes (hex): ";
-	for (size_t i = 0; i < std::min(body.size(), (size_t)200); ++i)
-	    printf("%02X ", (unsigned char)body[i]);
-	cout << endl << endl;
-
-	cout << "Last 100 bytes (hex): ";
-	for (size_t i = (body.size() > 100 ? body.size() - 100 : 0); i < body.size(); ++i)
-    	printf("%02X ", (unsigned char)body[i]);
-	cout << endl;
-
 	if (boundary_pos.size() < 2)
 		return (vector<s_multipart>());
 
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		if (get_status() >= 400)
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			break;
 		}
 		size_t	begin = boundary_pos[i] + delimiter.length();
@@ -316,10 +296,8 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 
 		if (get_status() >= 400)
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			break;
 		}
-		cout << __FILE__ << " " << __LINE__ << endl;
 		parts.push_back(single_part);
 		if (single_part.content.empty())
 			cout << PINK << __LINE__ << " / EMPTY / " << __FILE__ << endl;
@@ -333,17 +311,16 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 
 s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
+
 	s_multipart	part;
 
 	if (get_status() >= 400)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		return part;
 	}
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
 	if (separator_pos == string::npos)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		set_status(400); // en-tete manquant, parsing multipart echoue
 		return part;
 	}
@@ -367,7 +344,6 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 
 	if (get_status() >= 400)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		return part;
 	}
 	part.content = content_section;
@@ -382,7 +358,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 {
 	if (get_status() >= 400)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		return;
 	}
 	// Headers possibles :
@@ -396,14 +371,12 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_disposition);
 		if (line.empty())
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			set_status(400); // en-tete manquant, parsing multipart echoue
 			return;
 		}
 		part.name = extract_quotes(line, "name=");
 		if (part.name.empty())
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			set_status(400); // en-tete manquant, parsing multipart echoue
 			return;
 		}
@@ -411,7 +384,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	}
 	else
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		set_status(400);
 		return;
 	}
@@ -423,7 +395,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		part.content_type = extract_after_points(line);
 		if (part.content_type.empty())
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			set_status(400);
 		}
 	}

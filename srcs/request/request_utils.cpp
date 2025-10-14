@@ -71,7 +71,6 @@ void	c_request::check_required_headers()
 	{
 		_server.log_message("[DEBUG] Request has a body");
 		this->_has_body = true;
-		cout << __FILE__ << " " << __LINE__ << endl;
 	}
 
 	if (this->_headers.count("Host") != 1)
@@ -85,14 +84,12 @@ void	c_request::check_required_headers()
 	{
 		if (!has_content_length && !has_transfer_encoding)
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			this->_error = true;
 			this->_status_code = 400;
 			_server.log_message("[ERROR] Missing header indicating body size");
 		}
 		if (has_content_length && has_transfer_encoding)
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			this->_error = true;
 			this->_status_code = 400;
 			_server.log_message("[ERROR] Misleading header body size");

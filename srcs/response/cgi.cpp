@@ -13,6 +13,7 @@ _server(server), _client_fd(client_fd)
 	this->_finished = false;
 	this->_content_length = 0;
 	this->_body_size = 0;
+	this->_pid = 0;
 	this->_headers_parsed = false;
 	this->_pipe_in = 0;
 	this->_pipe_out = 0;

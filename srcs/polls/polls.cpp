@@ -78,7 +78,6 @@ void c_server::setup_pollfd()
 		c_cgi *cgi = find_cgi_by_client(to_remove[i]);
 		if (cgi)
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			log_message("[INFO] Killing CGI pid " + int_to_string(cgi->get_pid()) 
 							+ "linked to client" + int_to_string(to_remove[i]));
 			kill(cgi->get_pid(), SIGTERM);
@@ -274,13 +273,11 @@ void c_server::handle_client_read(int client_fd)
 	}
 	if (client->get_state() != IDLE)
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		// request.print_full_request();
 		client->set_creation_time();
 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
 		c_response response(*this, *client);
 		response.define_response_content(request);
-		cout << __FILE__ << " " << __LINE__ << endl;
 		if (response.get_is_cgi())
 		{
 			client->set_state(PROCESSING);
@@ -531,16 +528,19 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		cgi->mark_stdout_closed();	
 	}
 
-	int status;
-	pid_t result = waitpid(cgi->get_pid(), &status, WNOHANG);
-	if (result == 0)
+	if (cgi->get_pid() > 0)
 	{
-		log_message("[DEBUG] CGI PID " + int_to_string(cgi->get_pid()) + " still alive after SIGTERM, forcing SIGKILL");
-    	kill(cgi->get_pid(), SIGKILL);
-    	waitpid(cgi->get_pid(), &status, 0);
+		int status;
+		pid_t result = waitpid(cgi->get_pid(), &status, WNOHANG);
+		if (result == 0)
+		{
+			log_message("[DEBUG] CGI PID " + int_to_string(cgi->get_pid()) + " still alive after SIGTERM, forcing SIGKILL");
+    		kill(cgi->get_pid(), SIGKILL);
+    		waitpid(cgi->get_pid(), &status, 0);
+		}
+		// cout << __FILE__ << " " << __LINE__ << endl;
+		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
-	// cout << __FILE__ << " " << __LINE__ << endl;
-	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 
 	delete cgi;
 }

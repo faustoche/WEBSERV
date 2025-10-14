@@ -89,6 +89,7 @@ void	c_server::handle_fully_sent_response(c_client *client)
 	log_access(client);
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
 				+ " can send a new request : POLLIN");
+	client->set_last_modified();
 	client->set_bytes_written(0);
 	client->clear_read_buffer();
 	client->clear_write_buffer();
