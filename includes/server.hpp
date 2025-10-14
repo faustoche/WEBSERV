@@ -116,6 +116,7 @@ public:
 	void                				set_indexes(vector<string> const & index);
 	void								set_body_size(size_t const & size){_body_size = size; };
 	void								add_error_page(vector<int> const & codes, string path);
+	void								set_root(string const & root);
 	
 	vector<string> const &      		get_indexes() const {return (_indexes); };
 	string const &						get_ip_adress() const {return (_ip); };

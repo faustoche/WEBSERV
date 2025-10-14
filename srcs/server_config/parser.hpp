@@ -24,11 +24,11 @@ public :
 	~c_parser();
 
 	vector<c_server>	parse();
-	s_token			current_token() const;
-	string const &	get_value() const;
-	s_token			peek_token() const;
-	void			advance_token();
-	bool			is_at_end() const;
+	s_token				current_token() const;
+	string const &		get_value() const;
+	s_token				peek_token() const;
+	void				advance_token();
+	bool				is_at_end() const;
 
 private :
 	vector<s_token>::iterator	_current;
@@ -40,6 +40,7 @@ private :
 	void				parse_server_directives(c_server & server);
 	void				parse_index_directive(c_server & server);
 	void				parse_listen_directive(c_server & server);
+	void				parse_root_directive(c_server & server);
 	void				parse_server_name(c_server & server);
 	string				parse_ip(string const & value);
 	void				parse_server_cgi(c_server & server);
@@ -53,12 +54,16 @@ private :
 	void				parse_auto_index(c_location & location);
 	void				parse_upload_path(c_location & location);
 	void				parse_redirect(c_location & location);
-	void				loc_parse_error_page(c_location & location);
 	void				parse_allowed_extensions(c_location & location);
+	void				parse_allowed_data_dir(c_location & location);
+
+	void				loc_parse_error_page(c_location & location);
+	
 	void				expected_token_type(int expected_type) const;
 	bool				is_token_value(std::string key);
 	bool				is_token_type(int type);
 	size_t				convert_to_octet(string const & str, string const & suffix, size_t const i) const;
+	
 	void	throw_error(string const & first, string const & second, string const & value);
 
 	template<typename C>

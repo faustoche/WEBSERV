@@ -7,7 +7,7 @@ c_server::c_server()
 	// _names.push_back("default server");
 	// _ip = "0.0.0.0";
 	// _port = 80;
-	_root = "."; // dossier courrant --> comparer utilisation avec default_root
+	_root = ""; // dossier courrant --> comparer utilisation avec default_root
 	// ne pas definir d'index par defaut
 	_body_size = 1048576; // 1Mo en octet
 	_fatal_error = false;
@@ -77,8 +77,6 @@ void	c_server::add_error_page(vector<int> const & codes, string path)
 		_err_pages[codes[i]] = path;
 }
 
-/*-------------------------   setters   -----------------------------*/
-
 void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 {
 	if (!cgi)
@@ -89,6 +87,12 @@ void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 	else
 		_active_cgi.insert(make_pair(key_fd, cgi));
 }
+
+void	c_server::set_root(string const & root)
+{
+	this->_root = root;
+}
+
 
 /*-------------------------   debug   -----------------------------*/
 

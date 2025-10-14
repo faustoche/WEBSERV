@@ -272,25 +272,6 @@ string c_response::get_content_type(const string &file_path)
 		return ("text/plain"); 
 }
 
-/* Reading the error pages*/
-
-string c_response::read_error_pages(int error_code)
-{
-	ostringstream path;
-	path << "www/error_pages/" << error_code << ".html";
-	ifstream file(path.str().c_str());
-	if (file.is_open())
-	{
-		ostringstream content;
-		content << file.rdbuf();
-		file.close();
-		return (content.str());
-	}
-	ostringstream fallback;
-	fallback << "<html><body><h1>" << error_code << " - Error</h1></body></html>";
-	return (fallback.str());
-}
-
 /************ BUILDING RESPONSES ************/
 
 /* Build the successfull request response */

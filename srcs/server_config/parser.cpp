@@ -86,7 +86,7 @@ string      my_to_string(int int_str)
 /*----------------------------   LOCATION   -----------------------------*/
 /*---------------------   location : main function   -----------------------------*/
 
-void                c_parser::parse_location_block(c_server & server)
+void		c_parser::parse_location_block(c_server & server)
 {
 	advance_token();
 
@@ -103,7 +103,7 @@ void                c_parser::parse_location_block(c_server & server)
 
 /*---------------------   location : directory as value   ----------------------*/
 
-void                c_parser::location_url_directory(c_server & server)
+void		c_parser::location_url_directory(c_server & server)
 {
 	c_location  location;
 
@@ -131,7 +131,7 @@ void                c_parser::location_url_directory(c_server & server)
 
 /*---------------------   location : file as value   ---------------------------*/
 
-void                c_parser::location_url_file(c_server & server)
+void		c_parser::location_url_file(c_server & server)
 {
 	c_location  location;
 
@@ -158,7 +158,7 @@ void                c_parser::location_url_file(c_server & server)
 
 /*------------------------   location : directives   ---------------------------*/
 
-void                c_parser::location_directives(c_location & location)
+void		c_parser::location_directives(c_location & location)
 {
 	int     flag_cgi = 0;
 	int     flag_upload = 0;
@@ -194,8 +194,31 @@ void                c_parser::location_directives(c_location & location)
 		parse_redirect(location);
 	else if (is_token_value("allowed_extensions"))
 		parse_allowed_extensions(location);
+	else if (is_token_value("allowed_data_dir"))
+		parse_allowed_data_dir(location);
 	else
 		return;
+}
+
+void	c_parser::parse_allowed_data_dir(c_location & location)
+{
+	advance_token();
+	expected_token_type(TOKEN_VALUE);
+	string  allowed_dir = _current->value;
+	advance_token();
+	expected_token_type(TOKEN_SEMICOLON);
+	advance_token();
+
+	if ((allowed_dir[0] != '.' || allowed_dir[1] != '/') && allowed_dir[0] != '.' && allowed_dir[0] != '/')
+		throw invalid_argument("Invalid path for allowed_data_dir directive): " + allowed_dir + " (must begin with './' or '/' )");
+	if (allowed_dir.find("..") != string::npos)
+		throw invalid_argument("Invalid path for allowed_data_dir directive: " + allowed_dir + " (cannot contain '..')");
+	if (allowed_dir[allowed_dir.length() - 1] != '/')
+		allowed_dir.push_back('/');
+	if (!(is_directory(allowed_dir)))
+		throw invalid_argument("Invalid path for allowed_data_dir directive: " + allowed_dir + " (it must exists)");
+	
+	location.set_allowed_data_dir(allowed_dir);
 }
 
 void	c_parser::parse_methods(c_location & location)
@@ -222,7 +245,7 @@ void	c_parser::parse_methods(c_location & location)
 	advance_token();
 }
 
-void                c_parser::parse_cgi(c_location & location)
+void		c_parser::parse_cgi(c_location & location)
 {
 	string  extension;
 	string  path;
@@ -248,7 +271,7 @@ void                c_parser::parse_cgi(c_location & location)
 	location.set_cgi(extension, path);
 }
 
-void                c_parser::location_indexes(c_location & location)
+void		c_parser::location_indexes(c_location & location)
 {
 	advance_token();
 	expected_token_type(TOKEN_VALUE);
@@ -268,7 +291,7 @@ void                c_parser::location_indexes(c_location & location)
 	advance_token();
 }
 
-void                c_parser::parse_allowed_extensions(c_location & location)
+void		c_parser::parse_allowed_extensions(c_location & location)
 {
 	advance_token();
 	expected_token_type(TOKEN_VALUE);
@@ -285,7 +308,7 @@ void                c_parser::parse_allowed_extensions(c_location & location)
 	advance_token();
 }
 
-void                c_parser::parse_alias(c_location & location)
+void		c_parser::parse_alias(c_location & location)
 {
 	advance_token();
 	expected_token_type(TOKEN_VALUE);
@@ -294,12 +317,19 @@ void                c_parser::parse_alias(c_location & location)
 	expected_token_type(TOKEN_SEMICOLON);
 	advance_token();
 
-	if (alias[0] != '/' && alias[0] != '.')
-		throw invalid_argument("Invalid path for alias directive: " + _current->value);
+	if ((alias[0] != '.' || alias[1] != '/') && alias[0] != '.' && alias[0] != '/')
+		throw invalid_argument("Invalid path for alias directive): " + alias + " (must begin with './' or '/' )");
+	if (alias.find("..") != string::npos)
+		throw invalid_argument("Invalid path for alias directive: " + alias + " (cannot contain '..')");
 	if (alias[alias.length() - 1] != '/')
 		alias.push_back('/');
+	if (!(is_directory(alias)))
+		throw invalid_argument("Invalid path for alias directive: " + alias + " (it must exists)");
+	
 	location.set_alias(alias);
 }
+
+
 
 void        c_parser::parse_upload_path(c_location & location)
 {
@@ -471,6 +501,26 @@ void	c_parser::parse_server_name(c_server & server)
 	advance_token();
 }
 
+void		c_parser::parse_root_directive(c_server & server)
+{
+	advance_token();
+	expected_token_type(TOKEN_VALUE);
+	string  root = _current->value;
+	advance_token();
+	expected_token_type(TOKEN_SEMICOLON);
+	advance_token();
+
+	if ((root[0] != '.' || root[1] != '/') && root[0] != '.' && root[0] != '/')
+		throw invalid_argument("Invalid path for root directive): " + root + " (must begin with './' or '/' )");
+	if (root.find("..") != string::npos)
+		throw invalid_argument("Invalid path for root directive: " + root + " (cannot contain '..')");
+	if (root[root.length() - 1] != '/')
+		root.push_back('/');
+	if (!(is_directory(root)))
+		throw invalid_argument("Invalid path for root directive: " + root + " (it must exists)");
+	server.set_root(root);
+}
+
 void	c_parser::parse_server_directives(c_server & server)
 {
 	if (is_token_value("index"))
@@ -483,6 +533,8 @@ void	c_parser::parse_server_directives(c_server & server)
 		parse_body_size(server);
 	else if (is_token_value("error_page"))
 		parse_error_page(server);
+	else if (is_token_value("root"))
+		parse_root_directive(server);
 	else
 		throw invalid_argument("Unexpected token in server block (not a valid directive): " + _current->value);
 }
@@ -518,7 +570,9 @@ c_server	c_parser::parse_server_block()
 	expected_token_type(TOKEN_RBRACE);
 	advance_token();
 	if (server.get_ports().empty())
-		throw invalid_argument("No listening ports defined");
+		throw invalid_argument("The block server must define at least one port");
+	if (server.get_root().empty())
+		throw invalid_argument("The block server must define a root");
 	return server;
 
 }
