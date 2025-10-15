@@ -55,6 +55,7 @@ public:
 
 	c_response(c_server& server, c_client &client);
 	~c_response();
+
 	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
 	const string 	&get_header_value(const string& key) const;
 	void			set_body(const string &body) { this->_body = body; };
@@ -64,6 +65,7 @@ public:
 	bool			get_is_cgi() { return this->_is_cgi; };
 	bool			get_error() { return this->_error; };
 	const int		&get_client_fd() { return this->_client_fd; };
+	c_server		&get_server() { return this->_server; };
 
 	void			clear_response();
 	void			set_error() { this->_error = true; };
@@ -90,8 +92,8 @@ private:
 	string const				url_decode(const string &body);
 	void						create_form_response(const map<string, string> &form, const c_request &request);
 	void						handle_test_form(const c_request &request);
-	void						handle_contact_form(const c_request &request);
-	bool						save_contact_data(const map<string, string> &data);
+	void						handle_contact_form(const c_request &request, c_location *location);
+	bool						save_contact_data(const map<string, string> &data, c_location *location);
 	void						error_form_response(const string &msg, const c_request &request);
 	void						handle_upload_form_file(const c_request &request);
 	void 						load_todo_page(const c_request &request);

@@ -21,7 +21,7 @@ public:
 		c_location const&	operator=(c_location const & rhs);
 
 		void								set_url_key(string const & url) {this->_url_key = url; };
-		void								set_alias(string const & root) {this->_location_alias = root; };
+		void								set_alias(string const & alias) {this->_location_alias = alias; };
 		void								set_index_files(vector<string> const & files) {this->_location_indexes = files; };
 		void								add_index_file(string const & file);
 
@@ -36,7 +36,8 @@ public:
 		void								add_error_page(vector<int> const & codes, string path);
 		void								add_allowed_extension(const string & extension);
 		void								set_allowed_data_dir(const string & data_dir) {this->_allowed_data_dir = data_dir; };
-		
+		void								set_current_server(c_server & server) {this->_current_server = &server; };
+
 		string const &						get_url_key() const {return _url_key; };
 		string const &						get_alias() const {return _location_alias; };
 		vector<string> const &				get_indexes() const {return _location_indexes; };
@@ -51,6 +52,7 @@ public:
 		map<int, string> const &			get_err_pages() const {return (_location_err_pages); };
 		vector<string> const &				get_allowed_extensions() const {return _allowed_extensions; };
 		string const &						get_allowed_data_dir() const {return _allowed_data_dir; };
+		c_server *							get_current_server() const {return _current_server; };
 
 		// Print
 		void								print_location() const;
@@ -78,4 +80,5 @@ private:
 		map<int, string>					_location_err_pages;
 		vector<string>						_allowed_extensions;
 		string								_allowed_data_dir;
+		c_server *							_current_server;
 };

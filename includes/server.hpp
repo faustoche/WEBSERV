@@ -152,3 +152,4 @@ bool		file_exists(const std::string &path);
 string		url_decode(const string &str);
 string		escape_html(const string &text);
 string		escape_html_attr(const string &text);
+string		join_path(const string &base, const string &path);

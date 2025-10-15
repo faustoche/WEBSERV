@@ -149,6 +149,7 @@ void	c_response::define_response_content(const c_request &request)
 	if (root.empty() || root == "." || root == "./")
 		root = "./www";
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root);
+
 	// jusqu'ici 
 	///string file_path = _server.convert_url_to_file_path(matching_location, target, _server.get_root());
 	char resolved_path[PATH_MAX];
@@ -162,9 +163,13 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(403, request);
 		return ;
 	}
+	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+	cout << file_path << endl;
 	/////// je rajoute d'ici 
 	if (is_directory(file_path))
 	{
+		// PB on rentre plus de dans !!!!!!!!!!!!!!!!!!!!!!
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		// on recupere liste fichiers index dans la locations
 		vector<string> indexes;
 		if (matching_location && !matching_location->get_indexes().empty())
@@ -572,36 +577,32 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 
 c_location	*c_server::find_matching_location(const string &request_path)
 {
+	cout << __LINE__ << " request path : " << request_path << endl; //ATENTION AUX PROTECTION DES LOCATION
 	c_location *best_match = NULL;
 	size_t best_match_length = 0;
 
 	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
 	{
 		const string &location_path = it->first;
-		if (request_path.find(location_path) == 0)
+
+		/* modifications */
+		if (request_path.compare(0, location_path.size(), location_path) == 0)
 		{
-			if (location_path.length() > 0 && location_path[location_path.length() - 1] == '/')
+			bool valid_match = false;
+			// on compare a partir de la longueur de request path
+			// et on verifie si la suite de location_path est vide
+			if (request_path.size() == location_path.size())
+				valid_match = true;
+			else if (request_path.size() > location_path.size())
 			{
-				if (request_path.length() == location_path.length() || 
-					(request_path.length() > location_path.length() && 
-					 request_path[location_path.length()] == '/') ||
-					request_path.length() > location_path.length())
-				{
-					if (location_path.length() > best_match_length)
-					{
-						best_match = &(it->second);
-						best_match_length = location_path.length();
-					}
-				}
+				char next_char = request_path[location_path.size()];
+				if (next_char == '/' || next_char == '.')
+					valid_match = true;
 			}
-			else
+			if (valid_match && location_path.size() > best_match_length)
 			{
-				if (request_path == location_path)
-				{
-					best_match = &(it->second);
-					best_match_length = location_path.length();
-					break ;
-				}
+				best_match = &(it->second);
+				best_match_length = location_path.size();
 			}
 		}
 	}
@@ -628,58 +629,106 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 }
 
 /* Convert the url given into a real file path to access all of the informations */
+/*
+tester =
+Cas 1: Aucune location définie
+Cas 2: Déterminer le root de base (alias ou root)
+Cas 3: Location qui n'est pas un dossier (endpoint logique)
+Cas 4: Location est un dossier -> construire le chemin réel
+Cas 5: Si c'est un dossier, chercher un fichier index
+Cas 6: Retourner le chemin construit (fichier direct)
+*/
+
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
+	cout << PINK <<  __LINE__ << " / " << __FILE__ << " request_path + default root = " << default_root + request_path << RESET << endl;
 	if (location == NULL)
 	{
-		string index = get_valid_index(default_root, this->get_indexes());
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (request_path == "/")
-			return (default_root + "/" + index);
-		return (default_root + request_path);
+		{
+			string index = get_valid_index(default_root, this->get_indexes());
+			return (join_path(default_root, index));
+		}
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+		cout << join_path(default_root, request_path) << endl;
+		// si location pas definie et quon demande un chemin
+		return join_path(default_root, request_path);
 	}
-	// if (location == NULL)
-	// {
-	// 	string index = get_valid_index(_root, this->get_indexes());
-	// 	if (request_path == "/")
-	// 		return (default_root + "/" + index);
-	// 	return (default_root + request_path);
-	// }
 
-	string location_root = location->get_alias();
+	string location_root;
+
+	if (!location->get_alias().empty())
+	{
+		location_root = location->get_alias();
+		if (!directory_exists(location_root))
+		{
+			// erreur : alias directory n'existe pas
+			// envoyer un log d'erreur ? ou ecrire qqch sur le terminal ?
+			return ""; // mettre a jour code derreur ?
+		}
+	}
+	else
+	{
+		location_root = default_root; // default root correspond au serveur root
+		if (!directory_exists(default_root))
+		{
+			// erreur : root n'existe pas
+			// envoyer un log d'erreur ? ou ecrire qqch sur le terminal ?
+			return ""; // mettre a jour code derreur ?
+		}
+	}
+
 	string location_key = location->get_url_key();
 
+	// location qui ne designe pas un dossier mais un endpoint
+	if (!location->get_bool_is_directory())
+	{
+		return join_path(location_root, request_path);
+		// if (location_root.empty())
+		// 	return default_root + request_path;
+		// else
+		// 	return location_root + request_path;
+		// return location_root; 
+	}
+
+	// Location est un dossier -> construire chemin reel a partir de la request
 	string relative_path;
 	if (request_path.find(location_key) == 0)
 	{
 		relative_path = request_path.substr(location_key.length());
-		if (!relative_path.empty() && relative_path[0] == '/')
-			relative_path = relative_path.substr(1);
+		// if (!relative_path.empty() && relative_path[0] == '/')
+		// 	relative_path = relative_path.substr(1);
 	}
+	else
+		relative_path = request_path;
 
-	if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	string full_path = join_path(location_root, relative_path);
+
+	// if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
+	if (is_directory(full_path) && location->get_bool_is_directory())
 	{
-		location->set_is_directory(true);
 		vector<string> index_files = location->get_indexes();
-		if (index_files.empty())
-			return (location_root + relative_path);
-		else
+
+		// si pas d'index defini retourner le dossier
+		if (index_files.empty()) 
+			return (full_path);
+
+		// chercher un dossier index existant
+		if (!index_files.empty())
 		{
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + relative_path + index_files[i];
-				ifstream file_checker(index_path.c_str());
-				if (file_checker.is_open())
-				{
-					file_checker.close();
-					return (index_path);
-				}
-				file_checker.close();
+				string index_path = join_path(full_path, index_files[i]);
+				if (is_existing_file(index_path))
+					return index_path;
 			}
 			if (location->get_auto_index())
-				return (location_root + relative_path);
-			return (location_root + relative_path + index_files[0]);
+				return full_path;
+			return full_path;
+			// return (location_root + relative_path + index_files[0]);
 		}
 	}
-	return (location_root + relative_path);
+	return full_path;
 }
