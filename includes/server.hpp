@@ -29,7 +29,6 @@
 /************ DEFINE ************/
 
 #define	BUFFER_SIZE 4096
-#define MAX_CONNECTIONS 255
 #define TIMEOUT 10
 using	namespace std;
 
