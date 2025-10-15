@@ -7,13 +7,9 @@ c_request::c_request(c_server& server, c_client &client) : _server(server), _cli
 	this->init_request();
 }
 
-c_request::~c_request()
-{
-}
-
+c_request::~c_request(){}
 
 /************ REQUEST ************/
-
 
 void	c_request::read_request()
 {

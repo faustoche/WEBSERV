@@ -144,13 +144,11 @@ void	c_response::define_response_content(const c_request &request)
 	if (handle_redirect(matching_location, request))
 		return ;
 
-	/// j'ai rajouté ca 
 	string root = _server.get_root();
 	if (root.empty() || root == "." || root == "./")
 		root = "./www";
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root);
-	// jusqu'ici 
-	///string file_path = _server.convert_url_to_file_path(matching_location, target, _server.get_root());
+
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
@@ -162,17 +160,15 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(403, request);
 		return ;
 	}
-	/////// je rajoute d'ici 
+
 	if (is_directory(file_path))
 	{
-		// on recupere liste fichiers index dans la locations
 		vector<string> indexes;
 		if (matching_location && !matching_location->get_indexes().empty())
 			indexes = matching_location->get_indexes();
 		else
 			indexes = _server.get_indexes();
-		
-		// on cehrche le preimeir index qui existe
+
 		for (size_t i = 0; i < indexes.size(); ++i)
 		{
 			string index_path = file_path;
@@ -180,7 +176,6 @@ void	c_response::define_response_content(const c_request &request)
 				index_path += "/";
 			index_path += indexes[i];
 
-			// maj file path si ca existe
 			if (is_existing_file(index_path))
 			{
 				file_path = index_path;
@@ -188,13 +183,12 @@ void	c_response::define_response_content(const c_request &request)
 			}
 		}
 	}
-	////// a ici
+
 	if (is_regular_file(file_path))
 		_file_content = load_file_content(file_path);
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
-		// si la location 
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 		{
 			this->_is_cgi = false;
@@ -238,7 +232,7 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 			build_error_response(404, request);
 			return (1);
 		}
-		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index())
 		{
 			build_directory_listing_response(file_path, request);
 			return (1);
@@ -306,7 +300,6 @@ string c_response::get_content_type(const string &file_path)
 }
 
 /************ BUILDING RESPONSES ************/
-
 /* Build the successfull request response */
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
@@ -419,13 +412,6 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	if (it != err_pages.end())
 	{
 		string error_path = it->second;
-		
-		// if (!error_path.empty() && error_path[0] == '/')
-		// {
-		// 	string root = _server.get_root();
-		// 	error_path = root + error_path;
-		// }
-
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
@@ -449,7 +435,7 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	}
 	else
 	{
-		_server.log_message("[WARN] No error page configured for code " + int_to_string(error_code));
+		_server.log_message("[WARNING] No error page configured for code " + int_to_string(error_code));
 		ostringstream fallback;
 		fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 		error_content = fallback.str();
@@ -464,7 +450,7 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	_response += "Server: webserv/1.0\r\n";
 
 	string connection_header = "keep-alive";
-	if (error_code == 413)
+	if (error_code == 413 || error_code == 400 || error_code == 408)
 		connection_header = "close";
 	else
 	{
@@ -568,7 +554,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 }
 
 /************ HANDLING LOCATIONS ************/
-
 /* Finding the locations the matches the most with what the request is asking for */
 
 c_location	*c_server::find_matching_location(const string &request_path)
@@ -639,13 +624,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			return (default_root + "/" + index);
 		return (default_root + request_path);
 	}
-	// if (location == NULL)
-	// {
-	// 	string index = get_valid_index(_root, this->get_indexes());
-	// 	if (request_path == "/")
-	// 		return (default_root + "/" + index);
-	// 	return (default_root + request_path);
-	// }
 
 	string location_root = location->get_alias();
 	string location_key = location->get_url_key();

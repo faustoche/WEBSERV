@@ -40,14 +40,11 @@ void c_server::setup_pollfd()
 		switch (client.get_state())
 		{
 			case READING:
-				client_pollfd.events = POLLIN;
-				break;
+				client_pollfd.events = POLLIN;break;
 			case PROCESSING:
-				client_pollfd.events = 0;
-				break;
+				client_pollfd.events = 0;break;
 			case SENDING:
-				client_pollfd.events = POLLOUT;
-				break;
+				client_pollfd.events = POLLOUT;break;
 			case IDLE:
 				client_pollfd.events = 0;
 			default:
@@ -468,7 +465,7 @@ void c_server::check_terminated_cgi_processes()
 		{
 			if (!terminated_cgi)
 			{
-				log_message("[WARN] Unkown CGI pid " + int_to_string(pid));
+				log_message("[WARNING] Unkown CGI pid " + int_to_string(pid));
 				continue;
 			}
 		
