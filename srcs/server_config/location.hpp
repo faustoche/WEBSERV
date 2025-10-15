@@ -21,7 +21,7 @@ public:
 		c_location const&	operator=(c_location const & rhs);
 
 		void								set_url_key(string const & url) {this->_url_key = url; };
-		void								set_alias(string const & root) {this->_location_root = root; };
+		void								set_alias(string const & root) {this->_location_alias = root; };
 		void								set_index_files(vector<string> const & files) {this->_location_indexes = files; };
 		void								add_index_file(string const & file);
 
@@ -35,9 +35,10 @@ public:
 		void								set_err_pages(map<int, string> err_pages) {this->_location_err_pages = err_pages; };
 		void								add_error_page(vector<int> const & codes, string path);
 		void								add_allowed_extension(const string & extension);
+		void								set_allowed_data_dir(const string & data_dir) {this->_allowed_data_dir = data_dir; };
 		
 		string const &						get_url_key() const {return _url_key; };
-		string const &						get_alias() const {return _location_root; };
+		string const &						get_alias() const {return _location_alias; };
 		vector<string> const &				get_indexes() const {return _location_indexes; };
 		vector<string> const &				get_methods() const {return _location_methods; };
 		size_t								get_body_size() const {return _location_body_size; };
@@ -49,6 +50,7 @@ public:
 		bool								get_bool_is_directory() const {return _is_directory; };
 		map<int, string> const &			get_err_pages() const {return (_location_err_pages); };
 		vector<string> const &				get_allowed_extensions() const {return _allowed_extensions; };
+		string const &						get_allowed_data_dir() const {return _allowed_data_dir; };
 
 		// Print
 		void								print_location() const;
@@ -64,7 +66,7 @@ public:
 
 private:
 		string								_url_key;
-		string								_location_root;
+		string								_location_alias;
 		vector<string>						_location_indexes;
 		vector<string>						_location_methods;
 		size_t								_location_body_size;
@@ -75,4 +77,5 @@ private:
 		bool								_is_directory;
 		map<int, string>					_location_err_pages;
 		vector<string>						_allowed_extensions;
+		string								_allowed_data_dir;
 };
