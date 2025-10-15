@@ -30,7 +30,7 @@
 
 #define	BUFFER_SIZE 4096
 #define MAX_CONNECTIONS 255
-#define TIMEOUT 10
+#define TIMEOUT 20
 using	namespace std;
 
 /************ CLASS ************/
@@ -43,7 +43,7 @@ class c_server
 	private:
 		int						_socket_fd;
 		struct sockaddr_in		_socket_address;
-		map<int, c_client>		_clients;
+		map<int, c_client*>		_clients;
 		vector<struct pollfd>	_poll_fds;
 		map<int, c_cgi*>		_active_cgi;
 		map<int, int>			_multiple_ports; // on stocke socket_fd + port

@@ -56,7 +56,7 @@ int c_server::get_port_from_socket(int socket_fd)
 
 void	c_server::close_all_sockets_and_fd(void)
 {
-	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
+	for (map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		int client_fd = it->first;
 		close(client_fd);

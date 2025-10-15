@@ -49,12 +49,15 @@ private:
 
 public:
 
+	c_response(c_server& server, c_client &client);
+	~c_response();
+
+	// c_response const& operator=(const c_response& rhs);
+
 	void define_response_content(const c_request &request);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }
 
-	c_response(c_server& server, c_client &client);
-	~c_response();
 	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
 	const string 	&get_header_value(const string& key) const;
 	void			set_body(const string &body) { this->_body = body; };
@@ -68,6 +71,7 @@ public:
 	void			clear_response();
 	void			set_error() { this->_error = true; };
 	void			build_error_response(int error_code, const c_request &request);
+	void			init_response();
 
 private:
 	string	read_error_pages(int error_code);

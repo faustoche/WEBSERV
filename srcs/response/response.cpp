@@ -4,13 +4,42 @@
 
 c_response::c_response(c_server& server, c_client &client) : _server(server), _client(client)
 {
-	this->_is_cgi = false;
-	this->_error = false;
 	this->_client_fd = _client.get_fd();
-	this->_status = 200;
+
+	init_response();
 }
 
 c_response::~c_response(){}
+
+void	c_response::init_response()
+{
+	_response.clear();
+	_file_content.clear();
+
+	_headers_response.clear();
+	_body.clear();
+	_status = 200;
+	_is_cgi = false;
+	_error = false;
+}
+
+// c_response const& c_response::operator=(const c_response& rhs)
+// {
+// 	if (this != &rhs)
+// 	{
+// 		_response = rhs._response;
+// 		_file_content = rhs._file_content;
+// 		_server = rhs._server;
+// 		_headers_response = rhs._headers_response;
+// 		_body = rhs._body;
+// 		_client_fd = rhs._client_fd;
+// 		_status = rhs._status;
+// 		_is_cgi = rhs._is_cgi;
+// 		_error = rhs._error;
+// 		_client = rhs._client;
+// 	}
+// 	return (*this);
+// }
 
 /************ GETTERS ************/
 
@@ -105,6 +134,7 @@ bool	c_response::handle_redirect(c_location *matching_location, const c_request 
 
 void	c_response::define_response_content(const c_request &request)
 {
+	cout << __FILE__ << " " << __LINE__ << " entrée dans define response content" << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -174,6 +204,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (this->_is_cgi)
 	{
+		cout << __FILE__ << " " << __LINE__ << " entrée dans CGI response" << endl;
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
 	}

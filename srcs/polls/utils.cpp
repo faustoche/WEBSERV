@@ -83,6 +83,7 @@ void	c_server::fill_cgi_response_headers(string headers, c_cgi *cgi)
 
 void	c_server::handle_fully_sent_response(c_client *client)
 {
+	cout << "Entrée dans handle fully sent response" << endl;
 	int duration = client->get_last_modified() - client->get_creation_time();
 	log_message("[INFO] ✅ RESPONSE FULLY SENT TO CLIENT " 
 				+ int_to_string(client->get_fd()) + " IN " + int_to_string(duration) + "s with status_code of " + int_to_string(client->get_status_code()));
@@ -90,7 +91,11 @@ void	c_server::handle_fully_sent_response(c_client *client)
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
 				+ " can send a new request : POLLIN");
 	client->set_last_modified();
+	// client->set_creation_time();
 	client->set_bytes_written(0);
+	client->get_request()->init_request();
+	client->get_response()->init_response();
+
 	client->clear_read_buffer();
 	client->clear_write_buffer();
 	client->set_response_complete(false);

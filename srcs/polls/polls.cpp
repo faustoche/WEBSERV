@@ -17,18 +17,18 @@ void c_server::setup_pollfd()
 		_poll_fds.push_back(server_pollfd);
 	}
 
-	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
+	for (map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
 		int client_fd = it->first;
-		c_client &client = it->second;
+		c_client *client = it->second;
 
 		time_t now = time(NULL);
 		int timeout_value = TIMEOUT;
-		if ((client.get_state() == PROCESSING || client.get_state() == SENDING))
+		if ((client->get_state() == PROCESSING || client->get_state() == SENDING))
 			timeout_value = TIMEOUT * 3;
-		if (now - client.get_last_modified() > timeout_value)
+		if (now - client->get_last_modified() > timeout_value)
 		{
-			log_message("[DEBUG] Client " + int_to_string(client.get_fd()) + " has timed out");
+			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " has timed out");
 			to_remove.push_back(client_fd);
 			continue ;
 		}
@@ -37,7 +37,7 @@ void c_server::setup_pollfd()
 		client_pollfd.fd = client_fd;
 		client_pollfd.revents = 0;
 
-		switch (client.get_state())
+		switch (client->get_state())
 		{
 			case READING:
 				client_pollfd.events = POLLIN;
@@ -205,6 +205,8 @@ void c_server::handle_poll_events()
 void	c_server::handle_new_connection(int listening_socket)
 {
 	vector<pair<int, string> > new_fds;
+	int accept_count = 0;
+
 	while (true)
 	{
 		struct sockaddr_in client_address;
@@ -212,32 +214,32 @@ void	c_server::handle_new_connection(int listening_socket)
 		
 		int client_fd = accept(listening_socket, (struct sockaddr *)&client_address, &client_len);
 		if (client_fd < 0)
-			break ;
+		{
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			{
+				log_message("[DEBUG] No more connections to accept (accepted " + int_to_string(accept_count) + " this round)");
+				break ;
+			}
+			else
+			{
+				log_message("[ERROR] accept failed: " + string(strerror(errno)));
+				break ;
+			}
+		}
+		accept_count++;
+		int port = get_port_from_socket(listening_socket);
+		log_message("[INFO] ✅ NEW CONNECTION FOR CLIENT : " + int_to_string(client_fd) + " ON PORT : " + int_to_string(port));
+			
 
 		char client_ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
 
-		if (_clients.size() > MAX_CONNECTIONS)
-		{
-			c_client client(client_fd, client_ip);
-			c_request  too_many_request(*this, client);
-			too_many_request.init_request();
-
-			c_response resp(*this, client);
-			resp.build_error_response(503, too_many_request);
-
-			const string &raw = resp.get_response();
-			send(client_fd, raw.c_str(), raw.size(), 0);
-			log_message("[ERROR] Rejected client " + int_to_string(client_fd) + " with 503 (server is full)");
-			close(client_fd);
-			continue ;
-		}
-
 		set_non_blocking(client_fd);
-		int port = get_port_from_socket(listening_socket);
-		log_message("[INFO] ✅ NEW CONNECTION FOR CLIENT : " + int_to_string(client_fd) + " ON PORT : " + int_to_string(port));
+		
+		
 		new_fds.push_back(make_pair(client_fd, string(client_ip)));
 	}
+	log_message("[DEBUG] Adding " + int_to_string(new_fds.size()) + " new clients to map");
 	for (size_t i = 0; i < new_fds.size(); i++)
 		add_client(new_fds[i].first, new_fds[i].second);
 }
@@ -245,52 +247,41 @@ void	c_server::handle_new_connection(int listening_socket)
 
 /* Check if the client exist, read the request and create the appropriate response. Fill the writing buffer */
 
-void c_server::handle_client_read(int client_fd)
+void	c_server::handle_client_read(int client_fd)
 {
 	c_client *client = find_client(client_fd);
-	if (!client)
-	{
-		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
-		return ;
-	}
+ 	if (!client)
+ 	{
+ 		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
+ 		return ;
+ 	}
 
-	/* a voir si ca pose PB car ca recree une request a chaque lecture et ne concerve pas les infos
-	le parsing doit pouvoir persister entre deux evenements poll() */
-	c_request request(*this, *client);
-	request.read_request();
+	client->get_request()->read_request();
 
-	// je rajoute ca pour traiter les doubles uploads
-	if (!request.is_request_fully_parsed())
+	if (client->get_request()->is_request_fully_parsed())
 	{
-		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
-		return ;
-	}
-	if (request.is_client_disconnected())
-	{
-		close(client_fd);
-		remove_client(client_fd);
-		return ;
-	}
-	if (client->get_state() != IDLE)
-	{
-		// request.print_full_request();
-		client->set_creation_time();
-		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
-		c_response response(*this, *client);
-		response.define_response_content(request);
-		if (response.get_is_cgi())
+		client->get_request()->print_full_request();
+
+		string start_line = client->get_request()->get_method() + " "
+							+ client->get_request()->get_target() + " "
+							+ client->get_request()->get_version();
+
+		client->set_last_request(start_line);
+		client->set_last_modified();
+		client->get_response()->define_response_content(*client->get_request());
+		if (client->get_response()->get_is_cgi())
 		{
 			client->set_state(PROCESSING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is processing request");
 		}
 		else
 		{
-			client->get_write_buffer() = response.get_response();
+			client->get_write_buffer() = client->get_response()->get_response();
 			client->set_state(SENDING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
 		}
 		client->set_bytes_written(0);
-	}
+	}				
 }
 
 /* Check response's buffer and number of bytes sent. If everything has been sent, delete client. If not, send what's left. */
@@ -309,9 +300,7 @@ void	c_server::handle_client_write(int client_fd)
 	if (remaining == 0)
 	{
 		if (client->get_response_complete() && cgi->is_finished())
-		{
 			handle_fully_sent_response(client);
-		}
 		return;
 	}
 
@@ -339,9 +328,7 @@ void	c_server::handle_client_write(int client_fd)
 		}
 
 		if (!cgi || (client->get_response_complete() && cgi->is_finished()))
-		{
 			handle_fully_sent_response(client);
-		}
 	}
 }
 
@@ -405,6 +392,7 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 		fill_cgi_response_body(cgi->get_read_buffer().data(), cgi->get_read_buffer().size(), cgi);
 	}
 
+	/* Ne pas faire de while !*/
 	while (true)
 	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
@@ -537,7 +525,6 @@ void c_server::cleanup_cgi(c_cgi* cgi)
     		kill(cgi->get_pid(), SIGKILL);
     		waitpid(cgi->get_pid(), &status, 0);
 		}
-		// cout << __FILE__ << " " << __LINE__ << endl;
 		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
 

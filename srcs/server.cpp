@@ -14,7 +14,9 @@ c_server::c_server()
 }
 c_server::~c_server()
 {
-	
+	for (std::map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+		delete it->second;
+	_clients.clear();
 }
 
 c_server const &	c_server::operator=(c_server const & rhs)
@@ -188,6 +190,6 @@ void	c_server::log_access(c_client *client)
 
 	log << client->get_ip() << " - ["
 		<< buf << "]"
-		<< " \"" << client->get_last_request() << " \" "
+		<< " \"" << client->get_last_request() << "\" "
 		<< client->get_status_code() << " " << client->get_bytes_written() << endl;
 }

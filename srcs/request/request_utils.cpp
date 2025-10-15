@@ -111,6 +111,65 @@ void    c_request::check_port()
 	}
 }
 
+/************ BUFFER HANDLING FUNCTIONS ***********/
+
+bool	c_request::has_end_of_headers(const std::vector<char> &buf)
+{
+	if (buf.size() < 4)
+		return (false);
+	for (size_t i = 0; i + 3 < buf.size(); ++i)
+	{
+		if (buf[i] == '\r' && buf[i + 1] == '\n' &&
+			buf[i + 2] == '\r' && buf[i + 3] == '\n')
+		{
+			cout << "i: " << i << endl;
+			return (true);
+		}
+	}
+	return (false);
+}
+
+void	c_request::append_read_buffer(const char* buffer, ssize_t bytes)
+{
+	if (!buffer || bytes == 0)
+		return ;
+
+	this->_read_buffer.insert(_read_buffer.end(), buffer, buffer + bytes);
+}
+
+void    c_request::consume_read_buffer(size_t n) 
+{
+	if (n >= _read_buffer.size())
+		_read_buffer.clear();
+	else
+		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + n);
+}
+
+void	c_request::extract_body_part()
+{
+	cout << __FILE__ << " " << __LINE__ << endl;
+	size_t 	body_start = 0;
+	bool	found = false;
+
+	while (!found)
+	{
+		body_start = find_end_of_headers_pos(this->_read_buffer);
+		if (body_start < 0)
+			return ;
+		else
+			found = true;
+	}
+
+	// Extraire la partie du body déjà reçue dans 'request'
+	// vector<char>	body_part;
+	if (body_start < this->_read_buffer.size())
+	{
+		cout << __FILE__ << " " << __LINE__ << endl;
+		this->_body.insert(_body.end(), this->_read_buffer.begin() + body_start, this->_read_buffer.end());
+		set_total_bytes(_body.size());
+	}
+}
+
 /************ UTILS ************/
 
 void	c_request::print_full_request() const
@@ -156,7 +215,11 @@ void	c_request::init_request()
 	this->_has_body = false;
 	this->_chunk_line_count = 0;
 	this->_expected_chunk_size = -1;
-	this->_request_fully_parsed = false;
+	this->_total_bytes = 0;
+	// this->_request_fully_parsed = false;
+	// this->_headers_parsed = false;
+	this->set_headers_parsed(false);
+	this->set_request_fully_parsed(false);
 	this->_error = false;
 	this->_disconnected = false;
 	this->_content_length = 0;

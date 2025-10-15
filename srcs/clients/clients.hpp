@@ -4,6 +4,8 @@
 
 #include <poll.h>
 #include "server.hpp"
+#include "response.hpp"
+#include "request.hpp"
 #include <sys/time.h>
 #include <ctime>
 
@@ -19,11 +21,16 @@ enum client_state {
 	DISCONNECTED
 };
 
+class	c_server;
+class 	c_request;
+class	c_response;
+
 /************ CLASS ************/
 
 class c_client
 {
 	private:
+		c_server&		_server;
 		int				_fd;
 		string			_client_ip;
 		client_state	_state;
@@ -39,11 +46,15 @@ class c_client
 
 		time_t			_creation_time;
 		time_t			_last_modified;
+		c_request*		_request;
+		c_response*		_response;
 
 	public:
-		c_client();
-		c_client(int client_fd, string client_ip);
+		// c_client();
+		c_client(c_server& server, int client_fd, string client_ip);
 		~c_client();
+
+		// c_client const& operator=(const c_client& rhs);
 
 		/******* GETTERS ******* */
 		const int&				get_fd() const { return (_fd); }
@@ -60,6 +71,8 @@ class c_client
 		const time_t&			get_creation_time() const { return _creation_time; };
 		const string&			get_last_request() const { return _last_request; };
 		const int&				get_status_code() const { return _status_code; };
+		c_request*				get_request() const { return _request; };
+		c_response*				get_response() const { return _response; };
 
 		/******* SETTERS ******* */
 		void	append_to_read_buffer(const string &data) { _read_buffer += data; }
