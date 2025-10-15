@@ -231,6 +231,7 @@ void	c_server::handle_new_connection(int listening_socket)
 			resp.build_error_response(503, too_many_request);
 
 			const string &raw = resp.get_response();
+			// interdiction de faire un send sans passer par poll() avant 
 			send(client_fd, raw.c_str(), raw.size(), 0);
 			log_message("[ERROR] Rejected client " + int_to_string(client_fd) + " with 503 (server is full)");
 			close(client_fd);

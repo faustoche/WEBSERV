@@ -194,7 +194,8 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
-		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		// si la location 
+		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 		{
 			this->_is_cgi = false;
 			build_directory_listing_response(file_path, request);
