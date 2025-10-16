@@ -30,13 +30,11 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 {
 	if (method == "GET" && target == "/todo.html")
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		load_todo_page(request);
 		return (true);
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		handle_delete_todo(request);
 		return (true);
 	}
@@ -44,26 +42,22 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 	{
 		if (location)
 		{
-			cout << __LINE__ << " / " << __FILE__ << endl;
 			handle_todo_form(request, location);
 			return (true);
 		}
 		else
 		{
-			cout << __LINE__ << " / " << __FILE__ << endl;
 			return false;
 		}
 		
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		load_upload_page(request);
 		return (true);
 	}
 	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
 	{
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		handle_delete_upload(request);
 		return (true);
 	}
