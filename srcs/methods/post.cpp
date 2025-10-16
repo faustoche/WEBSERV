@@ -21,7 +21,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	else if (content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, location);
 	else if (target == "/post_todo")
-		handle_todo_form(request);
+		handle_todo_form(request, location);
 	else
 		build_error_response(404, request);
 }
@@ -386,50 +386,31 @@ bool	c_response::save_contact_data(const map<string, string> &data, c_location *
 {	
 	string path;
 
-	// recuperation du chemin de l'alias 
-	// --> si mauvais chemin pour l'alias renvoyer une erreur
-	//	--> si pas d'alias defini dans la location recuperer chemin du root
-
 	if (location && location->get_upload_path().empty())
-	{		
-		// s'il y a un alias de defini
-		if (!location->get_alias().empty())
-		{
-			// si le chemin de l'alias est valide
-			if (directory_exists(location->get_alias()))
-				path = location->get_alias();
-			else
-			{
-				cout << ORANGE << "ICI" << RESET << endl;
-				_status = 500;
-				return false; // mettre a jour code erreur
-			}
-		}
-		else if (location->get_alias().empty()) // si pas d'alias on recupere le root
-			path = get_server().get_root();
-	}
-
-	// si on a un upload path on lutilise puis on verifie quil existe
-	if (location && !location->get_upload_path().empty()) 
-		path = location->get_upload_path();
-
-	if (!directory_exists(path))
 	{
-		cout << RED << "ICI" << RESET << endl;
 		_status = 500;
+		_server.log_message("[ERROR] There is no upload path defined for upload the data. ");
 		return false;
+	}
+	if (location && !location->get_upload_path().empty())
+	{
+		path = location->get_upload_path();
+		if (!directory_exists(path))
+		{
+			_status = 500;
+			_server.log_message("[ERROR] The upload path defined is not existing, the data can't be download. ");
+			return false;
+		}
+
 	}
 	
 	string filename = path + "contact.txt"; 
 
-	// avant on marquait en dur :
-	// string filename = "./www/data/contact.txt"; 
-
 	ofstream file(filename.c_str(), ios::binary | ios::app);
 	if (!file.is_open())
 	{
-		_server.log_message("[ERROR] error with the creation of file " + filename);
-		// changer le status
+		_server.log_message("[ERROR] The file can't be create " + filename);
+		_status = 500;
 		return false;
 	}
 
@@ -609,7 +590,7 @@ map<string, string> const	c_response::parse_form_data(const string &body)
 
 /***** TODO ******/
 
-void c_response::handle_todo_form(const c_request &request)
+void c_response::handle_todo_form(const c_request &request, const c_location *location)
 {
 	map<string, string>form = parse_form_data(request.get_body());
 	string task;
@@ -622,10 +603,32 @@ void c_response::handle_todo_form(const c_request &request)
 	if (task.empty())
 	{
 		build_error_response(400, request);
-		return ;
+		return ; //mettre un booleen?
 	}
 
-	string filename = "./www/data/todo.txt";
+	string path;
+
+	if (location && location->get_upload_path().empty())
+	{
+		_status = 500;
+		_server.log_message("[ERROR] There is no upload path defined for upload the data. ");
+		return;
+	}
+	if (location && !location->get_upload_path().empty())
+	{
+		path = location->get_upload_path();
+		if (!directory_exists(path))
+		{
+			_status = 500;
+			_server.log_message("[ERROR] The upload path defined is not existing, the data can't be download. ");
+			return;
+		}
+
+	}
+	
+	string filename = path + "todo.txt"; 
+
+	// string filename = "./www/data/todo.txt";
 	ofstream file(filename.c_str(), ios::app);
 	if (!file.is_open())
 	{

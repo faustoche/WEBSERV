@@ -26,30 +26,35 @@ const string& c_response::get_header_value(const string& key) const
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target)
+bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target, const c_location *location)
 {
 	if (method == "GET" && target == "/todo.html")
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		load_todo_page(request);
 		return (true);
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		handle_delete_todo(request);
 		return (true);
 	}
 	if (method == "POST" && target == "/post_todo")
 	{
-		handle_todo_form(request);
+		cout << __LINE__ << " / " << __FILE__ << endl;
+		handle_todo_form(request, location);
 		return (true);
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		load_upload_page(request);
 		return (true);
 	}
 	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
 	{
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		handle_delete_upload(request);
 		return (true);
 	}
@@ -126,9 +131,6 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(405, request);
 		return ;
 	}
-	if (handle_special_routes(request, method, target))
-		return ;
-	
 	if (!validate_http(request))
 		return ;
 
@@ -137,7 +139,6 @@ void	c_response::define_response_content(const c_request &request)
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 	{
 		this->_is_cgi = true;
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 	}
 
 	if (!validate_location(matching_location, target, request))
@@ -150,6 +151,9 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	if (handle_redirect(matching_location, request))
+		return ;
+
+	if (handle_special_routes(request, method, target, matching_location))
 		return ;
 
 	/// j'ai rajouté ca 
@@ -204,6 +208,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 
 	////// a ici
+	
 	if (is_regular_file(file_path))
 	{
 		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
@@ -593,8 +598,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 
 c_location	*c_server::find_matching_location(const string &request_path)
 {
-	cout << __LINE__ << " / " << __FILE__ " request path : " << request_path << endl; //ATENTION AUX PROTECTION DES LOCATION
-	
 	c_location *best_match = NULL;
 	size_t best_match_length = 0;
 
