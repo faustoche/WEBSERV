@@ -50,8 +50,8 @@ private:
 
 	string							_ip;
 	vector<int>						_ports;
-	string                          _root;
-	vector <string>                 _indexes;
+	string							_root;
+	vector <string>					_indexes;
 	vector <string>					_names;
 	size_t							_body_size;
 	map<string, c_location>   		_location_map;
@@ -110,21 +110,21 @@ public:
 
 	void								add_port(int const & port);
 	void								set_ip(string const & ip);
-	void                				add_location(string const & path, c_location const & loc);
+	void								add_location(string const & path, c_location const & loc);
 	void								set_name(vector<string> const & names);
-	void                				set_indexes(vector<string> const & index);
+	void								set_indexes(vector<string> const & index);
 	void								set_body_size(size_t const & size){_body_size = size; };
 	void								add_error_page(vector<int> const & codes, string path);
 	void								set_root(string const & root);
 	
-	vector<string> const &      		get_indexes() const {return (_indexes); };
-	string const &						get_ip_adress() const {return (_ip); };
-	vector<int> const &					get_ports() const {return (_ports); };
+	vector<string> const&				get_indexes() const {return (_indexes); };
+	string const&						get_ip_adress() const {return (_ip); };
+	vector<int> const&					get_ports() const {return (_ports); };
 	string								get_root() const {return (_root);} ;
-	vector<string> const &				get_name() const {return (_names); };
+	vector<string> const&				get_name() const {return (_names); };
 	size_t								get_body_size() const {return (_body_size); };
-	map<int, string> const &			get_err_pages() const {return (_err_pages); };
-	map<string, c_location> const &		get_location() const {return (_location_map); };
+	map<int, string> const&				get_err_pages() const {return (_err_pages); };
+	map<string, c_location> const&		get_location() const {return (_location_map); };
 
 	void    				print_config() const;
 	void					print_indexes() const;

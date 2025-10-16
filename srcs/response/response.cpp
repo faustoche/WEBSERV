@@ -105,6 +105,7 @@ bool	c_response::handle_redirect(c_location *matching_location, const c_request 
 
 void	c_response::define_response_content(const c_request &request)
 {
+	cout << __FILE__ << " | " << __LINE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -118,6 +119,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		build_error_response(405, request);
 		return ;
 	}
@@ -137,6 +139,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (!_server.is_method_allowed(matching_location, method))
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		build_error_response(405, request);
 		return ;	
 	}
@@ -148,6 +151,7 @@ void	c_response::define_response_content(const c_request &request)
 	if (root.empty() || root == "." || root == "./")
 		root = "./www";
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root);
+
 
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
@@ -163,6 +167,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (is_directory(file_path))
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		vector<string> indexes;
 		if (matching_location && !matching_location->get_indexes().empty())
 			indexes = matching_location->get_indexes();
@@ -205,6 +210,8 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
+
 		handle_post_request(request, matching_location);
 		return;
 	}
@@ -258,7 +265,7 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 
 /* Proceed to load the file content. Nothing else to say. */
 
-string c_response::load_file_content(const string &file_path)
+string	c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
 	if (!file.is_open()) {
@@ -558,7 +565,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 
 c_location	*c_server::find_matching_location(const string &request_path)
 {
-	cout << __LINE__ << " request path : " << request_path << endl; //ATENTION AUX PROTECTION DES LOCATION
 	c_location *best_match = NULL;
 	size_t best_match_length = 0;
 
@@ -623,16 +629,13 @@ Cas 6: Retourner le chemin construit (fichier direct)
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
-	cout << PINK <<  __LINE__ << " / " << __FILE__ << " request_path + default root = " << default_root + request_path << RESET << endl;
 	if (location == NULL)
 	{
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (request_path == "/")
 		{
 			string index = get_valid_index(default_root, this->get_indexes());
 			return (join_path(default_root, index));
 		}
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		cout << join_path(default_root, request_path) << endl;
 		// si location pas definie et quon demande un chemin
 		return join_path(default_root, request_path);
