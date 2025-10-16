@@ -88,6 +88,7 @@ class c_request
 		void				set_headers_parsed(bool state) { _headers_parsed = state; };
 		void				set_request_fully_parsed(bool state) { _request_fully_parsed = state; };
 		void				set_total_bytes(size_t bytes) { _total_bytes = bytes; };
+		void				set_has_body(bool state) { _has_body = state; };
 
 		const map<string, string>	&get_headers() const { return _headers; }
 

@@ -317,7 +317,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["PATH_INFO"] = this->_path_info;
     this->_map_env_vars["TRANSLATED_PATH"] = this->_translated_path;
     this->_map_env_vars["SCRIPT_FILENAME"] = this->_script_filename;
-    this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_content_length());
+	this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_body().size());
     this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
     this->_map_env_vars["QUERY_STRING"] = request.get_query();
     this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();

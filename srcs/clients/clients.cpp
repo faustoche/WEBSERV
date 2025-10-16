@@ -47,7 +47,6 @@ void    c_server::add_fd(int fd, short events)
 
 void c_server::add_client(int client_fd, string client_ip)
 {
-	cout << "entrée dans add client" << endl;
 	// Vérifier que le client n'existe pas déjà
     if (_clients.find(client_fd) != _clients.end())
     {

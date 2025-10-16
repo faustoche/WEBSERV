@@ -70,7 +70,7 @@ void	c_request::check_required_headers()
 	if (this->_method == "POST" && (has_content_length || has_transfer_encoding))
 	{
 		_server.log_message("[DEBUG] Request has a body");
-		this->_has_body = true;
+		set_has_body(true);
 	}
 
 	if (this->_headers.count("Host") != 1)
@@ -122,7 +122,6 @@ bool	c_request::has_end_of_headers(const std::vector<char> &buf)
 		if (buf[i] == '\r' && buf[i + 1] == '\n' &&
 			buf[i + 2] == '\r' && buf[i + 3] == '\n')
 		{
-			cout << "i: " << i << endl;
 			return (true);
 		}
 	}
@@ -168,8 +167,8 @@ void	c_request::extract_body_part()
 		this->_body.insert(_body.end(), this->_read_buffer.begin() + body_start, this->_read_buffer.end());
 		set_total_bytes(_body.size());
 	}
-}
 
+}
 /************ UTILS ************/
 
 void	c_request::print_full_request() const
@@ -194,7 +193,7 @@ void	c_request::print_full_request() const
 		{
 			cout << "************* BODY ***************" << endl;
 			for (size_t i = 0; i < this->_body.size(); i++)
-				cout << this->_body[i] << endl;
+				cout << this->_body[i];
 		}
 
 		cout << endl;

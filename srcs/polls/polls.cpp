@@ -19,6 +19,7 @@ void c_server::setup_pollfd()
 
 	for (map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
+		
 		int client_fd = it->first;
 		c_client *client = it->second;
 
@@ -139,7 +140,9 @@ void c_server::handle_poll_events()
 					continue ;
 
 				if ((pfd.revents & POLLOUT) && (fd == cgi->get_pipe_in()))
+				{
 					handle_cgi_write(cgi);
+				}
 
 				if ((pfd.revents & POLLIN) && (fd == cgi->get_pipe_out()))
 					handle_cgi_read(cgi);
@@ -185,6 +188,7 @@ void c_server::handle_poll_events()
 				handle_client_read(fd);
 			else if (pfd.revents & POLLOUT)
 			{
+				
 				handle_client_write(fd);
 				if (client->get_write_buffer().empty() || client->get_response_complete())
 				{
@@ -256,27 +260,31 @@ void	c_server::handle_client_read(int client_fd)
  		return ;
  	}
 
-	client->get_request()->read_request();
 
-	if (client->get_request()->is_request_fully_parsed())
+	c_request* request = client->get_request();
+
+	request->read_request();
+
+	if (request->is_request_fully_parsed())
 	{
-		client->get_request()->print_full_request();
-
-		string start_line = client->get_request()->get_method() + " "
-							+ client->get_request()->get_target() + " "
-							+ client->get_request()->get_version();
+		c_response* response = client->get_response();
+		string start_line = request->get_method() + " "
+							+ request->get_target() + " "
+							+ request->get_version();
 
 		client->set_last_request(start_line);
 		client->set_last_modified();
-		client->get_response()->define_response_content(*client->get_request());
-		if (client->get_response()->get_is_cgi())
+
+		response->define_response_content(*request);
+		if (response->get_is_cgi())
 		{
 			client->set_state(PROCESSING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is processing request");
 		}
 		else
 		{
-			client->get_write_buffer() = client->get_response()->get_response();
+			// cout << __FILE__ << " " << __LINE__ << endl;
+			client->get_write_buffer() = response->get_response();
 			client->set_state(SENDING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
 		}
@@ -429,7 +437,9 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 void	c_server::handle_cgi_write(c_cgi* cgi)
 {
 	if (cgi->is_body_fully_sent_to_cgi())
+	{
 		return ;
+	}
 
 	size_t	remaining = cgi->get_body_to_send().size() - cgi->get_body_sent();
 	int 	fd = cgi->get_pipe_in();
@@ -457,7 +467,6 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	}
 
 	cgi->add_body_sent(bytes);
-
 }
 
 /* Check if CGI are done and update status */

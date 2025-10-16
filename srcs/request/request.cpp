@@ -20,7 +20,7 @@ void	c_request::read_request()
 	char	buffer[BUFFER_SIZE];
 	ssize_t	receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
 
-	if (receivedBytes <= 0)
+	if (receivedBytes < 0)
 		return ;
 
 	this->append_read_buffer(buffer, receivedBytes);
@@ -39,17 +39,14 @@ void	c_request::read_request()
 			}
 			if (this->_has_body && this->_read_buffer.size() > i)
 			{
-				this->extract_body_part();
-				this->set_request_fully_parsed(false);	
+				this->_read_buffer.erase(this->_read_buffer.begin(), this->_read_buffer.begin() + i);
+				this->determine_body_reading_strategy(_socket_fd);
 			}
 			else
+			{
 				this->set_request_fully_parsed(true);
-			// cout << "read_buffer: " << endl;
-			// for (size_t i = 0; i < _read_buffer.size(); i++)
-			// {
-			// 	cout << _read_buffer[i];
-			// }
-			this->consume_read_buffer(i);
+				this->_read_buffer.clear();
+			}
 			return ;
 		}
 		else
@@ -57,13 +54,7 @@ void	c_request::read_request()
 	}
 	else
 	{
-		// cout << __FILE__ << " " << __LINE__ << endl;
 		this->determine_body_reading_strategy(_socket_fd);
-		// for (size_t i = 0; i < _read_buffer.size(); i++)
-		// {
-		// 	cout << _read_buffer[i];
-		// }
-		cout << endl;
 		this->consume_read_buffer(this->_read_buffer.size());
 	}
 }
@@ -116,6 +107,13 @@ int c_request::parse_request(const string& raw_request)
 	this->check_required_headers();
 	this->set_headers_parsed(true);
 	
+	// cout << "*********** START-LINE ************" << endl;
+	// cout << "method: " << this->_method << endl;
+	// if (!this->_query.empty())
+	// 	cout << "query: " << this->_query << endl;
+	// cout << "target: " << this->_target << endl;
+	// cout << "version: " << this->_version << endl << endl;
+
 	return (0);
 }
 
@@ -262,7 +260,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			// Si taille = 0, c'est le chunk final
 			if (this->_expected_chunk_size == 0)
 			{
-				this->_request_fully_parsed = true;
+				this->set_request_fully_parsed(true);
 				accumulator.clear();
 				return;
 			}
@@ -295,7 +293,9 @@ void	c_request::read_body_with_chunks(int socket_fd)
 {
 	if (!_read_buffer.empty())
 	{
+
 		string tmp_chunk(_read_buffer.begin(), _read_buffer.end());
+		cout << "tmp_chunk = " << tmp_chunk << endl;
 		this->fill_body_with_chunks(tmp_chunk);
 
 		if (this->_request_fully_parsed)
@@ -361,6 +361,23 @@ void	c_request::read_body_with_length(int socket_fd)
 		return ;
 	}
 
+	if (this->_read_buffer.size() > 0)
+	{
+		set_total_bytes(this->_read_buffer.size());
+		const char* ptr = _read_buffer.data();
+		size_t len = _read_buffer.size();
+		if (fill_body_with_bytes(ptr, len))
+			return ;
+		this->consume_read_buffer(this->_read_buffer.size());
+
+		if (_total_bytes == _content_length)
+		{
+			this->_request_fully_parsed = true;
+			cout << "== DANS read body with length ==" << endl;
+			cout << "==request ptr== " << this << endl;
+		}
+	}
+
 	if (_total_bytes < _content_length)
 	{
 		char	buffer[BUFFER_SIZE];
@@ -410,7 +427,10 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 			this->read_body_with_length(socket_fd);
 
 		else
+		{
+
 			this->read_body_with_chunks(socket_fd);
+		}
 
 		if (this->_error)
 			return ;

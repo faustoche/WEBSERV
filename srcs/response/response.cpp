@@ -134,7 +134,6 @@ bool	c_response::handle_redirect(c_location *matching_location, const c_request 
 
 void	c_response::define_response_content(const c_request &request)
 {
-	cout << __FILE__ << " " << __LINE__ << " entrée dans define response content" << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -183,7 +182,6 @@ void	c_response::define_response_content(const c_request &request)
 			build_error_response(404, request);
 			return ;
 		}
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(403, request);
 		return ;
 	}
@@ -204,7 +202,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (this->_is_cgi)
 	{
-		cout << __FILE__ << " " << __LINE__ << " entrée dans CGI response" << endl;
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
 	}
