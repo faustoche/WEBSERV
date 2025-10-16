@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,11 +11,13 @@
             src: url("./fonts/ComicNeue-Regular.otf") format("opentype");
             font-weight: 400;
         }
+
         @font-face {
             font-family: "ComicNeue";
             src: url("./fonts/ComicNeue_Bold.otf") format("opentype");
             font-weight: 700;
         }
+
         body {
             margin: 0;
             font-family: "ComicNeue", cursive, sans-serif;
@@ -22,15 +25,17 @@
             color: #fff;
             padding: 2rem;
         }
+
         .container {
             max-width: 700px;
             margin: 0 auto;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0, 0, 0, 0.7);
             padding: 2rem;
             border: 3px solid #ff00aa;
             border-radius: 10px;
             margin-bottom: 2rem;
         }
+
         h1 {
             font-family: "ComicNeue", cursive, sans-serif;
             font-weight: 700;
@@ -42,6 +47,7 @@
             animation: flash 1s infinite alternate;
             text-align: center;
         }
+
         h2 {
             font-family: "ComicNeue", cursive, sans-serif;
             font-weight: 700;
@@ -50,14 +56,22 @@
             color: rgb(44, 221, 0);
             text-shadow: 1px 1px 0 #000;
         }
+
         @keyframes flash {
-            from { color: yellow; }
-            to { color: #ff66ff; }
+            from {
+                color: yellow;
+            }
+
+            to {
+                color: #ff66ff;
+            }
         }
+
         .upload-form {
             margin-bottom: 2rem;
         }
-        label { 
+
+        label {
             display: block;
             margin-bottom: 0.5rem;
             color: #0ff;
@@ -67,6 +81,7 @@
         #fileInput {
             display: none;
         }
+
         .custom-file-label {
             display: inline-block;
             padding: 10px 20px;
@@ -76,9 +91,11 @@
             font-weight: 700;
             cursor: pointer;
         }
+
         .custom-file-label:hover {
             background: #ffd000;
         }
+
         .file-name {
             margin-left: 10px;
             font-style: italic;
@@ -90,6 +107,7 @@
             gap: 10px;
             margin-top: 1rem;
         }
+
         button {
             padding: 10px 32.5px;
             background: #ff00aa;
@@ -100,9 +118,11 @@
             cursor: pointer;
             font-size: 1rem;
         }
+
         button:hover {
             background: #ff66ff;
         }
+
         .file-item {
             background: rgba(255, 0, 170, 0.2);
             padding: 15px;
@@ -112,53 +132,62 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .file-info {
             color: #0ff;
             flex: 1;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .file-name-list {
             font-weight: 700;
             font-size: 1.1rem;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .file-size {
             font-size: 0.9rem;
             opacity: 0.8;
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
         .delete-btn {
             background: rgb(255, 238, 0);
             color: #000;
             padding: 5px 15px;
         }
+
         .delete-btn:hover {
             background: #b3ff00;
         }
+
         .empty-message {
             text-align: center;
             color: #ff00aa;
             font-style: italic;
             padding: 2rem;
         }
+
         .info-text {
             color: #0ff;
             font-size: 0.9rem;
             margin-top: 0.5rem;
         }
+
         .back-link {
             display: inline-block;
             background: rgb(21, 255, 0);
             margin-top: 1rem;
-            color:rgb(0, 0, 0);
+            color: rgb(0, 0, 0);
             text-decoration: none;
             border: 2px solid rgb(21, 255, 0);
             padding: 10px 20px;
             font-weight: 700;
         }
+
         .back-link:hover {
             background: rgb(252, 248, 17);
             border: 2px solid rgb(252, 248, 17);
@@ -166,28 +195,29 @@
         }
     </style>
 </head>
+
 <body>
     <h1>★ FILE MANAGEMENT ★</h1>
-    
+
     <div class="container">
         <h2>📨 UPLOAD</h2>
-        
-        <form class="upload-form" action="/page_upload" method="POST" enctype="multipart/form-data">
+
+        <form class="upload-form" action="/page_upload.html" method="POST" enctype="multipart/form-data">
             <label>Choose a file :</label>
             <label for="fileInput" class="custom-file-label">BROWSE</label>
             <span class="file-name">No file chosen</span>
             <input type="file" name="file" id="fileInput" accept="image/*,.pdf,.txt" required>
-            
+
             <div class="button-group">
                 <button type="submit">SEND</button>
             </div>
         </form>
-        
+
     </div>
-    
+
     <div class="container">
         <h2>🗃️ UPLOADED FILES</h2>
-        
+
         <div id="file-list">
             {{FILES_HTML}}
         </div>
@@ -202,16 +232,16 @@
             fetch('/delete_upload?file=' + encodeURIComponent(filename), {
                 method: 'DELETE'
             })
-            .then(response => response.text())
-            .then(html => {
-                document.open();
-                document.write(html);
-                document.close();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error while deleting a file');
-            });
+                .then(response => response.text())
+                .then(html => {
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error while deleting a file');
+                });
         }
         const fileInput = document.getElementById("fileInput");
         const fileNameSpan = document.querySelector(".file-name");
@@ -225,7 +255,7 @@
         });
     </script>
     <script>
-        const MAX_FILE_SIZE = {{MAX_BODY_SIZE}};
+        const MAX_FILE_SIZE = {{ MAX_BODY_SIZE }};
         const uploadForm = document.querySelector(".upload-form");
 
         uploadForm.addEventListener("submit", (event) => {
@@ -240,4 +270,5 @@
         });
     </script>
 </body>
+
 </html>

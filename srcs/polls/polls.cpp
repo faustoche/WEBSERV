@@ -40,14 +40,11 @@ void c_server::setup_pollfd()
 		switch (client.get_state())
 		{
 			case READING:
-				client_pollfd.events = POLLIN;
-				break;
+				client_pollfd.events = POLLIN;break;
 			case PROCESSING:
-				client_pollfd.events = 0;
-				break;
+				client_pollfd.events = 0;break;
 			case SENDING:
-				client_pollfd.events = POLLOUT;
-				break;
+				client_pollfd.events = POLLOUT;break;
 			case IDLE:
 				client_pollfd.events = 0;
 			default:
@@ -186,7 +183,9 @@ void c_server::handle_poll_events()
 				remove_client(fd);
 			}	
 			else if (pfd.revents & POLLIN)
+			{
 				handle_client_read(fd);
+			}
 			else if (pfd.revents & POLLOUT)
 			{
 				handle_client_write(fd);
@@ -220,23 +219,6 @@ void	c_server::handle_new_connection(int listening_socket)
 
 		char client_ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
-
-		if (_clients.size() > MAX_CONNECTIONS)
-		{
-			c_client client(client_fd, client_ip);
-			c_request  too_many_request(*this, client);
-			too_many_request.init_request();
-
-			c_response resp(*this, client);
-			resp.build_error_response(503, too_many_request);
-
-			const string &raw = resp.get_response();
-			send(client_fd, raw.c_str(), raw.size(), 0);
-			log_message("[ERROR] Rejected client " + int_to_string(client_fd) + " with 503 (server is full)");
-			close(client_fd);
-			continue ;
-		}
-
 		set_non_blocking(client_fd);
 		int port = get_port_from_socket(listening_socket);
 		log_message("[INFO] ✅ NEW CONNECTION FOR CLIENT : " + int_to_string(client_fd) + " ON PORT : " + int_to_string(port));
@@ -256,7 +238,6 @@ void c_server::handle_client_read(int client_fd)
 		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
 		return ;
 	}
-
 	c_request request(*this, *client);
 	request.read_request();
 
@@ -292,50 +273,6 @@ void c_server::handle_client_read(int client_fd)
 		client->set_bytes_written(0);
 	}
 }
-
-// void c_server::handle_client_read(int client_fd)
-// {
-// 	c_client *client = find_client(client_fd);
-// 	if (!client)
-// 	{
-// 		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
-// 		return ;
-// 	}
-
-// 	c_request request(*this, *client);
-// 	request.read_request();
-
-// 	if (!request.is_request_fully_parsed())
-// 	{
-// 		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
-// 		return ;
-// 	}
-// 	if (request.is_client_disconnected())
-// 	{
-// 		close(client_fd);
-// 		remove_client(client_fd);
-// 		return ;
-// 	}
-// 	if (client->get_state() != IDLE)
-// 	{
-// 		client->set_creation_time();
-// 		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
-// 		c_response response(*this, *client);
-// 		response.define_response_content(request);
-// 		if (response.get_is_cgi())
-// 		{
-// 			client->set_state(PROCESSING);
-// 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is processing request");
-// 		}
-// 		else
-// 		{
-// 			client->get_write_buffer() = response.get_response();
-// 			client->set_state(SENDING);
-// 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
-// 		}
-// 		client->set_bytes_written(0);
-// 	}
-// }
 
 /* Check response's buffer and number of bytes sent. If everything has been sent, delete client. If not, send what's left. */
 
@@ -528,7 +465,7 @@ void c_server::check_terminated_cgi_processes()
 		{
 			if (!terminated_cgi)
 			{
-				log_message("[WARN] Unkown CGI pid " + int_to_string(pid));
+				log_message("[WARNING] Unkown CGI pid " + int_to_string(pid));
 				continue;
 			}
 		

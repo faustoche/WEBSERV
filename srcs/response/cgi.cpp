@@ -284,7 +284,7 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 				_server.log_message("[ERROR] chdir failed");
 			this->_status_code = 403;
 			clear_context();
-			_server.log_message("[WARN] CGI's argument is outside data file");
+			_server.log_message("[WARNING] CGI's argument is outside data file");
 			return (1);
 		}
 	}

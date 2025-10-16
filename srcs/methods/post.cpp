@@ -31,11 +31,11 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 void	c_response::handle_upload_form_file(const c_request &request, c_location *location)
 {
 	size_t max_size = 1 * 1024 * 1024;
-    if (request.get_content_length() > max_size)
-    {
-        build_error_response(413, request);
-        return;
-    }
+	if (request.get_content_length() > max_size)
+	{
+		build_error_response(413, request);
+		return;
+	}
 	string body = request.get_body();
 	if (body.empty())
 	{
@@ -133,25 +133,32 @@ string	get_unique_filename(const string &directory, string &filename)
 
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
-	string	uploaded_dir = location->get_upload_path();
-	
-	if (uploaded_dir.empty())
-		uploaded_dir = "./www/upload/"; // ATTENTION modifier avec le root du serveur
-	if (!directory_exists(uploaded_dir))
+	string upload_directory;
+
+	if (location && location->get_upload_path().empty())
 	{
-		if (!create_directory("./www/upload/"))
-			return "";
+		_server.log_message("[ERROR] No upload path defined.");
+		_status = 500;
+		return "";                 
 	}
+	upload_directory = location->get_upload_path();
+	if (!directory_exists(upload_directory))
+	{
+		_server.log_message("[ERROR] Directory doesn't exist. Upload failed.");
+		_status = 500;
+		return "";
+	}
+
 	string safe_filename = sanitize_filename(part.filename, location);
 	if (safe_filename.empty())
 		return "";
 
 	
-	string final_path = uploaded_dir + safe_filename;
+	string final_path = upload_directory + safe_filename;
 	if (file_exists(final_path))
 	{
-		safe_filename = get_unique_filename(uploaded_dir, safe_filename);
-		final_path = uploaded_dir + safe_filename;
+		safe_filename = get_unique_filename(upload_directory, safe_filename);
+		final_path = upload_directory + safe_filename;
 	}
 
 	ofstream file(final_path.c_str(), ios::binary);
@@ -446,7 +453,7 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 	}
 	else 
 	{
-		cout << "Error: extension not allowded (" << extension << ")" << endl;
+		cout << "Error: extension not allowed (" << extension << ")" << endl;
 		return "";
 	}
 	return extension;
@@ -642,7 +649,7 @@ void c_response::handle_todo_form(const c_request &request, const c_location *lo
 
 /* Load the upload page, list all the files already uploaded */
 
-void c_response::load_upload_page(const c_request &request)
+void	c_response::load_upload_page(const c_request &request)
 {
 	string html_template = load_file_content("./www/page_upload.html");
 	string files_html;
@@ -650,7 +657,17 @@ void c_response::load_upload_page(const c_request &request)
 	size_t max_body_size = request.get_client_max_body_size();
 	string max_body_size_str = int_to_string(max_body_size);
 
-	string upload_dir = "./www/upload/";
+	c_location *location = _server.find_matching_location(request.get_target());
+
+	string upload_dir;
+
+	if (location && !location->get_upload_path().empty())
+		upload_dir = location->get_upload_path();
+	else if (location && !location->get_alias().empty())
+		upload_dir = location->get_alias();
+	else
+		upload_dir = _server.get_root();
+
 	DIR *dir = opendir(upload_dir.c_str());
 	if (dir)
 	{
@@ -683,6 +700,6 @@ void c_response::load_upload_page(const c_request &request)
 	if (pos != string::npos)
 		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 
-    _file_content = html_template;
-    build_success_response("page_upload.html", request);
+	_file_content = html_template;
+	build_success_response("page_upload.html", request);
 }
