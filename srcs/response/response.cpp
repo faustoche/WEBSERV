@@ -630,7 +630,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			string index = get_valid_index(default_root, this->get_indexes());
 			return (join_path(default_root, index));
 		}
-		cout << join_path(default_root, request_path) << endl;
 		// si location pas definie et quon demande un chemin
 		return join_path(default_root, request_path);
 	}

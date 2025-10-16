@@ -139,7 +139,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	{
 		_server.log_message("[ERROR] No upload path defined.");
 		_status = 500;
-		return "";                 
+		return "";
 	}
 	upload_directory = location->get_upload_path();
 	if (!directory_exists(upload_directory))
@@ -152,7 +152,6 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	string safe_filename = sanitize_filename(part.filename, location);
 	if (safe_filename.empty())
 		return "";
-
 	
 	string final_path = upload_directory + safe_filename;
 	if (file_exists(final_path))
@@ -648,16 +647,20 @@ void	c_response::load_upload_page(const c_request &request)
 
 	c_location *location = _server.find_matching_location(request.get_target());
 
-	string upload_dir;
+	string upload_directory;
+	upload_directory = location->get_upload_path();           
 
-	if (location && !location->get_upload_path().empty())
-		upload_dir = location->get_upload_path();
-	else if (location && !location->get_alias().empty())
-		upload_dir = location->get_alias();
-	else
-		upload_dir = _server.get_root();
+	// if (location && location->get_upload_path().empty())
+	// {
+	// }
+	// if (!directory_exists(upload_directory))
+	// {
+	// 	_server.log_message("[ERROR] Directory doesn't exist. Upload failed.");
+	// 	_status = 500;
+	// 	return ;
+	// }
 
-	DIR *dir = opendir(upload_dir.c_str());
+	DIR *dir = opendir(upload_directory.c_str());
 	if (dir)
 	{
 		struct dirent *entry;
