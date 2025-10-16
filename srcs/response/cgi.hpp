@@ -41,7 +41,7 @@ class c_cgi
 		void			set_headers_parsed(bool state) { _headers_parsed = state; };
 		void			consume_read_buffer(size_t n);
 		void			set_content_length(size_t bytes) { _content_length = bytes; };
-		// void            set_body_size(size_t bytes) { _body_size = bytes; };
+		void            set_body_size(size_t bytes) { _body_size = bytes; };
 		const size_t&	get_body_size() { return _body_size; };
 		const vector<char>&	get_body_to_send() const { return _body_to_send; };
 		const size_t&	get_body_sent() const { return _body_sent; };

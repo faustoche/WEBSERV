@@ -398,17 +398,26 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 	{
 		fill_cgi_response_headers("", cgi);
 		fill_cgi_response_body(cgi->get_read_buffer().data(), cgi->get_read_buffer().size(), cgi);
+		cgi->set_headers_parsed(true);
 	}
 
-	/* Ne pas faire de while !*/
-	while (true)
+	if (!client->get_response_complete())
 	{
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
 		if (bytes_read < 0)
 			return ;
-		if (bytes_read == 0)
-			break ;
-		else
+		else if (bytes_read == 0)
+		{
+    		// EOF : le pipe CGI est entièrement lu
+    		if (cgi->get_content_length() == 0)
+    		{
+    		    std::string chunk = int_to_hex(0) + "\r\n\r\n";
+				client->get_write_buffer().append(chunk);
+    		}
+    		client->set_response_complete(true);
+    		client->set_status_code(200);
+		}
+		else if ( bytes_read > 0)
 		{
 			if (cgi->get_content_length() == 0)
 				transfer_with_chunks(buffer, bytes_read, cgi);
@@ -416,20 +425,12 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 				transfer_by_bytes(cgi, buffer, bytes_read);
 		}
 	}
-
-	if (cgi->get_content_length() == 0 && !client->get_response_complete())
-	{
-		std::string chunk = int_to_hex(0) + "\r\n\r\n";
-		client->get_write_buffer().append(chunk);
-	}
 	client->set_state(SENDING);
 
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
 
-	cgi->consume_read_buffer(cgi->get_read_buffer().size());
-	
-	client->set_response_complete(true);
-	client->set_status_code(200);
+	cgi->consume_read_buffer(cgi->get_read_buffer().size());	
+
 }
 
 /* Send request's body to CGI and close/clean the connections */
