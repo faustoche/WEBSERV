@@ -76,14 +76,19 @@ bool	c_response::validate_http(const c_request &request)
 
 bool	c_response::validate_location(c_location *matching_location, const string &target, const c_request &request)
 {
+	/* modif*/
 	if (matching_location == NULL)
 	{
 		string full_path = _server.get_root() + target;
 		if (is_directory(full_path) && _server.get_indexes().empty())
 		{
-			_server.log_message("[ERROR] No location found for target " + target);
-			build_error_response(404, request);
-			return (false);
+			if (_server.get_indexes().empty())
+			{
+				_server.log_message("[ERROR] No location found for target " + target);
+				build_error_response(404, request);
+				return (false);
+			}
+			return (true); // existing index
 		}
 	}
 	return (true);
@@ -130,7 +135,10 @@ void	c_response::define_response_content(const c_request &request)
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
+	{
 		this->_is_cgi = true;
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+	}
 
 	if (!validate_location(matching_location, target, request))
 		return ;
@@ -165,6 +173,7 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 	cout << file_path << endl;
+
 	/////// je rajoute d'ici 
 	if (is_directory(file_path))
 	{
@@ -193,23 +202,30 @@ void	c_response::define_response_content(const c_request &request)
 			}
 		}
 	}
+
 	////// a ici
 	if (is_regular_file(file_path))
+	{
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		_file_content = load_file_content(file_path);
+	}
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
 		{
+			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			this->_is_cgi = false;
 			build_directory_listing_response(file_path, request);
 			return ;
 		}
 		if (_server.get_indexes().empty())
 			build_error_response(404, request);
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 	}
 	if (this->_is_cgi)
 	{
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
 	}
@@ -577,7 +593,8 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 
 c_location	*c_server::find_matching_location(const string &request_path)
 {
-	cout << __LINE__ << " request path : " << request_path << endl; //ATENTION AUX PROTECTION DES LOCATION
+	cout << __LINE__ << " / " << __FILE__ " request path : " << request_path << endl; //ATENTION AUX PROTECTION DES LOCATION
+	
 	c_location *best_match = NULL;
 	size_t best_match_length = 0;
 
@@ -585,19 +602,27 @@ c_location	*c_server::find_matching_location(const string &request_path)
 	{
 		const string &location_path = it->first;
 
-		/* modifications */
+		/* location doit etre prefixee du request_path */
 		if (request_path.compare(0, location_path.size(), location_path) == 0)
 		{
 			bool valid_match = false;
-			// on compare a partir de la longueur de request path
-			// et on verifie si la suite de location_path est vide
+			// correspondance exacte
 			if (request_path.size() == location_path.size())
 				valid_match = true;
+			// request path plus long
 			else if (request_path.size() > location_path.size())
 			{
-				char next_char = request_path[location_path.size()];
-				if (next_char == '/' || next_char == '.')
+				// si la location se termine par / elle matche automatiquement
+				if (location_path[location_path.size() - 1] == '/')
 					valid_match = true;
+				// sinon verifier le caractere suivant
+				else
+				{
+					char next_char = request_path[location_path.size()];
+					if (next_char == '.' || next_char == '/')
+						valid_match = true;
+				}
+
 			}
 			if (valid_match && location_path.size() > best_match_length)
 			{
@@ -642,93 +667,94 @@ Cas 6: Retourner le chemin construit (fichier direct)
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
 {
-	cout << PINK <<  __LINE__ << " / " << __FILE__ << " request_path + default root = " << default_root + request_path << RESET << endl;
+	string real_path;
+
+	/* 1) no location */
 	if (location == NULL)
 	{
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
-		if (request_path == "/")
+		cout << __LINE__ << " / " << __FILE__ << endl;
+		string base = join_path(default_root, request_path);
+
+		if (is_directory(base))
 		{
-			string index = get_valid_index(default_root, this->get_indexes());
-			return (join_path(default_root, index));
+			cout << __LINE__ << " / " << __FILE__ << endl;
+			vector<string> index_files = get_indexes();
+			cout << __LINE__ << " / " << __FILE__ << endl;
+			/* if index files defined */
+			for (size_t i = 0; i < index_files.size(); i++)
+			{
+				string index_path = join_path(base, index_files[i]);
+				if (is_existing_file(index_path))
+					return index_path;
+			}
+			cout << __LINE__ << " / " << __FILE__ << endl;
+			return ""; // error 403 if no index and the directory exist
+			// string index = get_valid_index(default_root, this->get_indexes());
+			// if (!index.empty())
+			// 	return (join_path(base, index));
+			// return ""; // error index file doesnt exist and auto index not define -> error 403
 		}
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
-		cout << join_path(default_root, request_path) << endl;
-		// si location pas definie et quon demande un chemin
-		return join_path(default_root, request_path);
+		/* if file exist */
+		if (is_existing_file(base))
+			return base;
+		/* if file/directory doesnt exist */
+		return ""; // error 404
 	}
 
 	string location_root;
 
+	/* 2) Location */
+	/* with alias */
 	if (!location->get_alias().empty())
 	{
 		location_root = location->get_alias();
 		if (!directory_exists(location_root))
-		{
-			// erreur : alias directory n'existe pas
-			// envoyer un log d'erreur ? ou ecrire qqch sur le terminal ?
-			return ""; // mettre a jour code derreur ?
-		}
+			return ""; // error 500
 	}
+	/* without alias */
 	else
 	{
 		location_root = default_root; // default root correspond au serveur root
 		if (!directory_exists(default_root))
-		{
-			// erreur : root n'existe pas
-			// envoyer un log d'erreur ? ou ecrire qqch sur le terminal ?
-			return ""; // mettre a jour code derreur ?
-		}
+			return ""; // error 500
 	}
 
 	string location_key = location->get_url_key();
 
-	// location qui ne designe pas un dossier mais un endpoint
+	/* Endpoint */
 	if (!location->get_bool_is_directory())
 	{
 		return join_path(location_root, request_path);
-		// if (location_root.empty())
-		// 	return default_root + request_path;
-		// else
-		// 	return location_root + request_path;
-		// return location_root; 
 	}
 
-	// Location est un dossier -> construire chemin reel a partir de la request
+	/* Location is a directory */
 	string relative_path;
 	if (request_path.find(location_key) == 0)
-	{
 		relative_path = request_path.substr(location_key.length());
-		// if (!relative_path.empty() && relative_path[0] == '/')
-		// 	relative_path = relative_path.substr(1);
-	}
 	else
 		relative_path = request_path;
 
 	string full_path = join_path(location_root, relative_path);
 
-	// if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
 	if (is_directory(full_path) && location->get_bool_is_directory())
 	{
 		vector<string> index_files = location->get_indexes();
 
-		// si pas d'index defini retourner le dossier
-		if (index_files.empty()) 
-			return (full_path);
-
-		// chercher un dossier index existant
-		if (!index_files.empty())
+		/* if index files defined */
+		for (size_t i = 0; i < index_files.size(); i++)
 		{
-			for (size_t i = 0; i < index_files.size(); i++)
-			{
-				string index_path = join_path(full_path, index_files[i]);
-				if (is_existing_file(index_path))
-					return index_path;
-			}
-			if (location->get_auto_index())
-				return full_path;
-			return full_path;
-			// return (location_root + relative_path + index_files[0]);
+			string index_path = join_path(full_path, index_files[i]);
+			if (is_existing_file(index_path))
+				return index_path;
 		}
+		/* index file doesn't exist */
+		if (location->get_auto_index())
+			return full_path;
+		return ""; //error 403
+		// si pas d'index defini retourner le dossier
 	}
-	return full_path;
+	/* simple file */
+	if (is_existing_file(full_path))
+		return full_path;
+	return ""; // error 404
 }
