@@ -260,13 +260,13 @@ void	c_server::handle_client_read(int client_fd)
  		return ;
  	}
 
-
 	c_request* request = client->get_request();
-
 	request->read_request();
 
+	
 	if (request->is_request_fully_parsed())
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		c_response* response = client->get_response();
 		string start_line = request->get_method() + " "
 							+ request->get_target() + " "
@@ -283,7 +283,6 @@ void	c_server::handle_client_read(int client_fd)
 		}
 		else
 		{
-			// cout << __FILE__ << " " << __LINE__ << endl;
 			client->get_write_buffer() = response->get_response();
 			client->set_state(SENDING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is ready to receive the end of the response's body : POLLOUT");
@@ -384,7 +383,6 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 }	
 
 /* CGI close its pipeline out. We send what's have been read to the client */
-
 void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 {
 	char buffer[BUFFER_SIZE];
@@ -438,9 +436,7 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 void	c_server::handle_cgi_write(c_cgi* cgi)
 {
 	if (cgi->is_body_fully_sent_to_cgi())
-	{
 		return ;
-	}
 
 	size_t	remaining = cgi->get_body_to_send().size() - cgi->get_body_sent();
 	int 	fd = cgi->get_pipe_in();
@@ -471,7 +467,6 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 }
 
 /* Check if CGI are done and update status */
-
 void c_server::check_terminated_cgi_processes()
 {
 	pid_t pid;
@@ -502,7 +497,6 @@ void c_server::check_terminated_cgi_processes()
 }
 
 /* Free all the ressources linked to CGI */
-
 void c_server::cleanup_cgi(c_cgi* cgi) 
 {
 	if (!cgi) return;
@@ -537,6 +531,5 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		}
 		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
-
 	delete cgi;
 }

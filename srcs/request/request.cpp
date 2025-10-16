@@ -25,10 +25,13 @@ void	c_request::read_request()
 
 	this->append_read_buffer(buffer, receivedBytes);
 
+	cout << __FILE__ << " " << __LINE__ << endl;
 	if (!this->get_headers_parsed())
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		if (has_end_of_headers(_read_buffer))
 		{
+			cout << __FILE__ << " " << __LINE__ << endl;
 			size_t i = find_end_of_headers_pos(_read_buffer);
 			string	header_str(_read_buffer.begin(), _read_buffer.end());
 			this->parse_request(header_str);
@@ -295,7 +298,6 @@ void	c_request::read_body_with_chunks(int socket_fd)
 	{
 
 		string tmp_chunk(_read_buffer.begin(), _read_buffer.end());
-		cout << "tmp_chunk = " << tmp_chunk << endl;
 		this->fill_body_with_chunks(tmp_chunk);
 
 		if (this->_request_fully_parsed)
@@ -321,9 +323,6 @@ void	c_request::read_body_with_chunks(int socket_fd)
 
 		string	chunk_data(_chunk_accumulator.begin(), _chunk_accumulator.end());
 		this->fill_body_with_chunks(chunk_data);
-
-		// if (chunk_data.find("\0\r\n\r\n") != string::npos)
-		// 	set_request_fully_parsed(true);
 	}
 }
 
