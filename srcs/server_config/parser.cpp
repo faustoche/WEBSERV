@@ -541,7 +541,6 @@ void	c_parser::parse_server_directives(c_server & server)
 
 c_server	c_parser::parse_server_block()
 {
-	cout << "Passage dans parse_server_block" << endl;
 	c_server    server;
 	bool        has_location = false;
 
