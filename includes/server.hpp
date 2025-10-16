@@ -98,7 +98,7 @@ public:
 
 	c_location	*find_matching_location(const string &request_path);
 	bool		is_method_allowed(const c_location *location, const string &method);
-	string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root);
+	string		convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root, c_response &response);
 	c_cgi		*find_cgi_by_client(int client_fd);
 	c_cgi 		*find_cgi_by_pid(pid_t pid);
 	int			find_client_fd_by_cgi(c_cgi* cgi);
