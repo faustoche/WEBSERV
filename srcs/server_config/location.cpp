@@ -3,8 +3,9 @@
 
 /*-----------------  CONSTRUCTOR -------------------*/
 
-c_location::c_location() : _is_directory(false) 
+c_location::c_location()
 {
+	_is_directory = false;
 	_url_key = "";
 	_upload_path = "";
 	_location_body_size = 1048576;
@@ -15,6 +16,7 @@ c_location::c_location() : _is_directory(false)
 	_location_methods.push_back("GET");
 	_location_methods.push_back("POST");
 	_location_methods.push_back("DELETE");
+	_current_server = NULL;
 }
 
 /*-----------------  DESTRUCTOR -------------------*/
@@ -40,6 +42,7 @@ c_location const&    c_location::operator=(c_location const & rhs)
 		_location_err_pages = rhs._location_err_pages;
 		_allowed_extensions = rhs._allowed_extensions;
 		_allowed_data_dir = rhs._allowed_data_dir;
+		_current_server = rhs._current_server;
 	}
 	return *this;
 }

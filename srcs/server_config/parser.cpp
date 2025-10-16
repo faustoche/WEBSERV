@@ -112,6 +112,7 @@ void		c_parser::location_url_directory(c_server & server)
 	location.set_index_files(server.get_indexes());
 	location.set_body_size(server.get_body_size());
 	location.set_err_pages(server.get_err_pages());
+	location.set_current_server(server);
 
 	advance_token();
 	expected_token_type(TOKEN_LBRACE);
@@ -139,6 +140,7 @@ void		c_parser::location_url_file(c_server & server)
 	location.set_is_directory(false);
 	location.set_body_size(server.get_body_size());
 	location.set_err_pages(server.get_err_pages());
+	location.set_current_server(server);
 
 	advance_token();
 	expected_token_type(TOKEN_LBRACE);
@@ -323,8 +325,6 @@ void		c_parser::parse_alias(c_location & location)
 		throw invalid_argument("Invalid path for alias directive: " + alias + " (cannot contain '..')");
 	if (alias[alias.length() - 1] != '/')
 		alias.push_back('/');
-	if (!(is_directory(alias)))
-		throw invalid_argument("Invalid path for alias directive: " + alias + " (it must exists)");
 	
 	location.set_alias(alias);
 }

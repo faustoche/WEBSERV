@@ -17,7 +17,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	if (target == "/test_post")
 		handle_test_form(request);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
-		handle_contact_form(request);
+		handle_contact_form(request, location);
 	else if (content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, location);
 	else if (target == "/post_todo")
@@ -136,7 +136,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	string	uploaded_dir = location->get_upload_path();
 	
 	if (uploaded_dir.empty())
-		uploaded_dir = "./www/upload/";
+		uploaded_dir = "./www/upload/"; // ATTENTION modifier avec le root du serveur
 	if (!directory_exists(uploaded_dir))
 	{
 		if (!create_directory("./www/upload/"))
@@ -359,7 +359,7 @@ string	c_response::extract_after_points(const string &line)
 
 /*******************   contact form    *******************/
 
-void	c_response::handle_contact_form(const c_request &request)
+void	c_response::handle_contact_form(const c_request &request, c_location *location)
 {
 	string body = request.get_body();
 	map<string, string> form_data = parse_form_data(request.get_body());
@@ -370,7 +370,7 @@ void	c_response::handle_contact_form(const c_request &request)
 		return;
 	}
 
-	if (save_contact_data(form_data))
+	if (save_contact_data(form_data, location))
 	{
 		_response = "HTTP/1.1 303 See Other\r\n";
 		_response += "Location: /contact_success.html\r\n";
@@ -382,14 +382,54 @@ void	c_response::handle_contact_form(const c_request &request)
 		build_error_response(500, request);
 }
 
-bool	c_response::save_contact_data(const map<string, string> &data)
-{
-	string filename = "./www/data/contact.txt"; 
-	ofstream file(filename.c_str(), ios::binary | ios::app);
+bool	c_response::save_contact_data(const map<string, string> &data, c_location *location)
+{	
+	string path;
 
+	// recuperation du chemin de l'alias 
+	// --> si mauvais chemin pour l'alias renvoyer une erreur
+	//	--> si pas d'alias defini dans la location recuperer chemin du root
+
+	if (location && location->get_upload_path().empty())
+	{		
+		// s'il y a un alias de defini
+		if (!location->get_alias().empty())
+		{
+			// si le chemin de l'alias est valide
+			if (directory_exists(location->get_alias()))
+				path = location->get_alias();
+			else
+			{
+				cout << ORANGE << "ICI" << RESET << endl;
+				_status = 500;
+				return false; // mettre a jour code erreur
+			}
+		}
+		else if (location->get_alias().empty()) // si pas d'alias on recupere le root
+			path = get_server().get_root();
+	}
+
+	// si on a un upload path on lutilise puis on verifie quil existe
+	if (location && !location->get_upload_path().empty()) 
+		path = location->get_upload_path();
+
+	if (!directory_exists(path))
+	{
+		cout << RED << "ICI" << RESET << endl;
+		_status = 500;
+		return false;
+	}
+	
+	string filename = path + "contact.txt"; 
+
+	// avant on marquait en dur :
+	// string filename = "./www/data/contact.txt"; 
+
+	ofstream file(filename.c_str(), ios::binary | ios::app);
 	if (!file.is_open())
 	{
 		_server.log_message("[ERROR] error with the creation of file " + filename);
+		// changer le status
 		return false;
 	}
 
@@ -404,6 +444,7 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	}
 	file << endl;
 	file.close();
+	
 	return true;
 }
 
