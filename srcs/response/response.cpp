@@ -26,7 +26,7 @@ const string& c_response::get_header_value(const string& key) const
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target, const c_location *location)
+bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target, c_location *location)
 {
 	if (method == "GET" && target == "/todo.html")
 	{
@@ -46,10 +46,18 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 			return (true);
 		}
 		else
-		{
 			return false;
-		}
 		
+	}
+	if (method == "POST")
+	{
+		if (location)
+		{
+			handle_post_request(request, location);
+			return true;
+		}
+		else
+			return false;
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
@@ -92,7 +100,7 @@ bool	c_response::validate_location(c_location *matching_location, const string &
 		{
 			if (_server.get_indexes().empty())
 			{
-				_server.log_message("[ERROR] No location found for target " + target);
+				_server.log_message("[ERROR] No location found for target and no index for the server " + target);
 				build_error_response(404, request);
 				return (false);
 			}
@@ -161,14 +169,9 @@ void	c_response::define_response_content(const c_request &request)
 
 	/// j'ai rajouté ca 
 	string root = _server.get_root();
-	if (root.empty() || root == "." || root == "./")
-		root = "./www";
-	
-	cout << target << endl;
-	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
-
+	// if (root.empty() || root == "." || root == "./")
+	// 	root = "./www";
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root, *this);
-
 
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
@@ -181,9 +184,6 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(403, request);
 		return ;
 	}
-
-	cout << file_path << endl;
-	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 
 	/////// je rajoute d'ici 
 	if (is_directory(file_path))
@@ -210,47 +210,30 @@ void	c_response::define_response_content(const c_request &request)
 			}
 		}
 	}
-
-	cout << file_path << endl;
-	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
-
 	////// a ici
 	
 	if (is_regular_file(file_path))
 	{
-		cout << file_path << endl;
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		_file_content = load_file_content(file_path);
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 	}
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 		{
-			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			this->_is_cgi = false;
 			build_directory_listing_response(file_path, request);
 			return ;
 		}
 		if (_server.get_indexes().empty())
 		{
-			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			build_error_response(404, request);
 		}
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 	}
 	if (this->_is_cgi)
 	{
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
-	}
-	else if (method == "POST")
-	{
-		handle_post_request(request, matching_location);
-		return;
 	}
 	else if (method == "DELETE")
 	{
@@ -263,17 +246,9 @@ void	c_response::define_response_content(const c_request &request)
 		build_success_response(file_path, request);
 	}
 	else if (_status != 200)
-	{
-		cout << file_path << endl;
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_error_response(_status, request);
-	}
 	else
-	{
-		cout << file_path << endl;
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_success_response(file_path, request);
-	}
 }
 
 int	c_response::handle_cgi_response(const c_request &request, c_location *loc, const string& file_path)

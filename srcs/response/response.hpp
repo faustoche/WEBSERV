@@ -80,7 +80,7 @@ private:
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
 	void	check_method_and_headers(const c_request &request, string method, string target, int status_code);
-	bool	handle_special_routes(const c_request &request, const string &method, const string &target, const c_location *location);
+	bool	handle_special_routes(const c_request &request, const string &method, const string &target, c_location *location);
 	bool	validate_http(const c_request &request);
 	bool	validate_location(c_location *matching_location, const string &target, const c_request &request);
 	bool	handle_redirect(c_location *matching_location, const c_request &request);
