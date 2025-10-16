@@ -393,13 +393,8 @@ bool	c_response::save_contact_data(const map<string, string> &data, c_location *
 {	
 	string path;
 
-	// recuperation du chemin de l'alias 
-	// --> si mauvais chemin pour l'alias renvoyer une erreur
-	//	--> si pas d'alias defini dans la location recuperer chemin du root
-
 	if (location && location->get_upload_path().empty())
 	{		
-		// s'il y a un alias de defini
 		if (!location->get_alias().empty())
 		{
 			// si le chemin de l'alias est valide
@@ -407,7 +402,6 @@ bool	c_response::save_contact_data(const map<string, string> &data, c_location *
 				path = location->get_alias();
 			else
 			{
-				cout << ORANGE << "ICI" << RESET << endl;
 				_status = 500;
 				return false; // mettre a jour code erreur
 			}
@@ -416,13 +410,11 @@ bool	c_response::save_contact_data(const map<string, string> &data, c_location *
 			path = get_server().get_root();
 	}
 
-	// si on a un upload path on lutilise puis on verifie quil existe
 	if (location && !location->get_upload_path().empty()) 
 		path = location->get_upload_path();
 
 	if (!directory_exists(path))
 	{
-		cout << RED << "ICI" << RESET << endl;
 		_status = 500;
 		return false;
 	}
@@ -472,7 +464,7 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 	}
 	else 
 	{
-		cout << "Error: extension not allowded (" << extension << ")" << endl;
+		cout << "Error: extension not allowed (" << extension << ")" << endl;
 		return "";
 	}
 	return extension;

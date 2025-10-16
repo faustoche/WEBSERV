@@ -105,7 +105,6 @@ bool	c_response::handle_redirect(c_location *matching_location, const c_request 
 
 void	c_response::define_response_content(const c_request &request)
 {
-	cout << __FILE__ << " | " << __LINE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -119,7 +118,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
-		cout << __FILE__ << " | " << __LINE__ << endl;
 		build_error_response(405, request);
 		return ;
 	}
@@ -139,7 +137,6 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (!_server.is_method_allowed(matching_location, method))
 	{
-		cout << __FILE__ << " | " << __LINE__ << endl;
 		build_error_response(405, request);
 		return ;	
 	}
@@ -167,7 +164,6 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (is_directory(file_path))
 	{
-		cout << __FILE__ << " | " << __LINE__ << endl;
 		vector<string> indexes;
 		if (matching_location && !matching_location->get_indexes().empty())
 			indexes = matching_location->get_indexes();
@@ -210,8 +206,6 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "POST")
 	{
-		cout << __FILE__ << " | " << __LINE__ << endl;
-
 		handle_post_request(request, matching_location);
 		return;
 	}
