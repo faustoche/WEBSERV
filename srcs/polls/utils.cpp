@@ -1,6 +1,8 @@
 #include "server.hpp"
 #include "clients.hpp"
 
+/* Extract the Content-length value from HTT headers, return 0 if missing or invalid */
+
 size_t	c_server::extract_content_length(string headers)
 {
 	string key = "Content-Length:";

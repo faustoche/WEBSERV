@@ -55,7 +55,7 @@ const string& c_response::get_header_value(const string& key) const
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target)
+bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target, const c_location *location)
 {
 	if (method == "GET" && target == "/todo.html")
 	{
@@ -69,8 +69,16 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 	}
 	if (method == "POST" && target == "/post_todo")
 	{
-		handle_todo_form(request);
-		return (true);
+		if (location)
+		{
+			handle_todo_form(request, location);
+			return (true);
+		}
+		else
+		{
+			return false;
+		}
+		
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
@@ -105,14 +113,19 @@ bool	c_response::validate_http(const c_request &request)
 
 bool	c_response::validate_location(c_location *matching_location, const string &target, const c_request &request)
 {
+	/* modif*/
 	if (matching_location == NULL)
 	{
 		string full_path = _server.get_root() + target;
 		if (is_directory(full_path) && _server.get_indexes().empty())
 		{
-			_server.log_message("[ERROR] No location found for target " + target);
-			build_error_response(404, request);
-			return (false);
+			if (_server.get_indexes().empty())
+			{
+				_server.log_message("[ERROR] No location found for target " + target);
+				build_error_response(404, request);
+				return (false);
+			}
+			return (true); // existing index
 		}
 	}
 	return (true);
@@ -150,16 +163,15 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(405, request);
 		return ;
 	}
-	if (handle_special_routes(request, method, target))
-		return ;
-	
 	if (!validate_http(request))
 		return ;
 
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
+	{
 		this->_is_cgi = true;
+	}
 
 	if (!validate_location(matching_location, target, request))
 		return ;
@@ -173,7 +185,20 @@ void	c_response::define_response_content(const c_request &request)
 	if (handle_redirect(matching_location, request))
 		return ;
 
-	string file_path = _server.convert_url_to_file_path(matching_location, target, "./www");
+	if (handle_special_routes(request, method, target, matching_location))
+		return ;
+
+	/// j'ai rajouté ca 
+	string root = _server.get_root();
+	if (root.empty() || root == "." || root == "./")
+		root = "./www";
+	
+	cout << target << endl;
+	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+
+	string file_path = _server.convert_url_to_file_path(matching_location, target, root, *this);
+
+
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
@@ -186,22 +211,68 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 
+	cout << file_path << endl;
+	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+
+	/////// je rajoute d'ici 
+	if (is_directory(file_path))
+	{
+		cout << file_path << endl;
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+		vector<string> indexes;
+		if (matching_location && !matching_location->get_indexes().empty())
+			indexes = matching_location->get_indexes();
+		else
+			indexes = _server.get_indexes();
+
+		for (size_t i = 0; i < indexes.size(); ++i)
+		{
+			string index_path = file_path;
+			if (index_path[index_path.length() - 1] != '/')
+				index_path += "/";
+			index_path += indexes[i];
+
+			if (is_existing_file(index_path))
+			{
+				file_path = index_path;
+				break;
+			}
+		}
+	}
+
+	cout << file_path << endl;
+	cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+
+	////// a ici
+	
 	if (is_regular_file(file_path))
+	{
+		cout << file_path << endl;
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		_file_content = load_file_content(file_path);
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+	}
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
-		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 		{
+			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			this->_is_cgi = false;
 			build_directory_listing_response(file_path, request);
 			return ;
 		}
 		if (_server.get_indexes().empty())
+		{
+			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			build_error_response(404, request);
+		}
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 	}
 	if (this->_is_cgi)
 	{
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
 	}
@@ -220,8 +291,18 @@ void	c_response::define_response_content(const c_request &request)
 		handle_delete_request(request, file_path);
 		build_success_response(file_path, request);
 	}
+	else if (_status != 200)
+	{
+		cout << file_path << endl;
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
+		build_error_response(_status, request);
+	}
 	else
+	{
+		cout << file_path << endl;
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_success_response(file_path, request);
+	}
 }
 
 int	c_response::handle_cgi_response(const c_request &request, c_location *loc, const string& file_path)
@@ -234,7 +315,7 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 			build_error_response(404, request);
 			return (1);
 		}
-		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index()) // si la llocation est un repertoire ET que l'auto index est activé alors je genere un listing de repertoire
+		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index())
 		{
 			build_directory_listing_response(file_path, request);
 			return (1);
@@ -260,7 +341,7 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 
 /* Proceed to load the file content. Nothing else to say. */
 
-string c_response::load_file_content(const string &file_path)
+string	c_response::load_file_content(const string &file_path)
 {
 	ifstream	file(file_path.c_str(), ios::binary);
 	if (!file.is_open()) {
@@ -301,27 +382,7 @@ string c_response::get_content_type(const string &file_path)
 		return ("text/plain"); 
 }
 
-/* Reading the error pages*/
-
-string c_response::read_error_pages(int error_code)
-{
-	ostringstream path;
-	path << "www/error_pages/" << error_code << ".html";
-	ifstream file(path.str().c_str());
-	if (file.is_open())
-	{
-		ostringstream content;
-		content << file.rdbuf();
-		file.close();
-		return (content.str());
-	}
-	ostringstream fallback;
-	fallback << "<html><body><h1>" << error_code << " - Error</h1></body></html>";
-	return (fallback.str());
-}
-
 /************ BUILDING RESPONSES ************/
-
 /* Build the successfull request response */
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
@@ -353,36 +414,6 @@ void	c_response::buid_upload_success_response(const c_request &request)
 
 	_file_content.clear();
 }
-
-/* Code 201 - créée */
-
-// void	c_response::buid_upload_success_response(const string &file_path, const string version, const c_request &request)
-// {
-// 	(void)file_path;
-// 	_response = version + " 201 Created\r\n";
-// 	_response += "Content-Type: text/html\r\n";
-	
-
-// 	string connection;
-// 	try {
-// 		connection = request.get_header_value("Connection");
-// 	} catch (...) {
-// 		connection = "keep-alive";
-// 	}
-
-// 	_response += "Connection: " + connection + "\r\n";
-// 	_response += "Server: webserv/1.0\r\n";
-
-// 	string body = "Location: /upload_success.html\r\n";
-
-// 	ostringstream oss;
-// 	oss << body.size();
-// 	_response += "Content-Length: " + oss.str() + "\r\n";
-// 	_response += "\r\n";
-// 	_response += body;
-
-// 	_file_content.clear();
-// }
 
 void c_response::build_success_response(const string &file_path, const c_request &request)
 {
@@ -423,56 +454,39 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	switch (error_code)
 	{
 		case 400:
-			status = "Bad Request";
-			break;
+			status = "Bad Request"; break;
 		case 401:
-			status = "Unauthorized";
-			break;
+			status = "Unauthorized"; break;
 		case 403:
-			status = "Forbidden";
-			break;
+			status = "Forbidden"; break;
 		case 404:
-			status = "Not Found";
-			break;
+			status = "Not Found";break;
 		case 405:
-			status = "Method Not Allowed";
-			break;
+			status = "Method Not Allowed";break;
 		case 408:
-			status = "Request Timeout";
-			break;
+			status = "Request Timeout";break;
 		case 413:
-			status = "Payload Too Large";
-			break;
+			status = "Payload Too Large";break;
 		case 414:
-			status = "URI Too Long";
-			break;
+			status = "URI Too Long";break;
 		case 415:
-			status = "Unsupported Media Type";
-			break;
+			status = "Unsupported Media Type";break;
 		case 429:
-			status = "Too Many Request";
-			break;
+			status = "Too Many Request";break;
 		case 500:
-			status = "Internal Server Error";
-			break;
+			status = "Internal Server Error";break;
 		case 501:
-			status = "Not Implemented";
-			break;
+			status = "Not Implemented";break;
 		case 502:
-			status = "Bad Gateway";
-			break;
+			status = "Bad Gateway";break;
 		case 503:
-			status = "Service Unavailable";
-			break;
+			status = "Service Unavailable";break;
 		case 504:
-			status = "Gateway Timeout";
-			break;
+			status = "Gateway Timeout";break;
 		case 505:
-			status = "HTTP Version Not Supported";
-			break;
+			status = "HTTP Version Not Supported";break;
 		default:
-			status = "Internal Server Error";
-			break;
+			status = "Internal Server Error";break;
 	}
 
 	_client.set_status_code(error_code);
@@ -482,7 +496,6 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	if (it != err_pages.end())
 	{
 		string error_path = it->second;
-		
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
@@ -506,7 +519,7 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	}
 	else
 	{
-		_server.log_message("[WARN] No error page configured for code " + int_to_string(error_code));
+		_server.log_message("[WARNING] No error page configured for code " + int_to_string(error_code));
 		ostringstream fallback;
 		fallback << "<html><body><h1>" << error_code << " - " << status << "</h1></body></html>";
 		error_content = fallback.str();
@@ -520,12 +533,16 @@ void c_response::build_error_response(int error_code, const c_request &request)
 	_response += "Content-Length: " + oss.str() + "\r\n";
 	_response += "Server: webserv/1.0\r\n";
 
-	string connection;
-	connection = request.get_header_value("Connection");
-	if (connection.empty())
-		connection = "keep-alive";
-
-	_response += "Connection: " + connection + "\r\n";
+	string connection_header = "keep-alive";
+	if (error_code == 413 || error_code == 400 || error_code == 408)
+		connection_header = "close";
+	else
+	{
+		string client_connection = request.get_header_value("Connection");
+		if (!client_connection.empty())
+			connection_header = client_connection;
+	}
+	_response += "Connection: " + connection_header + "\r\n";
 	_response += "\r\n";
 	_response += error_content;
 	_file_content.clear();
@@ -539,21 +556,16 @@ void	c_response::build_redirect_response(int code, const string &location, const
 	switch (code)
 	{
 		case 301:
-			status = "Moved Permanently";
-			break ;
+			status = "Moved Permanently";break ;
 		case 302:
-			status = "Found";
-			break ;
+			status = "Found";break ;
 		case 307:
-			status = "Temporary Redirect";
-			break ;
+			status = "Temporary Redirect";break ;
 		case 308:
-			status = "Permanent Redirect";
-			break ;
+			status = "Permanent Redirect";break ;
 		default:
 			status = "Found";
-			code = 302;
-			break ;
+			code = 302;break ;
 	}
 
 	string content = "<html><body><h1>" + int_to_string(code) + " - " + status + "</h1>"
@@ -626,7 +638,6 @@ void c_response::build_directory_listing_response(const string &dir_path, const 
 }
 
 /************ HANDLING LOCATIONS ************/
-
 /* Finding the locations the matches the most with what the request is asking for */
 
 c_location	*c_server::find_matching_location(const string &request_path)
@@ -637,30 +648,33 @@ c_location	*c_server::find_matching_location(const string &request_path)
 	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
 	{
 		const string &location_path = it->first;
-		if (request_path.find(location_path) == 0)
+
+		/* location doit etre prefixee du request_path */
+		if (request_path.compare(0, location_path.size(), location_path) == 0)
 		{
-			if (location_path.length() > 0 && location_path[location_path.length() - 1] == '/')
+			bool valid_match = false;
+			// correspondance exacte
+			if (request_path.size() == location_path.size())
+				valid_match = true;
+			// request path plus long
+			else if (request_path.size() > location_path.size())
 			{
-				if (request_path.length() == location_path.length() || 
-					(request_path.length() > location_path.length() && 
-					 request_path[location_path.length()] == '/') ||
-					request_path.length() > location_path.length())
+				// si la location se termine par / elle matche automatiquement
+				if (location_path[location_path.size() - 1] == '/')
+					valid_match = true;
+				// sinon verifier le caractere suivant
+				else
 				{
-					if (location_path.length() > best_match_length)
-					{
-						best_match = &(it->second);
-						best_match_length = location_path.length();
-					}
+					char next_char = request_path[location_path.size()];
+					if (next_char == '.' || next_char == '/')
+						valid_match = true;
 				}
+
 			}
-			else
+			if (valid_match && location_path.size() > best_match_length)
 			{
-				if (request_path == location_path)
-				{
-					best_match = &(it->second);
-					best_match_length = location_path.length();
-					break ;
-				}
+				best_match = &(it->second);
+				best_match_length = location_path.size();
 			}
 		}
 	}
@@ -687,50 +701,120 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 }
 
 /* Convert the url given into a real file path to access all of the informations */
+<<<<<<< HEAD
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
+=======
+/*
+tester =
+Cas 1: Aucune location définie
+Cas 2: Déterminer le root de base (alias ou root)
+Cas 3: Location qui n'est pas un dossier (endpoint logique)
+Cas 4: Location est un dossier -> construire le chemin réel
+Cas 5: Si c'est un dossier, chercher un fichier index
+Cas 6: Retourner le chemin construit (fichier direct)
+*/
+
+
+string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root, c_response &response)
+>>>>>>> origin/main
 {
+	string real_path;
+
+	/* 1) no location defined */
 	if (location == NULL)
 	{
-		string index = get_valid_index(_root, this->get_indexes());
-		if (request_path == "/")
-			return (default_root + "/" + index);
-		return (default_root + request_path);
-	}
+		string base = join_path(default_root, request_path);
 
-	string location_root = location->get_alias();
-	string location_key = location->get_url_key();
-
-	string relative_path;
-	if (request_path.find(location_key) == 0)
-	{
-		relative_path = request_path.substr(location_key.length());
-		if (!relative_path.empty() && relative_path[0] == '/')
-			relative_path = relative_path.substr(1);
-	}
-
-	if (is_directory(location_root + relative_path) && (relative_path.empty() || relative_path[relative_path.length() - 1] == '/'))
-	{
-		location->set_is_directory(true);
-		vector<string> index_files = location->get_indexes();
-		if (index_files.empty())
-			return (location_root + relative_path);
-		else
+		if (is_directory(base))
 		{
+			base = default_root; // if we are on a directory we search index from the server root
+			
+			vector<string> index_files = get_indexes();
+			/* if index files defined for root */
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
-				string index_path = location_root + relative_path + index_files[i];
-				ifstream file_checker(index_path.c_str());
-				if (file_checker.is_open())
-				{
-					file_checker.close();
-					return (index_path);
-				}
-				file_checker.close();
+				string index_path = join_path(base, index_files[i]);
+				cout << index_path << endl;
+				if (is_existing_file(index_path))
+					return index_path;
 			}
-			if (location->get_auto_index())
-				return (location_root + relative_path);
-			return (location_root + relative_path + index_files[0]);
+			cout << __LINE__ << " / " << __FILE__ << endl;
+			response.set_status(403);
+			return "";
+		}
+		/* if file exist */
+		if (is_existing_file(base))
+			return base;
+		/* if file/directory doesnt exist */
+		response.set_status(404);
+		return ""; // error 404
+	}
+
+	string location_root;
+
+	/* 2) Location */
+	/* with alias */
+	if (!location->get_alias().empty())
+	{
+		location_root = location->get_alias();
+		if (!directory_exists(location_root))
+		{
+			response.set_status(500);
+			return "";
 		}
 	}
-	return (location_root + relative_path);
+	/* without alias */
+	else
+	{
+		location_root = default_root; // default root correspond au serveur root
+		if (!directory_exists(default_root))
+		{
+			cout << __LINE__ << " / " << __FILE__ << endl;
+			response.set_status(500);
+			return "";
+		}
+	}
+
+	string location_key = location->get_url_key();
+
+	/* Endpoint */
+	if (!location->get_bool_is_directory())
+	{
+		return join_path(location_root, request_path);
+	}
+
+	/* Location is a directory */
+	string relative_path;
+	if (request_path.find(location_key) == 0)
+		relative_path = request_path.substr(location_key.length());
+	else
+		relative_path = request_path;
+
+	string full_path = join_path(location_root, relative_path);
+
+	if (is_directory(full_path) && location->get_bool_is_directory())
+	{
+		vector<string> index_files = location->get_indexes();
+
+		/* if index files defined */
+		for (size_t i = 0; i < index_files.size(); i++)
+		{
+			string index_path = join_path(full_path, index_files[i]);
+			if (is_existing_file(index_path))
+				return index_path;
+		}
+		/* index file doesn't exist */
+		if (location->get_auto_index())
+			return full_path;
+
+		cout << __LINE__ << " / " << __FILE__ << endl;
+		response.set_status(403);
+		return "";
+	}
+	/* simple file */
+	if (is_existing_file(full_path))
+		return full_path;
+
+	response.set_status(404);
+	return "";
 }

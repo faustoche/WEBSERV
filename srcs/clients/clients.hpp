@@ -43,6 +43,7 @@ class c_client
 		bool			_response_complete;
 		string			_last_request;
 		int				_status_code;
+		bool			_should_disconnect;
 
 		time_t			_creation_time;
 		time_t			_last_modified;
@@ -73,6 +74,7 @@ class c_client
 		const int&				get_status_code() const { return _status_code; };
 		c_request*				get_request() const { return _request; };
 		c_response*				get_response() const { return _response; };
+		bool					get_should_disconnect() const { return _should_disconnect; };
 
 		/******* SETTERS ******* */
 		void	append_to_read_buffer(const string &data) { _read_buffer += data; }
@@ -83,6 +85,7 @@ class c_client
 		void	set_creation_time() { _creation_time = time(NULL); };
 		void	set_last_request(string start_line) { _last_request = start_line; };
 		void	set_status_code(int status_code) { _status_code = status_code; };
+		void	set_should_disconnect(bool value) { _should_disconnect = value; };
 		void	append_response_body_size(size_t bytes) { _response_body_size += bytes; };
 		void	clear_write_buffer() { _write_buffer.clear(); };
 		void	clear_read_buffer() { _read_buffer.clear(); };

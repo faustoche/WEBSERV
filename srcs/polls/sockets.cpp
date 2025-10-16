@@ -1,5 +1,10 @@
 #include "server.hpp"
 
+
+/* Create and configure TCP socket for each port, with options,
+bind the socket with the network adress and the port,
+listen on the socket and set non blocking socket */
+
 void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 {
 	for (std::vector<int>::const_iterator it = ports.begin(); it != ports.end(); it++)
@@ -41,10 +46,16 @@ void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 	}
 }
 
+
+/* Check if a fd correspond to a socket wich is listen and handle by the server */
+
 bool c_server::is_listening_socket(int fd)
 {
 	return (_multiple_ports.find(fd) != _multiple_ports.end());
 }
+
+
+/* Return the port bind to a socket or -1 if the socket is unknown */
 
 int c_server::get_port_from_socket(int socket_fd)
 {
@@ -54,6 +65,9 @@ int c_server::get_port_from_socket(int socket_fd)
 	return (-1);
 }
 
+
+/* Clean all sockets clients and servers, kill CGI, clean maps and struct */
+
 void	c_server::close_all_sockets_and_fd(void)
 {
 	for (map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
@@ -62,7 +76,7 @@ void	c_server::close_all_sockets_and_fd(void)
 		close(client_fd);
 	}
 	_clients.clear();
-	cout << GREEN << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
+	cout << GREEN << endl << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
 
 	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); )
 	{

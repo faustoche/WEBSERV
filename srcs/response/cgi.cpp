@@ -58,7 +58,6 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
 	this->_start_time = other._start_time;
 }
 
-
 c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 {
 	if (this != &rhs)
@@ -136,7 +135,6 @@ void    c_cgi::append_read_buffer(const char* buffer, ssize_t bytes)
 		return;
 	}
 	this->_read_buffer.append(buffer, bytes);
-
 }
 
 void    c_cgi::consume_read_buffer(size_t n) 
@@ -286,9 +284,35 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 	string allowed_data_dir = "./www/data/"; // à retirer en allant checher directement dans la location
 	if (!this->_relative_argv.empty() && !is_argv_in_allowed_directory(this->_relative_argv, allowed_data_dir))
 	{
-		this->_status_code = 403;
-		_server.log_message("[WARN] CGI's argument is outside allowed directory");
-		return (1);
+		if (chdir("www/cgi-bin/") == 0)
+		{
+			ifstream file_checker(this->_relative_argv.c_str());
+			if (!file_checker.is_open())
+			{
+				if (chdir(old_dir.c_str()) != 0)
+					_server.log_message("[ERROR] chdir failed");
+				this->_status_code = 404;
+				return (1);
+			}
+			else
+			{
+				file_checker.close();
+				if (chdir(old_dir.c_str()) != 0)
+				{
+					_server.log_message("[ERROR] chdir failed");
+					return (1);
+				}
+			}
+		}
+		if (this->_relative_argv.find("data") == string::npos)
+		{
+			if (chdir(old_dir.c_str()) != 0)
+				_server.log_message("[ERROR] chdir failed");
+			this->_status_code = 403;
+			clear_context();
+			_server.log_message("[WARNING] CGI's argument is outside data file");
+			return (1);
+		}
 	}
 
 	if (extension.size() > 0)
@@ -297,7 +321,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 		return (1);
 
 	set_environment(request);
-
 	return (0);
 }
 
@@ -386,20 +409,15 @@ int c_cgi::launch_cgi(vector<char>& body)
 		return (500);
 	}
 
-	/**** Processus enfant ****/
 	if (this->_pid == 0)
 	{
-		/* Redirection stdin depuis le pipe d'entree: permet au parent d'envoyer le body au cgi */
 		dup2(server_to_cgi[0], STDIN_FILENO);
 		close(server_to_cgi[0]);
 		close(this->_pipe_in);
-
-		/* Redirection stdout vers le pipe de sortie: permet au cgi de renvoyer la reponse au server */
 		dup2(cgi_to_server[1], STDOUT_FILENO);
 		close(cgi_to_server[1]);
 		close(this->_pipe_out);
 	 
-		/**** Convertir en tableau de char* pour execve ****/
 		vector<char*> envp;
 		for (size_t i = 0; i < this->_vec_env_vars.size(); i++)
 			envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
@@ -431,7 +449,6 @@ int c_cgi::launch_cgi(vector<char>& body)
 		exit(1);
 	}
 
-	/**** Processus parent ****/
 	close(server_to_cgi[0]);
 	close(cgi_to_server[1]);
 

@@ -29,7 +29,8 @@ c_client::~c_client()
 	delete	_response;
 }
 
-/************ CLIENT CREATION ************/
+/************ FUNCTIONS ************/
+
 /* Add a file descriptor to the list handled by poll */
 
 void    c_server::add_fd(int fd, short events)
@@ -132,9 +133,4 @@ c_cgi   *c_server::find_cgi_by_pid(pid_t pid)
 		}
 	}
 	return (NULL);
-}
-
-void    c_server::clear_write_buffer()
-{
-	
 }

@@ -75,7 +75,6 @@ string      get_valid_index(string const & root, vector<string> const & indexes)
 	return "";
 }
 
-
 string  trim(const string &str)
 {
 	size_t start = str.find_first_not_of(" \t\r\n");
@@ -201,4 +200,28 @@ string escape_html_attr(const string &text)
 		}
 	}
 	return (escaped);
+}
+
+/* fonciton qui verifie si on va pas join deux // cote a cote 
+./www/ + /data/ → ./www/data/
+./www + data/ → ./www/data/
+./www/ + data/ → ./www/data/
+./www + /data/ → ./www/data/
+*/
+string	join_path(const string &base, const string &path)
+{
+	if (base.empty())
+		return path;
+	if (path.empty())
+		return base;
+	
+	bool base_ends_slash = (base[base.length() - 1] == '/');
+	bool path_starts_slash = (path[0] == '/');
+
+	if (base_ends_slash && path_starts_slash)
+		return base + path.substr(1);
+	else if (!base_ends_slash && !path_starts_slash)
+		return base + '/' + path;
+	else
+		return base + path;
 }

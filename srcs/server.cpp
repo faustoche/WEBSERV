@@ -7,9 +7,10 @@ c_server::c_server()
 	// _names.push_back("default server");
 	// _ip = "0.0.0.0";
 	// _port = 80;
-	_root = "."; // dossier courrant --> comparer utilisation avec default_root
+	_root = "";
 	// ne pas definir d'index par defaut
 	_body_size = 1048576; // 1Mo en octet
+	_fatal_error = false;
 	// _err_pages = /* generer une page html simple si non configure */
 }
 c_server::~c_server()
@@ -69,8 +70,6 @@ void	c_server::add_location(string const & path, c_location const & loc)
 {
 	if (path.empty())
 		throw invalid_argument("Path for location is empty");
-	// if (is_valid(loc)) // verifier si location est valide ?
-	// 	throw invalid_argument("Invalid location");
 	this->_location_map[path] = loc;
 }
 
@@ -79,8 +78,6 @@ void	c_server::add_error_page(vector<int> const & codes, string path)
 	for (size_t i = 0; i < codes.size(); i++)
 		_err_pages[codes[i]] = path;
 }
-
-/*-------------------------   setters   -----------------------------*/
 
 void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 {
@@ -91,6 +88,11 @@ void	c_server::set_active_cgi(int key_fd, c_cgi* cgi)
 		it->second = cgi;
 	else
 		_active_cgi.insert(make_pair(key_fd, cgi));
+}
+
+void	c_server::set_root(string const & root)
+{
+	this->_root = root;
 }
 
 
@@ -162,7 +164,6 @@ void	c_server::print_config() const
 			<< it->first
 			<< endl;
 		it->second.print_location();
-		// it->second.print_error_page();
 		cout << RESET;
 		i++;
 	}

@@ -1,15 +1,5 @@
 #include "server.hpp"
 
-
-/********************    POST    ********************/
-
-/* Content-Type
---> formulaire classique = application/x-www-form-urlencoded
---> formulaire avec fichiers ou champs multiples = multipart/form-data
-	en-tete du content-type contient un boundary, c'est une chaine unique choisit par le client qui sert de
-	separateur entre les differentes parties du body
- */
-
 /* Dispatch to the matching function based on content-type or target path */
 
 void	c_response::handle_post_request(const c_request &request, c_location *location)
@@ -27,35 +17,16 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	if (target == "/test_post")
 		handle_test_form(request);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
-	{
-		handle_contact_form(request);
-	}
+		handle_contact_form(request, location);
 	else if (content_type.find("multipart/form-data") != string::npos)
 	{
 		handle_upload_form_file(request, location);
 	}
 	else if (target == "/post_todo")
-	{
-		handle_todo_form(request);
-	}
+		handle_todo_form(request, location);
 	else
 		build_error_response(404, request);
 }
-
-/********************   upload file   ********************/
-/*
-Objectif : Partage d'images, de fichier txt, pdf sur les chiens
-
-AUTORISER :
-- Images : jpg, png, gif (2 MB max)
-- Documents : pdf, txt (5 MB max)
-
-REJETER : Vidéos, exécutables, archives
-
-Exemple config :
-allowed_extensions = ["jpg", "jpeg", "png", "gif", "pdf", "txt"]
-max_file_size = 2 * 1024 * 1024  // 2 MB
-*/
 
 /* Process file uploads, validate size and content, saves files and redirect */
 
@@ -76,8 +47,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		return ;
 	}
 	string content_type = request.get_header_value("Content-Type");
-	
-	// PARSING
 	string boundary = extract_boundary(content_type);
 	if (boundary.empty() || get_status() >= 400)
 	{
@@ -92,16 +61,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		return ;
 	}
 
-	// if (parts.empty()) // pour fichiers lourds parfois rentre parfois non
-	// {
-		// cout << PINK << __LINE__ << " / " << __FILE__ << endl;
-		// build_error_response(400, version, request);
-		// return ;
-	// }
-
-
-	// TRAITEMENT de chaque partie
-	// string 			description;
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
@@ -137,9 +96,7 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		_client.set_last_modified();
 	}
 	else
-	{
 		build_error_response(400, request);
-	}
 }
 
 /* Generate a unique filename if a file has the same name as a targfet directory*/
@@ -180,25 +137,32 @@ string	get_unique_filename(const string &directory, string &filename)
 
 string	c_response::save_uploaded_file(const s_multipart &part, c_location *location)
 {
-	string	uploaded_dir = location->get_upload_path();
-	
-	if (uploaded_dir.empty())
-		uploaded_dir = "./www/upload/";
-	if (!directory_exists(uploaded_dir))
+	string upload_directory;
+
+	if (location && location->get_upload_path().empty())
 	{
-		if (!create_directory("./www/upload/"))
-			return "";
+		_server.log_message("[ERROR] No upload path defined.");
+		_status = 500;
+		return "";                 
 	}
+	upload_directory = location->get_upload_path();
+	if (!directory_exists(upload_directory))
+	{
+		_server.log_message("[ERROR] Directory doesn't exist. Upload failed.");
+		_status = 500;
+		return "";
+	}
+
 	string safe_filename = sanitize_filename(part.filename, location);
 	if (safe_filename.empty())
 		return "";
 
 	
-	string final_path = uploaded_dir + safe_filename;
+	string final_path = upload_directory + safe_filename;
 	if (file_exists(final_path))
 	{
-		safe_filename = get_unique_filename(uploaded_dir, safe_filename);
-		final_path = uploaded_dir + safe_filename;
+		safe_filename = get_unique_filename(upload_directory, safe_filename);
+		final_path = upload_directory + safe_filename;
 	}
 
 	ofstream file(final_path.c_str(), ios::binary);
@@ -265,15 +229,11 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 			break;
 		}
 		size_t	begin = boundary_pos[i] + delimiter.length();
-		
-		// sauter le \r\n ou \n apres le boundary
 		if (begin < body.size() && body[begin] == '\r')
 			begin++;
 		if (begin < body.size() && body[begin] == '\n')
 			begin++;
 
-		// end doit pointer juste avant le prochain boundary
-		// on ne doit pas inclure le \r\n qui precede le boundary
 		size_t	end = boundary_pos[i + 1];
 		if (end >= 2 && body[end - 2] == '\r' && body[end - 1] == '\n')
 			end -= 2;
@@ -297,11 +257,7 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 			break;
 		}
 		parts.push_back(single_part);
-		if (single_part.content.empty())
-			cout << PINK << __LINE__ << " / EMPTY / " << __FILE__ << endl;
 	}
-	if (parts.empty())
-		cout << PINK << __LINE__ << " / " << __FILE__ << endl;
 	return parts;
 }
 
@@ -319,7 +275,7 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
 	if (separator_pos == string::npos)
 	{
-		set_status(400); // en-tete manquant, parsing multipart echoue
+		set_status(400);
 		return part;
 	}
 
@@ -337,7 +293,6 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 		content_section.erase(pos);
 	}
 
-	// parser les header
 	parse_header_section(header_section, part);
 
 	if (get_status() >= 400)
@@ -357,25 +312,29 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	if (get_status() >= 400)
 	{
 		return;
+<<<<<<< HEAD
 	}
 	// Headers possibles :
 	// - Content-Disposition: form-data; name="xxx"; filename="yyy"
 	// - Content-Type: image/jpeg
 
 	// Parsing Content-Disposition
+=======
+
+>>>>>>> origin/main
 	size_t	pos_disposition = header_section.find("Content-Disposition");
 	if (pos_disposition != string::npos)
 	{
 		string line = extract_line(header_section, pos_disposition);
 		if (line.empty())
 		{
-			set_status(400); // en-tete manquant, parsing multipart echoue
+			set_status(400);
 			return;
 		}
 		part.name = extract_quotes(line, "name=");
 		if (part.name.empty())
 		{
-			set_status(400); // en-tete manquant, parsing multipart echoue
+			set_status(400);
 			return;
 		}
 		part.filename = extract_quotes(line, "filename=");
@@ -443,7 +402,7 @@ string	c_response::extract_after_points(const string &line)
 
 /*******************   contact form    *******************/
 
-void	c_response::handle_contact_form(const c_request &request)
+void	c_response::handle_contact_form(const c_request &request, c_location *location)
 {
 	vector<char> body = request.get_body();
 	map<string, string> form_data = parse_form_data(body);
@@ -454,7 +413,7 @@ void	c_response::handle_contact_form(const c_request &request)
 		return;
 	}
 
-	if (save_contact_data(form_data))
+	if (save_contact_data(form_data, location))
 	{
 		_response = "HTTP/1.1 303 See Other\r\n";
 		_response += "Location: /contact_success.html\r\n";
@@ -466,14 +425,35 @@ void	c_response::handle_contact_form(const c_request &request)
 		build_error_response(500, request);
 }
 
-bool	c_response::save_contact_data(const map<string, string> &data)
-{
-	string filename = "./www/data/contact.txt"; 
-	ofstream file(filename.c_str(), ios::binary | ios::app);
+bool	c_response::save_contact_data(const map<string, string> &data, c_location *location)
+{	
+	string path;
 
+	if (location && location->get_upload_path().empty())
+	{
+		_status = 500;
+		_server.log_message("[ERROR] There is no upload path defined for upload the data. ");
+		return false;
+	}
+	if (location && !location->get_upload_path().empty())
+	{
+		path = location->get_upload_path();
+		if (!directory_exists(path))
+		{
+			_status = 500;
+			_server.log_message("[ERROR] The upload path defined is not existing, the data can't be download. ");
+			return false;
+		}
+
+	}
+	
+	string filename = path + "contact.txt"; 
+
+	ofstream file(filename.c_str(), ios::binary | ios::app);
 	if (!file.is_open())
 	{
-		_server.log_message("[ERROR] error with the creation of file " + filename);
+		_server.log_message("[ERROR] The file can't be create " + filename);
+		_status = 500;
 		return false;
 	}
 
@@ -488,6 +468,7 @@ bool	c_response::save_contact_data(const map<string, string> &data)
 	}
 	file << endl;
 	file.close();
+	
 	return true;
 }
 
@@ -508,7 +489,7 @@ string  c_response::extract_extension(const string &filename, string &name, c_lo
 	}
 	else 
 	{
-		cout << "Error: extension not allowded (" << extension << ")" << endl;
+		cout << "Error: extension not allowed (" << extension << ")" << endl;
 		return "";
 	}
 	return extension;
@@ -556,9 +537,6 @@ string  c_response::sanitize_filename(const string &filename, c_location *locati
 void	c_response::handle_test_form(const c_request &request)
 {
 	map<string, string> form_data = parse_form_data(request.get_body());
-	// cout << GREEN << "=== DONNEES PARSEES ===" << endl;
-	// for (map<string, string>::iterator it = form_data.begin(); it != form_data.end(); it++)
-	// 	cout << it->first << " = [ " << it->second << " ]" << endl;
 	create_form_response(form_data, request);
 }
 
@@ -575,8 +553,6 @@ void	c_response::create_form_response(const map<string, string> &form, const c_r
 	_file_content = html;
 	build_success_response("response.html", request);
 }
-
-/****************   utils for test form   ****************/
 
 string const	c_response::url_decode(const string &body)
 {
@@ -669,8 +645,7 @@ map<string, string> const	c_response::parse_form_data(const vector<char>& body)
 
 /***** TODO ******/
 
-
-void c_response::handle_todo_form(const c_request &request)
+void c_response::handle_todo_form(const c_request &request, const c_location *location)
 {
 	map<string, string>form = parse_form_data(request.get_body());
 	string task;
@@ -683,10 +658,32 @@ void c_response::handle_todo_form(const c_request &request)
 	if (task.empty())
 	{
 		build_error_response(400, request);
-		return ;
+		return ; //mettre un booleen?
 	}
 
-	string filename = "./www/data/todo.txt";
+	string path;
+
+	if (location && location->get_upload_path().empty())
+	{
+		_status = 500;
+		_server.log_message("[ERROR] There is no upload path defined for upload the data. ");
+		return;
+	}
+	if (location && !location->get_upload_path().empty())
+	{
+		path = location->get_upload_path();
+		if (!directory_exists(path))
+		{
+			_status = 500;
+			_server.log_message("[ERROR] The upload path defined is not existing, the data can't be download. ");
+			return;
+		}
+
+	}
+	
+	string filename = path + "todo.txt"; 
+
+	// string filename = "./www/data/todo.txt";
 	ofstream file(filename.c_str(), ios::app);
 	if (!file.is_open())
 	{
@@ -698,19 +695,27 @@ void c_response::handle_todo_form(const c_request &request)
 	load_todo_page(request);
 }
 
-/* GESTION DES UPLOADS */
 /* Load the upload page, list all the files already uploaded */
 
-void c_response::load_upload_page(const c_request &request)
+void	c_response::load_upload_page(const c_request &request)
 {
 	string html_template = load_file_content("./www/page_upload.html");
 	string files_html;
 
-	/* recuperer max_body_size pour lenvoyer a la page HTML */
 	size_t max_body_size = request.get_client_max_body_size();
 	string max_body_size_str = int_to_string(max_body_size);
 
-	string upload_dir = "./www/upload/";
+	c_location *location = _server.find_matching_location(request.get_target());
+
+	string upload_dir;
+
+	if (location && !location->get_upload_path().empty())
+		upload_dir = location->get_upload_path();
+	else if (location && !location->get_alias().empty())
+		upload_dir = location->get_alias();
+	else
+		upload_dir = _server.get_root();
+
 	DIR *dir = opendir(upload_dir.c_str());
 	if (dir)
 	{
@@ -735,16 +740,14 @@ void c_response::load_upload_page(const c_request &request)
 		files_html = "<div class=\"empty-message\">No uploaded files yet.</div>";
 	}
 
-	/* remplacememtn du placeholder {{MAX_BODY_SIZE}}*/
 	size_t pos = html_template.find("{{MAX_BODY_SIZE}}");
 	if (pos != string::npos)
 		html_template.replace(pos, strlen("{{MAX_BODY_SIZE}}"), max_body_size_str);
 
-	/* remplacement des fichiers existants */
 	pos = html_template.find("{{FILES_HTML}}");
 	if (pos != string::npos)
 		html_template.replace(pos, strlen("{{FILES_HTML}}"), files_html);
 
-    _file_content = html_template;
-    build_success_response("page_upload.html", request);
+	_file_content = html_template;
+	build_success_response("page_upload.html", request);
 }

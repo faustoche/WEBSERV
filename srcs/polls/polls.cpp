@@ -41,14 +41,11 @@ void c_server::setup_pollfd()
 		switch (client->get_state())
 		{
 			case READING:
-				client_pollfd.events = POLLIN;
-				break;
+				client_pollfd.events = POLLIN;break;
 			case PROCESSING:
-				client_pollfd.events = 0;
-				break;
+				client_pollfd.events = 0;break;
 			case SENDING:
-				client_pollfd.events = POLLOUT;
-				break;
+				client_pollfd.events = POLLOUT;break;
 			case IDLE:
 				client_pollfd.events = 0;
 			default:
@@ -93,13 +90,19 @@ void c_server::setup_pollfd()
 
 void c_server::handle_poll_events()
 {
-	// D'abord vérifier les processus CGI terminés (avant poll)
     check_terminated_cgi_processes();
 	int num_events = poll(_poll_fds.data(), _poll_fds.size(), 100);
 	if (num_events < 0)
 	{
-		// si on garde ce close, alors on a toujours les messages de cloture en double
-		close_all_sockets_and_fd();
+		if (errno == EINTR)
+		{
+			log_message("[INFO] Poll interrupted by signal");
+			return ;
+		}
+		cout << RED_BOLD << endl << "Error: Poll failed. Stopping all servers." << RESET << endl;
+		log_message("[ERROR] Poll failed. Stopping all server.");
+		this->_fatal_error = 1;
+		close(this->_socket_fd);
 		return ;
 	}
 	if (num_events == 0)
@@ -128,8 +131,6 @@ void c_server::handle_poll_events()
 			if (_active_cgi.count(fd))
 			{
 				c_cgi* cgi = _active_cgi[fd];
-				// on ajoute cette vérification pour les race conditions problables
-				// eviter le segfault si on accede a un CGI deja delete
 				if (!cgi)
 				{
 					log_message("[DEBUG] CGI already finished, skipping poll event for fd " + int_to_string(fd));
@@ -185,7 +186,9 @@ void c_server::handle_poll_events()
 				remove_client(fd);
 			}	
 			else if (pfd.revents & POLLIN)
+			{
 				handle_client_read(fd);
+			}
 			else if (pfd.revents & POLLOUT)
 			{
 				
@@ -237,7 +240,10 @@ void	c_server::handle_new_connection(int listening_socket)
 
 		char client_ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 		set_non_blocking(client_fd);
 		
 		
@@ -248,12 +254,12 @@ void	c_server::handle_new_connection(int listening_socket)
 		add_client(new_fds[i].first, new_fds[i].second);
 }
 
-
 /* Check if the client exist, read the request and create the appropriate response. Fill the writing buffer */
 
 void	c_server::handle_client_read(int client_fd)
 {
 	c_client *client = find_client(client_fd);
+<<<<<<< HEAD
  	if (!client)
  	{
  		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
@@ -277,6 +283,35 @@ void	c_server::handle_client_read(int client_fd)
 
 		response->define_response_content(*request);
 		if (response->get_is_cgi())
+=======
+	if (!client)
+	{
+		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
+		return ;
+	}
+	c_request request(*this, *client);
+	request.read_request();
+
+	if (!request.is_request_fully_parsed())
+	{
+		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
+		return ;
+	}
+	if (client->get_state() == DISCONNECTED)
+	{
+		log_message("[INFO] Client " + int_to_string(client_fd) + " disconnected");
+		remove_client(client_fd);
+		return ;
+	}
+	if (client->get_state() != IDLE)
+	{
+		client->set_creation_time();
+		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
+		c_response response(*this, *client);
+		response.define_response_content(request);
+		client->clear_read_buffer();
+		if (response.get_is_cgi())
+>>>>>>> origin/main
 		{
 			client->set_state(PROCESSING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is processing request");
@@ -326,8 +361,7 @@ void	c_server::handle_client_write(int client_fd)
 	client->set_bytes_written(bytes_written + bytes_sent);
 
 	if (client->get_bytes_written() >= write_buffer.length())
-	{
-		
+	{	
 		if (cgi && !cgi->is_finished() && !client->get_response_complete())
 		{ 
 			log_message("[DEBUG] CGI " + int_to_string(cgi->get_pipe_out()) + " linked to client " + int_to_string(client_fd) + " is not finished...");
@@ -479,7 +513,7 @@ void c_server::check_terminated_cgi_processes()
 		{
 			if (!terminated_cgi)
 			{
-				log_message("[WARN] Unkown CGI pid " + int_to_string(pid));
+				log_message("[WARNING] Unkown CGI pid " + int_to_string(pid));
 				continue;
 			}
 		
@@ -519,6 +553,7 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		cgi->mark_stdout_closed();	
 	}
 
+<<<<<<< HEAD
 	if (cgi->get_pid() > 0)
 	{
 		int status;
@@ -531,5 +566,11 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		}
 		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
+=======
+	int status;
+	waitpid(cgi->get_pid(), &status, WNOHANG); 
+	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
+
+>>>>>>> origin/main
 	delete cgi;
 }

@@ -3,15 +3,15 @@
 
 /*-----------------  CONSTRUCTOR -------------------*/
 
-c_location::c_location() : _location_root("./"), _auto_index(false), _is_directory(false) 
+c_location::c_location()
 {
+	_is_directory = false;
 	_url_key = "";
 	_upload_path = "";
-	_location_body_size = 1048576; // 1Mo en octet
-	_location_root = "";
-	// _location_path = "";
+	_location_body_size = 1048576;
+	_location_alias = "";
 	_auto_index = false;
-	_upload_path = "";
+	_allowed_data_dir = "";
 	_cgi_extension.clear();
 	_location_methods.push_back("GET");
 	_location_methods.push_back("POST");
@@ -30,7 +30,7 @@ c_location const&    c_location::operator=(c_location const & rhs)
 	{
 		_url_key = rhs._url_key;
 		_location_body_size = rhs._location_body_size;
-		_location_root = rhs._location_root;
+		_location_alias = rhs._location_alias;
 		_location_methods = rhs._location_methods;
 		_location_indexes = rhs._location_indexes;
 		_auto_index = rhs._auto_index;
@@ -40,6 +40,7 @@ c_location const&    c_location::operator=(c_location const & rhs)
 		_is_directory = rhs._is_directory;
 		_location_err_pages = rhs._location_err_pages;
 		_allowed_extensions = rhs._allowed_extensions;
+		_allowed_data_dir = rhs._allowed_data_dir;
 	}
 	return *this;
 }
@@ -163,14 +164,8 @@ void	c_location::print_location() const
 				cout << "OFF";
 	cout << endl
 			<< "            upload path: " << get_upload_path() << endl
-			// << "Redirect = " << get_redirect() << endl
 			<< "            CGI extensions:" << endl;
 			print_cgi();
-	// cout    << "            is directory: ";
-	//         if (get_bool_is_directory())
-	//             cout << "yes";
-	//         else
-	//             cout << "no";
 	cout
 			<< "            Error pages = " << endl;
 			print_error_page();

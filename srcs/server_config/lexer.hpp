@@ -12,13 +12,11 @@ using namespace std;
 
 
 /*------------- ENUM ------------*/
-/* definit la categorie gramaticale 
-de chaque token */
 
 enum    token_type {
-	TOKEN_BLOC_KEYWORD, // server, location
-	TOKEN_DIRECTIVE_KEYWORD, // listen, root, index, ...
-	TOKEN_VALUE,      // /var/www, index.html, 8080, ...
+	TOKEN_BLOC_KEYWORD,
+	TOKEN_DIRECTIVE_KEYWORD,
+	TOKEN_VALUE,
 	TOKEN_LBRACE,
 	TOKEN_RBRACE,
 	TOKEN_SEMICOLON,
@@ -29,8 +27,8 @@ enum    token_type {
 /*-----------  STRUCT -----------*/
 
 struct  s_token {
-	token_type      type;  // categorie gramaticale
-	string          value; // contenu reel du token --> texte
+	token_type      type;
+	string          value;
 	int             line;
 	int             column;
 
@@ -50,42 +48,32 @@ public :
 	~c_lexer();
 
 	void	get_next_token();
-	// s_token peek_token();
 	bool	has_more_token();
 
-	// getters
-	int			get_current_line() const;
-	int			get_current_column() const;
+	int					get_current_line() const;
+	int					get_current_column() const;
 	vector<s_token>&	get_list_of_token();
-
-	 //remettre en private
 
 protected :
 	
-	string		_content; // contenu entier du .conf
-	size_t		_pos; // position actuelle dans _content
+	string		_content;
+	size_t		_pos;
 	int		_current_line;
 	int		_current_column;
 
 	vector<s_token>	_tokens;
 
-	// private method
-	bool	open_file(string const & filename);
-
-	// navigation dans le contenu
+	bool		open_file(string const & filename);
 	char		current_char() const;
 	bool		is_at_end() const;
 	string		read_word();
 	void		skip_whitespace();
 	void		skip_line();
 	void		advance();
-
-	// pour tokens
-	void	init_list_of_tokens();
-	bool	has_more_tokens() const;
-	bool	is_bloc_keyword(string const & word) const;
-	bool	is_directive_keyword(string const & word) const;
-
+	void		init_list_of_tokens();
+	bool		has_more_tokens() const;
+	bool		is_bloc_keyword(string const & word) const;
+	bool		is_directive_keyword(string const & word) const;
 };
 
 

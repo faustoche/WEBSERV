@@ -7,10 +7,7 @@ c_request::c_request(c_server& server, c_client &client) : _server(server), _cli
 	this->init_request();
 }
 
-c_request::~c_request()
-{
-}
-
+c_request::~c_request(){}
 
 /************ REQUEST ************/
 
@@ -69,7 +66,6 @@ int c_request::parse_request(const string& raw_request)
 	istringstream stream(raw_request);
 	string line;
 
-	/*---- ETAPE 1: start-line -----*/
 	if (!getline(stream, line, '\n'))
 	{
 		this->_status_code = 400;
@@ -83,13 +79,11 @@ int c_request::parse_request(const string& raw_request)
 		return (1);
 	}
 	line.erase(line.size() - 1);
-
-	
 	this->parse_start_line(line);
+
 	if (this->_error == true)
 		return (1);
-		
-	/*---- ETAPE 2: headers -----*/
+
 	while (getline(stream, line, '\n'))
 	{
 		if (line[line.size() - 1] != '\r')
@@ -100,13 +94,11 @@ int c_request::parse_request(const string& raw_request)
 		}
 
 		line.erase(line.size() - 1);
-
 		if (line.empty())
 			break ;
 		
 		this->parse_headers(line);
 	}
-	
 	this->check_required_headers();
 	this->set_headers_parsed(true);
 	
@@ -127,8 +119,7 @@ int c_request::parse_start_line(string& start_line)
 	size_t	start = 0;
 	size_t	space_pos = start_line.find(' ', start);
 	string	tmp = "";
-	
-	/*- ---- Method ----- */
+
 	if (space_pos == string::npos)
 	{
 		this->_status_code = 400;
@@ -142,7 +133,6 @@ int c_request::parse_start_line(string& start_line)
 		this->_error = true;
 	}
 
-	/*- ---- Target ----- */
 	start = space_pos + 1;
 	space_pos = start_line.find(' ', start);
 
@@ -173,7 +163,6 @@ int c_request::parse_start_line(string& start_line)
 		return (1);
 	}
 
-	/*- ---- Version ----- */
 	start = space_pos + 1;
 	this->_version = start_line.substr(start);
 	if (this->_version.empty())
@@ -190,7 +179,6 @@ int c_request::parse_start_line(string& start_line)
 	
 	return (1);
 }
-
 
 /************ HEADERS ************/
 
@@ -224,7 +212,6 @@ int c_request::parse_headers(string& headers)
 	return (0);
 }
 
-
 /************ BODY ************/
 
 int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
@@ -249,7 +236,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 	while ((pos = accumulator.find("\r\n")) != string::npos)
 	{
 		tmp = accumulator.substr(0, pos);
-		accumulator.erase(0, pos + 2); // supprimer \r\n
+		accumulator.erase(0, pos + 2);
 
 		if (tmp.empty())
 			continue ;
@@ -257,10 +244,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 
 		if (this->_chunk_line_count % 2 == 1)
 		{
-			// On lit la taille du chunk
 			this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
-			
-			// Si taille = 0, c'est le chunk final
 			if (this->_expected_chunk_size == 0)
 			{
 				this->set_request_fully_parsed(true);
@@ -269,8 +253,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			}
 		}
 		else
-		{
-			// On lit les données du chunk            
+		{          
 			if (tmp.size() < this->_expected_chunk_size)
 			{
 				accumulator.insert(0, tmp + "\r\n");
@@ -279,9 +262,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			}
 			if (tmp.size() > this->_expected_chunk_size)
 			{
-				_server.log_message("[ERROR] Invalid chunk size. Received: " 
-										+ int_to_string(tmp.size()) + " Expected: " 
-										+ int_to_string(_expected_chunk_size));
+				_server.log_message("[ERROR] Invalid chunk size. Received: " + int_to_string(tmp.size()) + " Expected: " + int_to_string(_expected_chunk_size));
 				this->_status_code = 400;
 				this->_error = true;
 				return;				
@@ -394,7 +375,7 @@ void	c_request::read_body_with_length(int socket_fd)
 								+ ") excesses announced size (" + int_to_string(_content_length) + ")");
 			this->_status_code = 413;
 			this->_error = true;
-			this->_request_fully_parsed = true; // rajout car pb quand gros fichier voir si ca pause pas de pb (jen ai pas limpression)
+			this->_request_fully_parsed = true;
 			return ;
 		}
 
@@ -405,6 +386,8 @@ void	c_request::read_body_with_length(int socket_fd)
 		if (_total_bytes == _content_length)
 			this->_request_fully_parsed = true;
 	}
+	if (_total_bytes == _content_length)
+		this->_request_fully_parsed = true;
 }
 
 
@@ -436,8 +419,11 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 
 		return ;
 	}
+<<<<<<< HEAD
 	else
 		this->_request_fully_parsed = true;
+=======
+>>>>>>> origin/main
 }
 
 /************ SETTERS & GETTERS ************/

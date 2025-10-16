@@ -92,6 +92,8 @@ class c_request
 
 		const map<string, string>	&get_headers() const { return _headers; }
 
+
+
 	private:
 		c_server&			_server;
 		int					_socket_fd;
@@ -107,6 +109,7 @@ class c_request
 		// string              _buffered_data;
 		map<string, string>	_headers;
 		c_client&			_client;
+		bool				_is_reading_request;
 
 		int					_status_code;
 		int					_port;
@@ -116,7 +119,6 @@ class c_request
 		bool				_error;
 		bool				_has_body;
 		bool				_disconnected;
-
 		int					_chunk_line_count;
 		string				_chunk_accumulator;
 		size_t				_content_length;
