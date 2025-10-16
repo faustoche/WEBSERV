@@ -14,3 +14,4 @@
 [ Wed Oct 15 16:21:41 2025 ] email=cocodu62@laposte.net; message=cc; nom=Corine; 
 [ Thu Oct 16 13:33:37 2025 ] email=cocodu62@laposte.net; message=coucou; nom=Corine; 
 [ Thu Oct 16 14:36:26 2025 ] email=dd@ff.com; message=ddd; nom=dd; 
+[ Thu Oct 16 17:11:33 2025 ] email=dd@ff.com; message=dd; nom=dd; 

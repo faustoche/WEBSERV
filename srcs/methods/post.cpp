@@ -312,16 +312,12 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	if (get_status() >= 400)
 	{
 		return;
-<<<<<<< HEAD
 	}
 	// Headers possibles :
 	// - Content-Disposition: form-data; name="xxx"; filename="yyy"
 	// - Content-Type: image/jpeg
 
 	// Parsing Content-Disposition
-=======
-
->>>>>>> origin/main
 	size_t	pos_disposition = header_section.find("Content-Disposition");
 	if (pos_disposition != string::npos)
 	{

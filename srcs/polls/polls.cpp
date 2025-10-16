@@ -122,7 +122,7 @@ void c_server::handle_poll_events()
 			{
 				int port = get_port_from_socket(pfd.fd);
 				log_message("[ERROR] error on socket server on port " + int_to_string(port));
-				close_all_sockets_and_fd();
+				// close_all_sockets_and_fd();
 			}
 		}
 		else
@@ -179,6 +179,7 @@ void c_server::handle_poll_events()
 				c_cgi* cgi = find_cgi_by_client(client->get_fd());
 				if (cgi)
 				{
+					cout << __FILE__ << " " << __LINE__ << endl;
 					kill(cgi->get_pid(), SIGTERM);
 					cleanup_cgi(cgi);
 					// close_all_sockets_and_fd();
@@ -240,10 +241,6 @@ void	c_server::handle_new_connection(int listening_socket)
 
 		char client_ip[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN);
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main
 		set_non_blocking(client_fd);
 		
 		
@@ -259,7 +256,6 @@ void	c_server::handle_new_connection(int listening_socket)
 void	c_server::handle_client_read(int client_fd)
 {
 	c_client *client = find_client(client_fd);
-<<<<<<< HEAD
  	if (!client)
  	{
  		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
@@ -268,11 +264,9 @@ void	c_server::handle_client_read(int client_fd)
 
 	c_request* request = client->get_request();
 	request->read_request();
-
 	
 	if (request->is_request_fully_parsed())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		c_response* response = client->get_response();
 		string start_line = request->get_method() + " "
 							+ request->get_target() + " "
@@ -283,35 +277,6 @@ void	c_server::handle_client_read(int client_fd)
 
 		response->define_response_content(*request);
 		if (response->get_is_cgi())
-=======
-	if (!client)
-	{
-		log_message("[ERROR] Client not found : " + int_to_string(client_fd));
-		return ;
-	}
-	c_request request(*this, *client);
-	request.read_request();
-
-	if (!request.is_request_fully_parsed())
-	{
-		log_message("[DEBUG] Request not fully parsed yet for client " + int_to_string(client_fd));
-		return ;
-	}
-	if (client->get_state() == DISCONNECTED)
-	{
-		log_message("[INFO] Client " + int_to_string(client_fd) + " disconnected");
-		remove_client(client_fd);
-		return ;
-	}
-	if (client->get_state() != IDLE)
-	{
-		client->set_creation_time();
-		client->set_last_request(request.get_method() + " " + request.get_target() + " " + request.get_version());
-		c_response response(*this, *client);
-		response.define_response_content(request);
-		client->clear_read_buffer();
-		if (response.get_is_cgi())
->>>>>>> origin/main
 		{
 			client->set_state(PROCESSING);
 			log_message("[DEBUG] Client " + int_to_string(client->get_fd()) + " is processing request");
@@ -533,7 +498,8 @@ void c_server::check_terminated_cgi_processes()
 /* Free all the ressources linked to CGI */
 void c_server::cleanup_cgi(c_cgi* cgi) 
 {
-	if (!cgi) return;
+	if (!cgi) 
+		return;
 
 	if (cgi->get_pipe_in() > 0) 
 	{
@@ -553,7 +519,6 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		cgi->mark_stdout_closed();	
 	}
 
-<<<<<<< HEAD
 	if (cgi->get_pid() > 0)
 	{
 		int status;
@@ -566,11 +531,9 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		}
 		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
-=======
-	int status;
-	waitpid(cgi->get_pid(), &status, WNOHANG); 
-	log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
+	cout << "==APRES CLEAN DU CGI==" << endl;
+	cout << cgi->get_pipe_in() << endl;
+	cout << cgi->get_pipe_out() << endl;
 
->>>>>>> origin/main
 	delete cgi;
 }

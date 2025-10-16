@@ -15,9 +15,6 @@ c_server::c_server()
 }
 c_server::~c_server()
 {
-	for (std::map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-		delete it->second;
-	_clients.clear();
 }
 
 c_server const &	c_server::operator=(c_server const & rhs)

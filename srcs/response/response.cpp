@@ -9,7 +9,10 @@ c_response::c_response(c_server& server, c_client &client) : _server(server), _c
 	init_response();
 }
 
-c_response::~c_response(){}
+c_response::~c_response()
+{
+	cout << "DESCTRUCTOR DE RESPONSE" << endl;
+}
 
 void	c_response::init_response()
 {
@@ -202,11 +205,14 @@ void	c_response::define_response_content(const c_request &request)
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (!is_existing_file(file_path))
 		{
+			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			build_error_response(404, request);
 			return ;
 		}
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_error_response(403, request);
 		return ;
 	}
@@ -701,9 +707,6 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 }
 
 /* Convert the url given into a real file path to access all of the informations */
-<<<<<<< HEAD
-string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root)
-=======
 /*
 tester =
 Cas 1: Aucune location définie
@@ -716,7 +719,6 @@ Cas 6: Retourner le chemin construit (fichier direct)
 
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root, c_response &response)
->>>>>>> origin/main
 {
 	string real_path;
 

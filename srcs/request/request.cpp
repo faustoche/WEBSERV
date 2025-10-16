@@ -7,7 +7,10 @@ c_request::c_request(c_server& server, c_client &client) : _server(server), _cli
 	this->init_request();
 }
 
-c_request::~c_request(){}
+c_request::~c_request()
+{
+	cout << "DESCTRUCTOR DE REQUEST" << endl;
+}
 
 /************ REQUEST ************/
 
@@ -22,13 +25,10 @@ void	c_request::read_request()
 
 	this->append_read_buffer(buffer, receivedBytes);
 
-	cout << __FILE__ << " " << __LINE__ << endl;
 	if (!this->get_headers_parsed())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		if (has_end_of_headers(_read_buffer))
 		{
-			cout << __FILE__ << " " << __LINE__ << endl;
 			size_t i = find_end_of_headers_pos(_read_buffer);
 			string	header_str(_read_buffer.begin(), _read_buffer.end());
 			this->parse_request(header_str);
@@ -101,14 +101,6 @@ int c_request::parse_request(const string& raw_request)
 	}
 	this->check_required_headers();
 	this->set_headers_parsed(true);
-	
-	// cout << "*********** START-LINE ************" << endl;
-	// cout << "method: " << this->_method << endl;
-	// if (!this->_query.empty())
-	// 	cout << "query: " << this->_query << endl;
-	// cout << "target: " << this->_target << endl;
-	// cout << "version: " << this->_version << endl << endl;
-
 	return (0);
 }
 
@@ -225,6 +217,7 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 	}
 
 	this->_body.insert(this->_body.end(), buffer, buffer + len);
+	this->set_total_bytes(this->_body.size());
 	return (0);
 }
 
@@ -343,7 +336,6 @@ void	c_request::read_body_with_length(int socket_fd)
 
 	if (this->_read_buffer.size() > 0)
 	{
-		set_total_bytes(this->_read_buffer.size());
 		const char* ptr = _read_buffer.data();
 		size_t len = _read_buffer.size();
 		if (fill_body_with_bytes(ptr, len))
@@ -353,9 +345,14 @@ void	c_request::read_body_with_length(int socket_fd)
 		if (_total_bytes == _content_length)
 		{
 			this->_request_fully_parsed = true;
-			cout << "== DANS read body with length ==" << endl;
-			cout << "==request ptr== " << this << endl;
+			return ;
 		}
+	}
+
+	if (_total_bytes == _content_length)
+	{
+		this->_request_fully_parsed = true;
+		return ;
 	}
 
 	if (_total_bytes < _content_length)
@@ -364,9 +361,12 @@ void	c_request::read_body_with_length(int socket_fd)
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (receivedBytes < 0)
 			return;
+		if (receivedBytes == 0)
+		{
+			this->_request_fully_parsed = true;
+			return ;
+		}
 		this->append_read_buffer(buffer, receivedBytes);
-	
-		set_total_bytes(_total_bytes + receivedBytes);
 		
 		if (_total_bytes > _content_length && is_limited())
 		{
@@ -386,8 +386,6 @@ void	c_request::read_body_with_length(int socket_fd)
 		if (_total_bytes == _content_length)
 			this->_request_fully_parsed = true;
 	}
-	if (_total_bytes == _content_length)
-		this->_request_fully_parsed = true;
 }
 
 
@@ -395,10 +393,7 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 {
 	c_location *matching_location = _server.find_matching_location(this->get_target());
 	if (matching_location != NULL && matching_location->get_body_size() > 0)
-	{
-		cout << "location: " << matching_location->get_url_key() << endl;
 		this->set_client_max_body_size(matching_location->get_body_size());
-	}
 
 	if (this->_client_max_body_size == 0)
 		_client_max_body_size = 100 * 1024 * 1024; // 100 MB
@@ -407,23 +402,16 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 	{
 		if (this->get_content_length())
 			this->read_body_with_length(socket_fd);
-
 		else
-		{
-
 			this->read_body_with_chunks(socket_fd);
-		}
 
 		if (this->_error)
 			return ;
 
 		return ;
 	}
-<<<<<<< HEAD
 	else
 		this->_request_fully_parsed = true;
-=======
->>>>>>> origin/main
 }
 
 /************ SETTERS & GETTERS ************/

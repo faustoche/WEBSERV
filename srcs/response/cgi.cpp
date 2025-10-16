@@ -95,6 +95,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 
 c_cgi::~c_cgi()
 {
+	cout << "DESCTRUCTOR DE CGI" << endl;
 	if (this->get_pipe_in() > 0)
 		close(this->get_pipe_in());
 	if (this->get_pipe_out() > 0)
