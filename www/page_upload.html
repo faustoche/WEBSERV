@@ -229,7 +229,7 @@
             if (!confirm('Delete ' + filename + ' ?')) {
                 return;
             }
-            fetch('/delete_upload?file=' + encodeURIComponent(filename), {
+            fetch('/page_upload?file=' + encodeURIComponent(filename), {
                 method: 'DELETE'
             })
                 .then(response => response.text())

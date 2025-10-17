@@ -11,7 +11,7 @@ c_response::c_response(c_server& server, c_client &client) : _server(server), _c
 
 c_response::~c_response()
 {
-	cout << "DESCTRUCTOR DE RESPONSE" << endl;
+	//cout << "DESCTRUCTOR DE RESPONSE" << endl;
 }
 
 void	c_response::init_response()
@@ -79,7 +79,6 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 		}
 		else
 			return false;
-		
 	}
 	if (method == "POST")
 	{
@@ -96,7 +95,7 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 		load_upload_page(request);
 		return (true);
 	}
-	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
+	if (method == "DELETE" && (target.find("/page_upload?") == 0))
 	{
 		handle_delete_upload(request);
 		return (true);
@@ -199,32 +198,26 @@ void	c_response::define_response_content(const c_request &request)
 	if (handle_special_routes(request, method, target, matching_location))
 		return ;
 
-	/// j'ai rajouté ca 
 	string root = _server.get_root();
-	// if (root.empty() || root == "." || root == "./")
-	// 	root = "./www";
+	if (root.empty() || root == "." || root == "./")
+		root = "./www";
+	
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root, *this);
 
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (!is_existing_file(file_path))
 		{
-			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			build_error_response(404, request);
 			return ;
 		}
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_error_response(403, request);
 		return ;
 	}
 
-	/////// je rajoute d'ici 
 	if (is_directory(file_path))
 	{
-		cout << file_path << endl;
-		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		vector<string> indexes;
 		if (matching_location && !matching_location->get_indexes().empty())
 			indexes = matching_location->get_indexes();
@@ -245,12 +238,9 @@ void	c_response::define_response_content(const c_request &request)
 			}
 		}
 	}
-	////// a ici
-	
+
 	if (is_regular_file(file_path))
-	{
 		_file_content = load_file_content(file_path);
-	}
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
@@ -261,9 +251,7 @@ void	c_response::define_response_content(const c_request &request)
 			return ;
 		}
 		if (_server.get_indexes().empty())
-		{
 			build_error_response(404, request);
-		}
 	}
 	if (this->_is_cgi)
 	{
@@ -711,11 +699,9 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
 				string index_path = join_path(base, index_files[i]);
-				cout << index_path << endl;
 				if (is_existing_file(index_path))
 					return index_path;
 			}
-			cout << __LINE__ << " / " << __FILE__ << endl;
 			response.set_status(403);
 			return "";
 		}
@@ -746,7 +732,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		location_root = default_root; // default root correspond au serveur root
 		if (!directory_exists(default_root))
 		{
-			cout << __LINE__ << " / " << __FILE__ << endl;
 			response.set_status(500);
 			return "";
 		}
@@ -784,7 +769,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		if (location->get_auto_index())
 			return full_path;
 
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		response.set_status(403);
 		return "";
 	}

@@ -18,10 +18,8 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		handle_test_form(request);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 		handle_contact_form(request, location);
-	else if (content_type.find("multipart/form-data") != string::npos)
-	{
+	else if (target == "/page_upload.html" && content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, location);
-	}
 	else if (target == "/post_todo")
 		handle_todo_form(request, location);
 	else
@@ -60,7 +58,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		build_error_response(get_status(), request);
 		return ;
 	}
-
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
@@ -143,7 +140,7 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	{
 		_server.log_message("[ERROR] No upload path defined.");
 		_status = 500;
-		return "";                 
+		return "";
 	}
 	upload_directory = location->get_upload_path();
 	if (!directory_exists(upload_directory))
@@ -156,7 +153,6 @@ string	c_response::save_uploaded_file(const s_multipart &part, c_location *locat
 	string safe_filename = sanitize_filename(part.filename, location);
 	if (safe_filename.empty())
 		return "";
-
 	
 	string final_path = upload_directory + safe_filename;
 	if (file_exists(final_path))
@@ -202,7 +198,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 
 	// while((pos = body.find(delimiter, pos)) != string::npos)
 	// {
-	// 	cout << __FILE__ << " " << __LINE__ << endl;
 	// 	boundary_pos.push_back(pos);
 	// 	pos += delimiter.size();
 	// }
@@ -695,24 +690,24 @@ void c_response::handle_todo_form(const c_request &request, const c_location *lo
 
 void	c_response::load_upload_page(const c_request &request)
 {
+	c_location *location = _server.find_matching_location("/page_upload");
+	if (!location || location->get_upload_path().empty())
+	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
+		_server.log_message("[ERROR] Cannot load upload page, no path configured");
+		build_error_response(500, request);
+		return ;
+	}
+
+	string upload_directory = location->get_upload_path();
+	
 	string html_template = load_file_content("./www/page_upload.html");
 	string files_html;
 
 	size_t max_body_size = request.get_client_max_body_size();
 	string max_body_size_str = int_to_string(max_body_size);
 
-	c_location *location = _server.find_matching_location(request.get_target());
-
-	string upload_dir;
-
-	if (location && !location->get_upload_path().empty())
-		upload_dir = location->get_upload_path();
-	else if (location && !location->get_alias().empty())
-		upload_dir = location->get_alias();
-	else
-		upload_dir = _server.get_root();
-
-	DIR *dir = opendir(upload_dir.c_str());
+	DIR *dir = opendir(upload_directory.c_str());
 	if (dir)
 	{
 		struct dirent *entry;

@@ -25,7 +25,7 @@ c_client::c_client(c_server &server, int client_fd, string client_ip) : _server(
 
 c_client::~c_client() 
 {
-	cout << "DESCTRUCTOR DE CLIENT" << endl;
+	//cout << "DESCTRUCTOR DE CLIENT" << endl;
 	delete	_request;
 	delete	_response;
 }
@@ -84,6 +84,7 @@ void c_server::remove_client(int client_fd)
 	map<int, c_client*>::iterator it = _clients.find(client_fd);
 	if (it != _clients.end())
 	{
+		delete it->second;
 		_clients.erase(it);
 		log_message("[DEBUG] fd " + int_to_string(client_fd) + " erased from _clients");
 	}

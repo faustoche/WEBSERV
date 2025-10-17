@@ -179,7 +179,6 @@ void c_server::handle_poll_events()
 				c_cgi* cgi = find_cgi_by_client(client->get_fd());
 				if (cgi)
 				{
-					cout << __FILE__ << " " << __LINE__ << endl;
 					kill(cgi->get_pid(), SIGTERM);
 					cleanup_cgi(cgi);
 					// close_all_sockets_and_fd();
@@ -274,7 +273,6 @@ void	c_server::handle_client_read(int client_fd)
 
 		client->set_last_request(start_line);
 		client->set_last_modified();
-
 		response->define_response_content(*request);
 		if (response->get_is_cgi())
 		{
@@ -531,9 +529,6 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		}
 		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
-	cout << "==APRES CLEAN DU CGI==" << endl;
-	cout << cgi->get_pipe_in() << endl;
-	cout << cgi->get_pipe_out() << endl;
 
 	delete cgi;
 }

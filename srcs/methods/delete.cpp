@@ -144,14 +144,38 @@ void c_response::handle_delete_upload(const c_request &request)
 		return ;
 	}
 
-	string filename = "./www/upload/" + file_to_delete;
-
 	if (file_to_delete.find("..") != string::npos)
 	{
 		build_error_response(403, request);
 		return ;
 	}
 	
+	string path_location = target.substr(0, pos);
+	c_location *location = _server.find_matching_location(path_location);
+	string upload_directory;
+
+	if (!location && location->get_upload_path().empty())
+	{
+		_server.log_message("[ERROR] No upload path found for target: " + target);
+		build_error_response(500, request);
+		return ;
+	}
+	upload_directory = location->get_upload_path();
+
+	string filename = upload_directory + file_to_delete;
+
+	if (access(upload_directory.c_str(), W_OK) != 0)
+	{
+		_server.log_message("[ERROR] No write access to directory: " + upload_directory);
+		build_error_response(403, request);
+		return ;
+	}
+	if (access(filename.c_str(), W_OK) != 0)
+	{
+		_server.log_message("[ERROR] No write access to filename: " + filename);
+		build_error_response(403, request);
+		return ;
+	}
 	if (remove(filename.c_str()) != 0)
 	{
 		_server.log_message("[ERROR] file not found or cannot be deleted: " + filename);
