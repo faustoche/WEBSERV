@@ -9,7 +9,7 @@ c_request::c_request(c_server& server, c_client &client) : _server(server), _cli
 
 c_request::~c_request()
 {
-	cout << "DESCTRUCTOR DE REQUEST" << endl;
+	//cout << "DESCTRUCTOR DE REQUEST" << endl;
 }
 
 /************ REQUEST ************/

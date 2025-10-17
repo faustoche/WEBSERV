@@ -25,7 +25,7 @@ c_client::c_client(c_server &server, int client_fd, string client_ip) : _server(
 
 c_client::~c_client() 
 {
-	cout << "DESCTRUCTOR DE CLIENT" << endl;
+	//cout << "DESCTRUCTOR DE CLIENT" << endl;
 	delete	_request;
 	delete	_response;
 }

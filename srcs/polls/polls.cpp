@@ -531,7 +531,6 @@ void c_server::cleanup_cgi(c_cgi* cgi)
 		}
 		log_message("[DEBUG] CGI with PID " + int_to_string(cgi->get_pid()) + " cleaned !");
 	}
-	cout << "==APRES CLEAN DU CGI==" << endl;
 	cout << cgi->get_pipe_in() << endl;
 	cout << cgi->get_pipe_out() << endl;
 
