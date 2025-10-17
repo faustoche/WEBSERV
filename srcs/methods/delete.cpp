@@ -87,6 +87,9 @@ void c_response::handle_delete_todo(const c_request &request)
 		return ;
 	}
 
+	cout << "target : " << target << endl;
+	c_location *location = _server.find_matching_location(target);
+	cout << "location: " << location << endl;
 	string filename = "./www/data/todo.txt";
 	ifstream infile(filename.c_str());
 	if (!infile.is_open())

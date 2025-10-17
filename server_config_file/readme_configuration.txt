@@ -100,6 +100,7 @@ Directives valides aux deux niveaux
     redirige la route vers une autre URL
     --- 301 -> moved permanently (Le contenu a changé d’adresse de façon permanente)
     --- 302 -> found (redirection temporaire)
+    --- 303 -> see other (le serveur a envoyé cette réponse pour diriger le client vers la ressource demandée via un autre URI en utilisant une requête GET)
     --- 307 -> temporary redirect
     --- 308 -> permanent redirect
     syntaxe :

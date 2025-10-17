@@ -382,8 +382,8 @@ void        c_parser::parse_redirect(c_location & location)
 		throw invalid_argument("Invalid code for redirect directive: " + code);
 
 	int nb_code = strtol(code.c_str(), NULL, 10);
-	if (nb_code != 301 && nb_code != 302 && nb_code != 307 && nb_code != 308)
-		throw invalid_argument("Invalid code for redirect directive (it must be 301, 302, 307 or 308): " + code);
+	if (nb_code != 301 && nb_code != 302 && nb_code != 307 && nb_code != 308 && nb_code != 303)
+		throw invalid_argument("Invalid code for redirect directive (it must be 301, 302, 303, 307 or 308): " + code);
 
 	if (redirect.compare(0, 6, "https://") != 0
 		&& redirect.compare(0, 7, "http://") != 0
