@@ -11,8 +11,6 @@ void	c_response::handle_delete_request(const c_request &request, string file_pat
 	}
 	if (!is_existing_file(file_path))
 	{
-		cout << "file path: " << file_path << endl;
-		cout << "ici" << endl;
 		build_error_response(404, request);
 		return ;
 	}
@@ -180,7 +178,6 @@ void c_response::handle_delete_upload(const c_request &request)
 	}
 	if (remove(filename.c_str()) != 0)
 	{
-		cout << "ici" << endl;
 		_server.log_message("[ERROR] file not found or cannot be deleted: " + filename);
 		build_error_response(404, request);
 		return ;

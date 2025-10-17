@@ -201,7 +201,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 
 	// while((pos = body.find(delimiter, pos)) != string::npos)
 	// {
-	// 	cout << __FILE__ << " " << __LINE__ << endl;
 	// 	boundary_pos.push_back(pos);
 	// 	pos += delimiter.size();
 	// }

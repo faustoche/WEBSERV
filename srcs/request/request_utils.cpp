@@ -146,7 +146,6 @@ void    c_request::consume_read_buffer(size_t n)
 
 void	c_request::extract_body_part()
 {
-	cout << __FILE__ << " " << __LINE__ << endl;
 	size_t 	body_start = 0;
 	bool	found = false;
 
@@ -163,7 +162,6 @@ void	c_request::extract_body_part()
 	// vector<char>	body_part;
 	if (body_start < this->_read_buffer.size())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		this->_body.insert(_body.end(), this->_read_buffer.begin() + body_start, this->_read_buffer.end());
 		set_total_bytes(_body.size());
 	}

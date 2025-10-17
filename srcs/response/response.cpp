@@ -11,7 +11,7 @@ c_response::c_response(c_server& server, c_client &client) : _server(server), _c
 
 c_response::~c_response()
 {
-	cout << "DESCTRUCTOR DE RESPONSE" << endl;
+	//cout << "DESCTRUCTOR DE RESPONSE" << endl;
 }
 
 void	c_response::init_response()
@@ -694,7 +694,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
 				string index_path = join_path(base, index_files[i]);
-				cout << index_path << endl;
 				if (is_existing_file(index_path))
 					return index_path;
 			}
@@ -765,7 +764,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		if (location->get_auto_index())
 			return full_path;
 
-		cout << __LINE__ << " / " << __FILE__ << endl;
 		response.set_status(403);
 		return "";
 	}
