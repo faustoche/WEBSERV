@@ -5,22 +5,7 @@
 
 /************ CONSTRUCTORS & DESTRUCTORS ************/
 
-c_client::c_client() : _fd(-1), _client_ip(""), _state(READING)
-{
-	memset(_buffer, 0, sizeof(_buffer));
-	gettimeofday(&_timestamp, 0);
-	_response_body_size = 0;
-	_response_complete = false;
-	_read_buffer.clear();
-	_write_buffer.clear();
-	_bytes_written = 0;
-    _creation_time = time(NULL);
-    _last_modified = time(NULL);
-    _last_request.clear();
-    _status_code = 200;
-}
-
-c_client::c_client(int client_fd, string client_ip) : _fd(client_fd), _client_ip(client_ip), _state(READING)
+c_client::c_client(c_server &server, int client_fd, string client_ip) : _server(server), _fd(client_fd), _client_ip(client_ip), _state(READING)
 {
 	memset(_buffer, 0, sizeof(_buffer));
 	gettimeofday(&_timestamp, 0);
@@ -33,9 +18,17 @@ c_client::c_client(int client_fd, string client_ip) : _fd(client_fd), _client_ip
 	_last_modified = time(NULL);
 	_last_request.clear();
 	_status_code = 0;
+
+	_request = new c_request(_server, *this);
+    _response = new c_response(_server, *this);
 }
 
-c_client::~c_client() {}
+c_client::~c_client() 
+{
+	cout << "DESCTRUCTOR DE CLIENT" << endl;
+	delete	_request;
+	delete	_response;
+}
 
 /************ FUNCTIONS ************/
 
@@ -56,9 +49,18 @@ void    c_server::add_fd(int fd, short events)
 
 void c_server::add_client(int client_fd, string client_ip)
 {
-	_clients[client_fd] = c_client(client_fd, client_ip);
+	// Vérifier que le client n'existe pas déjà
+    if (_clients.find(client_fd) != _clients.end())
+    {
+        log_message("[WARN] Client " + int_to_string(client_fd) + " already exists!");
+        return;
+    }
+
+	_clients[client_fd] = new c_client(*this, client_fd, client_ip);
+
 	set_non_blocking(client_fd);
 	add_fd(client_fd, POLLIN);
+	log_message("[DEBUG] ✅ Added client " + int_to_string(client_fd) + " (total clients: " + int_to_string(_clients.size()) + ")");
 	log_message("[DEBUG] Client " + int_to_string(client_fd) + " can send a request : POLLIN");
 }
 
@@ -79,21 +81,22 @@ void c_server::remove_client(int client_fd)
 		}
 	}
 	
-	map<int, c_client>::iterator it = _clients.find(client_fd);
+	map<int, c_client*>::iterator it = _clients.find(client_fd);
 	if (it != _clients.end())
 	{
 		_clients.erase(it);
 		log_message("[DEBUG] fd " + int_to_string(client_fd) + " erased from _clients");
 	}
-	 close(client_fd);
+	close(client_fd);
+
 	
 }
 
 c_client *c_server::find_client(int client_fd)
 {
-	map<int, c_client>::iterator it = _clients.find(client_fd);
+	map<int, c_client*>::iterator it = _clients.find(client_fd);
 	if (it != _clients.end())
-		return &(it->second);
+		return (it->second);
 	return (NULL);
 }
 
@@ -113,10 +116,10 @@ c_cgi   *c_server::find_cgi_by_client(int client_fd)
 
 int c_server::find_client_fd_by_cgi(c_cgi* cgi)
 {
-	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
+	for (map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
-		if (it->second.get_fd() == cgi->get_client_fd())
-			return (it->second.get_fd());
+		if (it->second->get_fd() == cgi->get_client_fd())
+			return (it->second->get_fd());
 	}
 	return (-1);
 }

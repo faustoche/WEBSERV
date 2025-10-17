@@ -16,7 +16,7 @@ class c_cgi
 		~c_cgi();
 
 		int				init_cgi(const c_request &request, const c_location &loc, string file_path);
-		int				launch_cgi(const string &body);
+		int				launch_cgi(vector<char>& body);
 		int				resolve_cgi_paths(const c_location &loc, const string& filename);
 		void			set_environment(const c_request &request);
 		void			set_script_filename(const string& filename) { this->_script_filename = filename; };
@@ -40,8 +40,9 @@ class c_cgi
 		void			set_headers_parsed(bool state) { _headers_parsed = state; };
 		void			consume_read_buffer(size_t n);
 		void			set_content_length(size_t bytes) { _content_length = bytes; };
+		void            set_body_size(size_t bytes) { _body_size = bytes; };
 		const size_t&	get_body_size() { return _body_size; };
-		const string&	get_body_to_send() const { return _body_to_send; };
+		const vector<char>&	get_body_to_send() const { return _body_to_send; };
 		const size_t&	get_body_sent() const { return _body_sent; };
 		void			mark_stdin_closed() { _pipe_in = -1; };
 		void			mark_stdout_closed() { _pipe_out = -1; };
@@ -55,6 +56,7 @@ class c_cgi
 		void			clear_context();
 		void			close_cgi();
 		size_t			identify_script_type(const string& path);
+		bool			is_argv_in_allowed_directory(const string& argv, const string& allowed_data_dir);
 
 	private:
 		c_server&			_server;
@@ -62,7 +64,7 @@ class c_cgi
 		int					_pipe_in;
 		int					_pipe_out;
 		pid_t				_pid;
-		string				_body_to_send;
+		vector<char>		_body_to_send;
 		size_t				_body_sent;
 		string				_write_buffer;
 		string				_read_buffer;

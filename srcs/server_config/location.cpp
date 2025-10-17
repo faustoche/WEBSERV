@@ -16,7 +16,6 @@ c_location::c_location()
 	_location_methods.push_back("GET");
 	_location_methods.push_back("POST");
 	_location_methods.push_back("DELETE");
-	_current_server = NULL;
 }
 
 /*-----------------  DESTRUCTOR -------------------*/
@@ -42,7 +41,6 @@ c_location const&    c_location::operator=(c_location const & rhs)
 		_location_err_pages = rhs._location_err_pages;
 		_allowed_extensions = rhs._allowed_extensions;
 		_allowed_data_dir = rhs._allowed_data_dir;
-		_current_server = rhs._current_server;
 	}
 	return *this;
 }
