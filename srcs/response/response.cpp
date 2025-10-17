@@ -4,13 +4,45 @@
 
 c_response::c_response(c_server& server, c_client &client) : _server(server), _client(client)
 {
-	this->_is_cgi = false;
-	this->_error = false;
 	this->_client_fd = _client.get_fd();
-	this->_status = 200;
+
+	init_response();
 }
 
-c_response::~c_response(){}
+c_response::~c_response()
+{
+	cout << "DESCTRUCTOR DE RESPONSE" << endl;
+}
+
+void	c_response::init_response()
+{
+	_response.clear();
+	_file_content.clear();
+
+	_headers_response.clear();
+	_body.clear();
+	_status = 200;
+	_is_cgi = false;
+	_error = false;
+}
+
+// c_response const& c_response::operator=(const c_response& rhs)
+// {
+// 	if (this != &rhs)
+// 	{
+// 		_response = rhs._response;
+// 		_file_content = rhs._file_content;
+// 		_server = rhs._server;
+// 		_headers_response = rhs._headers_response;
+// 		_body = rhs._body;
+// 		_client_fd = rhs._client_fd;
+// 		_status = rhs._status;
+// 		_is_cgi = rhs._is_cgi;
+// 		_error = rhs._error;
+// 		_client = rhs._client;
+// 	}
+// 	return (*this);
+// }
 
 /************ GETTERS ************/
 
@@ -176,11 +208,14 @@ void	c_response::define_response_content(const c_request &request)
 	char resolved_path[PATH_MAX];
 	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
 	{
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		if (!is_existing_file(file_path))
 		{
+			cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 			build_error_response(404, request);
 			return ;
 		}
+		cout << PINK <<  __LINE__ << " / " << __FILE__ << RESET << endl;
 		build_error_response(403, request);
 		return ;
 	}
@@ -272,10 +307,10 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 	
 	if (cgi->init_cgi(request, *loc, request.get_target()))
 	{
+		build_error_response(cgi->get_status_code(), request);
 		_server.cleanup_cgi(cgi);
 		this->_is_cgi = false;
 		set_error();
-		build_error_response(cgi->get_status_code(), request);
 		return (1);
 	}
 	build_cgi_response(*cgi, request);
@@ -334,7 +369,8 @@ string c_response::get_content_type(const string &file_path)
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
 	this->_status = request.get_status_code();
-	const string request_body = request.get_body();
+	// const string request_body = request.get_body();
+	vector<char> request_body = request.get_body();
 
 	if (cgi.get_interpreter().empty())
 		return ;

@@ -15,7 +15,6 @@ c_server::c_server()
 }
 c_server::~c_server()
 {
-	
 }
 
 c_server const &	c_server::operator=(c_server const & rhs)
@@ -189,6 +188,6 @@ void	c_server::log_access(c_client *client)
 
 	log << client->get_ip() << " - ["
 		<< buf << "]"
-		<< " \"" << client->get_last_request() << " \" "
+		<< " \"" << client->get_last_request() << "\" "
 		<< client->get_status_code() << " " << client->get_bytes_written() << endl;
 }

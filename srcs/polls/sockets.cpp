@@ -70,35 +70,46 @@ int c_server::get_port_from_socket(int socket_fd)
 
 void	c_server::close_all_sockets_and_fd(void)
 {
-	for (map<int, c_client>::iterator it = _clients.begin(); it != _clients.end(); it++)
+	if (_clients.size() > 0)
 	{
-		int client_fd = it->first;
-		close(client_fd);
-	}
-	_clients.clear();
-	cout << GREEN << endl << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
-
-	for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); )
-	{
-	    std::map<int, c_cgi*>::iterator to_delete = it++;
-	    if (to_delete->second)
+		cout << GREEN << endl << "🐕 Clients connexions closed (" << _clients.size() << ")" << RESET << endl;
+		cout << GREEN << "🧦 Sockets closed!" << RESET << endl;
+		for (map<int, c_client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
 		{
-			pid_t pid = to_delete->second->get_pid();
-            kill(pid, SIGTERM);
-            waitpid(pid, NULL, 0);
-	        delete to_delete->second;
+			int client_fd = it->first;
+			close(client_fd);
+			delete(it->second);
 		}
-	    _active_cgi.erase(to_delete);
+		_clients.clear();
 	}
-	cout << GREEN << "🧬 Active CGI has been cleaned !" << RESET << endl;
 
-	for (map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
+	if (_active_cgi.size() > 0)
 	{
-		int socket_fd = it->first;
-		close(socket_fd);
+		for (std::map<int, c_cgi*>::iterator it = _active_cgi.begin(); it != _active_cgi.end(); )
+		{
+		    std::map<int, c_cgi*>::iterator to_delete = it++;
+		    if (to_delete->second)
+			{
+				pid_t pid = to_delete->second->get_pid();
+    	        kill(pid, SIGTERM);
+    	        waitpid(pid, NULL, 0);
+		        delete to_delete->second;
+			}
+		    _active_cgi.erase(to_delete);
+		}
+		cout << GREEN << "🧬 Active CGI has been cleaned !" << RESET << endl;
 	}
-	_multiple_ports.clear();
-	cout << GREEN << "🧦 Sockets closed!" << RESET << endl;
+
+	if (_multiple_ports.size() > 0)
+	{
+		for (map<int, int>::iterator it = _multiple_ports.begin(); it != _multiple_ports.end(); it++)
+		{
+			int socket_fd = it->first;
+			close(socket_fd);
+		}
+		_multiple_ports.clear();
+	}
+	
 	_poll_fds.clear();
 	cout << GREEN << "✅ SERVER CLOSED!" << RESET << endl;
 }

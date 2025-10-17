@@ -606,6 +606,7 @@ vector<c_server>    c_parser::parse_config()
 
 vector<c_server>    c_parser::parse()
 {
+	cout << "passage dans parse" << endl;
 	try
 	{
 		return parse_config();

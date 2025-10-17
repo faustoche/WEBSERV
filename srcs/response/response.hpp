@@ -49,12 +49,14 @@ private:
 
 public:
 
+	c_response(c_server& server, c_client &client);
+	~c_response();
+
+	// c_response const& operator=(const c_response& rhs);
+
 	void define_response_content(const c_request &request);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }
-
-	c_response(c_server& server, c_client &client);
-	~c_response();
 
 	void			set_header_value(const string &key, const string &value) { _headers_response[key] = value; };
 	const string 	&get_header_value(const string& key) const;
@@ -70,6 +72,7 @@ public:
 	void			clear_response();
 	void			set_error() { this->_error = true; };
 	void			build_error_response(int error_code, const c_request &request);
+	void			init_response();
 
 private:
 	void	build_success_response(const string &file_path, const c_request &request);
@@ -88,7 +91,7 @@ private:
 
 	/***** POST method *****/
 	void						handle_post_request(const c_request &request, c_location *location);
-	map<string, string> const	parse_form_data(const string &body);
+	map<string, string> const	parse_form_data(const vector<char>& body);
 	string const				url_decode(const string &body);
 	void						create_form_response(const map<string, string> &form, const c_request &request);
 	void						handle_test_form(const c_request &request);
@@ -99,7 +102,7 @@ private:
 	void 						load_todo_page(const c_request &request);
 	void						handle_todo_form(const c_request &request, const c_location *location);
 	void						handle_upload_form_file(const c_request &request, c_location *location);
-	vector<s_multipart> const	parse_multipart_data(const string &body, const string &boundary); // return une reference ?
+	vector<s_multipart> const	parse_multipart_data(vector<char>& body, const string &boundary); // return une reference ?
 	s_multipart const			parse_single_part(const string &raw_part);
 	void						parse_header_section(const string &header_section, s_multipart &part);
 	string						extract_line(const string &header_section, const size_t &pos);

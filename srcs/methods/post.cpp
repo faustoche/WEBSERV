@@ -4,7 +4,7 @@
 
 void	c_response::handle_post_request(const c_request &request, c_location *location)
 {
-	string	body = request.get_body();
+	// vector<char>	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
@@ -19,7 +19,9 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 		handle_contact_form(request, location);
 	else if (content_type.find("multipart/form-data") != string::npos)
+	{
 		handle_upload_form_file(request, location);
+	}
 	else if (target == "/post_todo")
 		handle_todo_form(request, location);
 	else
@@ -30,13 +32,14 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 void	c_response::handle_upload_form_file(const c_request &request, c_location *location)
 {
-	size_t max_size = 1 * 1024 * 1024;
-	if (request.get_content_length() > max_size)
-	{
-		build_error_response(413, request);
-		return;
-	}
-	string body = request.get_body();
+	// pour tester la size_max
+	size_t max_size = 1 * 1024 * 1024; // 1MB
+    if (request.get_content_length() > max_size)
+    {
+        build_error_response(413, request);
+        return;
+    }
+	vector<char> body = request.get_body();
 	if (body.empty())
 	{
 		_server.log_message("[ERROR] Empty body for upload request");
@@ -51,7 +54,7 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		return ;
 	}
 
-	vector<s_multipart> parts = parse_multipart_data(request.get_body(), boundary);
+	vector<s_multipart> parts = parse_multipart_data(body, boundary);
 	if (get_status() >= 400)
 	{
 		build_error_response(get_status(), request);
@@ -90,6 +93,7 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		_response += "Server: webserv/1.0\r\n\r\n";
 
 		_server.log_message("[INFO] ✅ Upload done. Redirection to /page_upload.html");
+		_client.set_last_modified();
 	}
 	else
 		build_error_response(400, request);
@@ -189,25 +193,41 @@ string	c_response::extract_boundary(const string &content_type)
 
 /* parse multipart body in single parts */
 
-vector<s_multipart> const	c_response::parse_multipart_data(const string &body, const string &boundary)
+vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, const string &boundary)
 {
 	string			delimiter = "--" + boundary;
-	string			closing_delimier = delimiter + "--";
+	string			closing_delimiter = delimiter + "--";
 	size_t			pos = 0;
 	vector<size_t>	boundary_pos;
 
-	while((pos = body.find(delimiter, pos)) != string::npos)
+	// while((pos = body.find(delimiter, pos)) != string::npos)
+	// {
+	// 	cout << __FILE__ << " " << __LINE__ << endl;
+	// 	boundary_pos.push_back(pos);
+	// 	pos += delimiter.size();
+	// }
+	while (pos < body.size())
 	{
-		boundary_pos.push_back(pos);
-		pos += delimiter.size();
+		vector<char>::iterator found = search(body.begin() + pos, body.end(), 
+											delimiter.begin(), delimiter.end());
+		if (found == body.end())
+			break ;
+
+		size_t found_pos = static_cast<size_t>(found - body.begin());
+		boundary_pos.push_back(found_pos);
+		pos = found_pos + delimiter.size();
 	}
+
+	if (boundary_pos.size() < 2)
+		return (vector<s_multipart>());
 
 	vector<s_multipart>	parts;
 	for (size_t i = 0; i < boundary_pos.size() - 1; i++)
 	{
 		if (get_status() >= 400)
+		{
 			break;
-
+		}
 		size_t	begin = boundary_pos[i] + delimiter.length();
 		if (begin < body.size() && body[begin] == '\r')
 			begin++;
@@ -223,9 +243,9 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 		if (begin >= end)
 			continue;
 
-		string	raw_part = body.substr(begin, end - begin);
+		string	raw_part(body.begin() + begin, body.begin() + end);
 
-		if (raw_part.find(closing_delimier) != string::npos)
+		if (raw_part.find(closing_delimiter) != string::npos)
 			continue;
 		if (raw_part.find_first_not_of(" \r\n") == string::npos)
 			continue;
@@ -233,8 +253,9 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 		s_multipart single_part = parse_single_part(raw_part);
 
 		if (get_status() >= 400)
+		{
 			break;
-		
+		}
 		parts.push_back(single_part);
 	}
 	return parts;
@@ -244,11 +265,13 @@ vector<s_multipart> const	c_response::parse_multipart_data(const string &body, c
 
 s_multipart const	c_response::parse_single_part(const string &raw_part)
 {
+
 	s_multipart	part;
 
 	if (get_status() >= 400)
+	{
 		return part;
-
+	}
 	size_t		separator_pos = raw_part.find("\r\n\r\n");
 	if (separator_pos == string::npos)
 	{
@@ -273,8 +296,9 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 	parse_header_section(header_section, part);
 
 	if (get_status() >= 400)
+	{
 		return part;
-
+	}
 	part.content = content_section;
 	part.is_file = !part.filename.empty();
 
@@ -286,8 +310,14 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 void	c_response::parse_header_section(const string &header_section, s_multipart &part)
 {
 	if (get_status() >= 400)
+	{
 		return;
+	}
+	// Headers possibles :
+	// - Content-Disposition: form-data; name="xxx"; filename="yyy"
+	// - Content-Type: image/jpeg
 
+	// Parsing Content-Disposition
 	size_t	pos_disposition = header_section.find("Content-Disposition");
 	if (pos_disposition != string::npos)
 	{
@@ -317,7 +347,9 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 		string line = extract_line(header_section, pos_type);
 		part.content_type = extract_after_points(line);
 		if (part.content_type.empty())
+		{
 			set_status(400);
+		}
 	}
 }
 
@@ -368,8 +400,8 @@ string	c_response::extract_after_points(const string &line)
 
 void	c_response::handle_contact_form(const c_request &request, c_location *location)
 {
-	string body = request.get_body();
-	map<string, string> form_data = parse_form_data(request.get_body());
+	vector<char> body = request.get_body();
+	map<string, string> form_data = parse_form_data(body);
 
 	if (form_data["nom"].empty() || form_data["email"].empty())
 	{
@@ -562,35 +594,47 @@ string const	c_response::url_decode(const string &body)
 	return res;
 }
 
-map<string, string> const	c_response::parse_form_data(const string &body)
+map<string, string> const	c_response::parse_form_data(const vector<char>& body)
 {
 	map<string, string>	form_data;
 
-	size_t	pos_and = 0;
-	string	key;
-	string	value;
+	if (body.empty())
+		return (form_data);
+
+	// size_t	pos_and = 0;
 	size_t start = 0;
 
 	while (start < body.size())
 	{
-		size_t pos_equal = 0;
+		size_t	pos_and = start;
+		while (pos_and < body.size() && body[pos_and] != '&')
+			pos_and++;
 
-		pos_and = body.find("&", start);
-		if (pos_and == string::npos)
-			pos_and = body.size();
+		size_t pos_equal = start;
+		while (pos_equal < pos_and && body[pos_equal] != '=')
+			pos_equal++;
+
+		string	key;
+		string	value;
 		
-		string pairs = body.substr(start, pos_and - start);
-		pos_equal = pairs.find("=", 0);
-		key = pairs.substr(0, pos_equal);
-		value = pairs.substr(pos_equal + 1);
+		if (pos_equal > start)
+			key.assign(&body[start], &body[pos_equal]);
+		if (pos_equal < pos_and)
+			value.assign(&body[pos_equal + 1], &body[pos_and]);
+		// string pairs = body.substr(start, pos_and - start);
+		// pos_equal = pairs.find("=", 0);
+		// key = pairs.substr(0, pos_equal);
+		// value = pairs.substr(pos_equal + 1);
 
 		key = url_decode(key);
 		value = url_decode(value);
 
 		form_data[key] = value;
 
-		start += pairs.size();
-		start++;
+		start = pos_and + 1;
+
+		// start += pairs.size();
+		// start++;
 	}
 	return form_data;
 }

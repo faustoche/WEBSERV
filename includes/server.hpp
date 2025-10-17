@@ -29,7 +29,7 @@
 /************ DEFINE ************/
 
 #define	BUFFER_SIZE 4096
-#define TIMEOUT 10
+#define TIMEOUT 30
 using	namespace std;
 
 /************ CLASS ************/
@@ -39,14 +39,14 @@ class c_client;
 
 class c_server
 {
-private:
-	int						_socket_fd;
-	struct sockaddr_in		_socket_address;
-	map<int, c_client>		_clients;
-	vector<struct pollfd>	_poll_fds;
-	map<int, c_cgi*>		_active_cgi;
-	map<int, int>			_multiple_ports;
-	bool					_fatal_error;
+	private:
+		int						_socket_fd;
+		struct sockaddr_in		_socket_address;
+		map<int, c_client*>		_clients;
+		vector<struct pollfd>	_poll_fds;
+		map<int, c_cgi*>		_active_cgi;
+		map<int, int>			_multiple_ports; // on stocke socket_fd + port
+		bool					_fatal_error;
 
 	string							_ip;
 	vector<int>						_ports;

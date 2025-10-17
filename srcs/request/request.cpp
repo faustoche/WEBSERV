@@ -7,117 +7,59 @@ c_request::c_request(c_server& server, c_client &client) : _server(server), _cli
 	this->init_request();
 }
 
-c_request::~c_request(){}
+c_request::~c_request()
+{
+	cout << "DESCTRUCTOR DE REQUEST" << endl;
+}
 
 /************ REQUEST ************/
 
 void	c_request::read_request()
 {
-	char buffer[BUFFER_SIZE];
-	int receivedBytes;
-	
-	this->init_request();
-	this->_socket_fd = _client.get_fd();
-	
-	string request = _client.get_read_buffer();
-	_client.clear_read_buffer();
-	
-	while (request.find("\r\n\r\n") == string::npos)
-	{
-		memset(buffer, 0, BUFFER_SIZE);
-		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
-		
-		if (receivedBytes < 0)
-		{
-			_server.log_message("[DEBUG] No data available yet for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
-			_client.append_to_read_buffer(request);
-			this->_request_fully_parsed = false;
-			return;
-		}
-		else if (receivedBytes == 0)
-		{
-			_server.log_message("[INFO] Client " + int_to_string(_socket_fd) + " closed connection");
-			_client.set_state(DISCONNECTED);
-			this->_request_fully_parsed = false;
-			return;
-		}
-		request.append(buffer, receivedBytes);
-	}
-	
-	this->parse_request(request);
-	if (this->_error)
-	{
-		this->_request_fully_parsed = true;
-		return;
-	}
-	
-	c_location *matching_location = _server.find_matching_location(this->get_target());
-	if (matching_location != NULL && matching_location->get_body_size() > 0)
-	{
-		this->set_client_max_body_size(matching_location->get_body_size());
-	}
-	if (this->_client_max_body_size == 0)
-		_client_max_body_size = 100 * 1024 * 1024;
 
-	if (this->get_has_body() == false)
-	{
-		this->_request_fully_parsed = true;
-		return;
-	}
-	this->determine_body_reading_strategy(_socket_fd, buffer, request);
+	char	buffer[BUFFER_SIZE];
+	ssize_t	receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
 
-	if (this->_error)
+	if (receivedBytes < 0)
+		return ;
+
+	this->append_read_buffer(buffer, receivedBytes);
+
+	if (!this->get_headers_parsed())
 	{
-		this->_request_fully_parsed = true;
-		return;
+		if (has_end_of_headers(_read_buffer))
+		{
+			size_t i = find_end_of_headers_pos(_read_buffer);
+			string	header_str(_read_buffer.begin(), _read_buffer.end());
+			this->parse_request(header_str);
+			if (this->_error)
+			{
+				this->set_request_fully_parsed(true);
+				return ;
+			}
+			if (this->_has_body && this->_read_buffer.size() > i)
+			{
+				this->_read_buffer.erase(this->_read_buffer.begin(), this->_read_buffer.begin() + i);
+				this->determine_body_reading_strategy(_socket_fd);
+			}
+			else
+			{
+				this->set_request_fully_parsed(true);
+				this->_read_buffer.clear();
+			}
+			return ;
+		}
+		else
+			return ;
+	}
+	else
+	{
+		this->determine_body_reading_strategy(_socket_fd);
+		this->consume_read_buffer(this->_read_buffer.size());
 	}
 }
 
-// void	c_request::read_request()
-// {
-// 	char	buffer[BUFFER_SIZE];
-// 	int		receivedBytes;
-// 	string	request = "";
-	
-// 	this->init_request();
-// 	this->_socket_fd = _client.get_fd();
 
-// 	while (request.find("\r\n\r\n") == string::npos)
-// 	{
-// 		receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
-// 		if (receivedBytes <= 0)
-// 		{
-// 			if (receivedBytes == 0)
-// 			{
-// 				_client.set_state(IDLE);
-// 				return ;
-// 			}
-// 			else if (receivedBytes < 0) 
-// 			{
-// 				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(_socket_fd) + ". Will retry on next POLLIN.");
-// 				this->_request_fully_parsed = false;
-// 				return;
-// 			}
-// 		}
-// 		request.append(buffer, receivedBytes);
-// 	}
-// 	this->parse_request(request);
-// 	if (this->_error)
-// 	{
-// 		this->_request_fully_parsed = true;
-// 		return ;
-// 	}
-// 	c_location *matching_location = _server.find_matching_location(this->get_target());
-// 	if (matching_location != NULL && matching_location->get_body_size() > 0)
-// 	{
-// 		this->set_client_max_body_size(matching_location->get_body_size());
-// 	}
-// 	if (this->_client_max_body_size == 0)
-// 		_client_max_body_size = 100 * 1024 * 1024;
-
-// 	this->determine_body_reading_strategy(_socket_fd, buffer, request);
-// 	this->_request_fully_parsed = true;
-// }
 
 int c_request::parse_request(const string& raw_request)
 {
@@ -158,6 +100,7 @@ int c_request::parse_request(const string& raw_request)
 		this->parse_headers(line);
 	}
 	this->check_required_headers();
+	this->set_headers_parsed(true);
 	return (0);
 }
 
@@ -216,7 +159,6 @@ int c_request::parse_start_line(string& start_line)
 	this->_version = start_line.substr(start);
 	if (this->_version.empty())
 	{
-		
 		this->_status_code = 400;
 		return (0);
 	}
@@ -247,7 +189,9 @@ int c_request::parse_headers(string& headers)
 
 	pos++;
 	if (headers[pos] != 32)
+	{
 		this->_status_code = 400;
+	}
 
 	value = ft_trim(headers.substr(pos + 1));
 	if (!is_valid_header_value(key, value))
@@ -271,7 +215,9 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 		this->_request_fully_parsed = true;
 		return (1);
 	}
-	this->_body.append(buffer, len);
+
+	this->_body.insert(this->_body.end(), buffer, buffer + len);
+	this->set_total_bytes(this->_body.size());
 	return (0);
 }
 
@@ -294,7 +240,7 @@ void c_request::fill_body_with_chunks(string &accumulator)
 			this->_expected_chunk_size = strtoul(tmp.c_str(), NULL, 16);
 			if (this->_expected_chunk_size == 0)
 			{
-				this->_request_fully_parsed = true;
+				this->set_request_fully_parsed(true);
 				accumulator.clear();
 				return;
 			}
@@ -320,21 +266,14 @@ void c_request::fill_body_with_chunks(string &accumulator)
 	}
 }
 
-void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string request)
+void	c_request::read_body_with_chunks(int socket_fd)
 {
-	size_t 	body_start = request.find("\r\n\r\n") + 4;
-	string 	body_part = request.substr(body_start);
-	int		receivedBytes;
+	if (!_read_buffer.empty())
+	{
 
-	c_client *client = _server.find_client(socket_fd);
-	if (!client)
-	{
-		this->_error = true;
-		return ;
-	}
-	if (!body_part.empty())
-	{
-		this->fill_body_with_chunks(body_part);
+		string tmp_chunk(_read_buffer.begin(), _read_buffer.end());
+		this->fill_body_with_chunks(tmp_chunk);
+
 		if (this->_request_fully_parsed)
 		{
 			_server.log_message("[DEBUG] Complete chunked body received in first packet");
@@ -343,38 +282,44 @@ void	c_request::read_body_with_chunks(int socket_fd, char* buffer, string reques
 		if (this->_error)
 			return ;
 	}
-	while (!this->_request_fully_parsed && !this->_error)
+
+	int 	receivedBytes;
+	char	buffer[BUFFER_SIZE];
+	if (!this->_request_fully_parsed && !this->_error)
 	{
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
-		if (string(buffer) == "\0\r\n\r\n")
-			break;
-		if (receivedBytes <= 0) 
-		{
-			if (receivedBytes == 0) 
-			{
-				client->set_state(IDLE);
-				return ;
-			} 
-			else if (receivedBytes < 0) 
-			{
-				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(socket_fd) + ". Will retry on next POLLIN.");
-				this->_request_fully_parsed = false;
+		this->append_read_buffer(buffer, receivedBytes);
+
+		if (receivedBytes < 0) 
 				return;
-			}
-		}
-		this->_chunk_accumulator.append(buffer, receivedBytes);
-		this->fill_body_with_chunks(this->_chunk_accumulator);
+
+		_chunk_accumulator.insert(_chunk_accumulator.end(), buffer, buffer + receivedBytes);
+
+		string	chunk_data(_chunk_accumulator.begin(), _chunk_accumulator.end());
+		this->fill_body_with_chunks(chunk_data);
 	}
 }
 
-void	c_request::read_body_with_length(int socket_fd, char* buffer, string request)
+size_t	c_request::find_end_of_headers_pos(vector<char>& request)
 {
-	size_t 	body_start = request.find("\r\n\r\n") + 4;
-	string 	body_part = request.substr(body_start);
+	for (size_t i = 0; i + 3 < request.size(); i++)
+	{
+		if (request[i] == '\r' && request[i + 1] == '\n' &&
+			request[i + 2] == '\r' && request[i + 3] == '\n')
+		{
+			return (i + 4);
+		}
+	}
 
+	_server.log_message("[ERROR] could not find end of headers (\\r\\n\\r\\n))");
+	this->_error = true;
+	return (-1);
+}
+
+void	c_request::read_body_with_length(int socket_fd)
+{
 	size_t 	expected_length = this->_content_length;
 	int		receivedBytes;
-	size_t	total_bytes = 0;
 
 	if (expected_length > this->_client_max_body_size  && is_limited())
 	{
@@ -384,62 +329,50 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 		this->_status_code = 413;
 		this->_error = true;
 		this->_request_fully_parsed = true;
-
-		_server.log_message("[DEBUG] Draining socket to avoid connection issues...");
-		total_bytes = body_part.size();
-
-		while (total_bytes < expected_length)
-		{
-			receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
-			if (receivedBytes <= 0)
-				break;
-			total_bytes += receivedBytes;
-		}
-		_server.log_message("[DEBUG] Socket drained. Total bytes discarded: " + int_to_string(total_bytes));
-
+		this->consume_read_buffer(_read_buffer.size());
+		_server.log_message("[DEBUG] Socket drained. Total bytes discarded: " + int_to_string(_total_bytes));
 		return ;
 	}
 
-	if (!body_part.empty())
+	if (this->_read_buffer.size() > 0)
 	{
-		if (this->fill_body_with_bytes(body_part.data(), body_part.size()))
+		const char* ptr = _read_buffer.data();
+		size_t len = _read_buffer.size();
+		if (fill_body_with_bytes(ptr, len))
 			return ;
-		total_bytes += body_part.size();
+		this->consume_read_buffer(this->_read_buffer.size());
 
-		if (total_bytes >= expected_length)
+		if (_total_bytes == _content_length)
 		{
 			this->_request_fully_parsed = true;
-			return;
+			return ;
 		}
 	}
 
-	while (total_bytes < expected_length)
+	if (_total_bytes == _content_length)
 	{
-		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
-		if (receivedBytes <= 0)
-		{
-			if (receivedBytes == 0)
-			{
-				if (total_bytes == expected_length)
-					return ;
-				_server.log_message("[ERROR] Incomplete body. Expected: " + int_to_string(expected_length) + " Received: " + int_to_string(total_bytes));
-				this->_error = true;
-				return;
-			}
+		this->_request_fully_parsed = true;
+		return ;
+	}
 
-			else if (receivedBytes < 0) 
-			{
-				_server.log_message("[WARNING] recv() returned <0 for client " + int_to_string(socket_fd) + ". Will retry on next POLLIN.");
-				this->_request_fully_parsed = false;
-				return;
-			}
-		}
-	
-		total_bytes += receivedBytes;
-		
-		if (total_bytes > expected_length && is_limited())
+	if (_total_bytes < _content_length)
+	{
+		char	buffer[BUFFER_SIZE];
+		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
+		if (receivedBytes < 0)
+			return;
+		if (receivedBytes == 0)
 		{
-			_server.log_message("[ERROR] actual body size (" + int_to_string(total_bytes) + ") excesses announced size (" + int_to_string(expected_length) + ")");
+			this->_request_fully_parsed = true;
+			return ;
+		}
+		this->append_read_buffer(buffer, receivedBytes);
+		
+		if (_total_bytes > _content_length && is_limited())
+		{
+			_server.log_message("[ERROR] actual body size (" 
+								+ int_to_string(_total_bytes) 
+								+ ") excesses announced size (" + int_to_string(_content_length) + ")");
 			this->_status_code = 413;
 			this->_error = true;
 			this->_request_fully_parsed = true;
@@ -448,30 +381,37 @@ void	c_request::read_body_with_length(int socket_fd, char* buffer, string reques
 
 		if (this->fill_body_with_bytes(buffer, receivedBytes))
 			return ;
+		this->consume_read_buffer(receivedBytes);
 
-		if (total_bytes == expected_length)
-			break;
+		if (_total_bytes == _content_length)
+			this->_request_fully_parsed = true;
 	}
-	if (total_bytes == expected_length)
-		this->_request_fully_parsed = true;
 }
 
 
-void	c_request::determine_body_reading_strategy(int socket_fd, char* buffer, string request)
+void	c_request::determine_body_reading_strategy(int socket_fd)
 {
+	c_location *matching_location = _server.find_matching_location(this->get_target());
+	if (matching_location != NULL && matching_location->get_body_size() > 0)
+		this->set_client_max_body_size(matching_location->get_body_size());
+
+	if (this->_client_max_body_size == 0)
+		_client_max_body_size = 100 * 1024 * 1024; // 100 MB
+
 	if (this->_has_body)
 	{
 		if (this->get_content_length())
-		{
-			this->read_body_with_length(socket_fd, buffer, request);
-		}
+			this->read_body_with_length(socket_fd);
 		else
-			this->read_body_with_chunks(socket_fd, buffer, request);
+			this->read_body_with_chunks(socket_fd);
+
 		if (this->_error)
 			return ;
-		if (this->_error)
-			return ;
+
+		return ;
 	}
+	else
+		this->_request_fully_parsed = true;
 }
 
 /************ SETTERS & GETTERS ************/
@@ -492,4 +432,6 @@ void c_request::set_status_code(int code)
 {
 	this->_status_code = code;
 }
+
+
 

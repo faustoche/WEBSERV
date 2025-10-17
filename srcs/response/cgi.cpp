@@ -13,6 +13,7 @@ _server(server), _client_fd(client_fd)
 	this->_finished = false;
 	this->_content_length = 0;
 	this->_body_size = 0;
+	this->_pid = 0;
 	this->_headers_parsed = false;
 	this->_pipe_in = 0;
 	this->_pipe_out = 0;
@@ -51,7 +52,7 @@ c_cgi::c_cgi(const c_cgi& other): _server(other._server)
 	this->_relative_argv = other._relative_argv;
 	this->_relative_script_name = other._relative_script_name;
 	this->_request_fully_sent_to_cgi = other._request_fully_sent_to_cgi;
-	this->_body_to_send = other._body_sent;
+	this->_body_to_send = other._body_to_send;
 	this->_body_sent = other._body_sent;
 	this->_body_fully_sent = other._body_fully_sent;
 	this->_start_time = other._start_time;
@@ -84,7 +85,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 		this->_relative_argv = rhs._relative_argv;
 		this->_relative_script_name = rhs._relative_script_name;
 		this->_request_fully_sent_to_cgi = rhs._request_fully_sent_to_cgi;
-		this->_body_to_send = rhs._body_sent;
+		this->_body_to_send = rhs._body_to_send;
 		this->_body_sent = rhs._body_sent;
 		this->_body_fully_sent = rhs._body_fully_sent;
 		this->_start_time = rhs._start_time;
@@ -94,6 +95,7 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 
 c_cgi::~c_cgi()
 {
+	cout << "DESCTRUCTOR DE CGI" << endl;
 	if (this->get_pipe_in() > 0)
 		close(this->get_pipe_in());
 	if (this->get_pipe_out() > 0)
@@ -223,6 +225,7 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 	string  relative_path = this->_script_name.substr(url_key.size());
 	this->_script_filename = root + relative_path;
 
+
 	char resolved_path[PATH_MAX];
 	if (!this->_script_filename.empty() && !realpath(this->_script_filename.c_str(), resolved_path))
 	{
@@ -233,14 +236,36 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 	this->_relative_script_name = this->_script_name.substr(url_key.size());
 	if (!this->_path_info.empty())
 	{
-		this->_relative_argv = ".." + this->_path_info;
+		this->_relative_argv = "./www" + this->_path_info;
+		// changer en loc.get_root()
 		this->_translated_path = "./www" + this->_path_info;
 	}
 	return(0);
 }
 
+bool	c_cgi::is_argv_in_allowed_directory(const string& argv, const string& allowed_data_dir)
+{
+	char	resolved_path[PATH_MAX];
+	char	resolved_dir[PATH_MAX];
+
+	if (!realpath(argv.c_str(), resolved_path))
+		return (false);
+
+	if (!realpath(allowed_data_dir.c_str(), resolved_dir))
+		return (false);
+
+	string	path = resolved_path;
+	string	directory = resolved_dir;
+
+	if (path.rfind(directory, 0) == 0)
+		return (true);
+
+	return (false);
+}
+
 int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string target)
 {
+	
 	this->_status_code = request.get_status_code();
 	this->_loc = &loc;
 	char cwd[1024];
@@ -256,7 +281,9 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 
 	if (resolve_cgi_paths(loc, request.get_target()))
 		return (1);
-	if (!this->_relative_argv.empty())
+
+	string allowed_data_dir = "./www/data/"; // à retirer en allant checher directement dans la location
+	if (!this->_relative_argv.empty() && !is_argv_in_allowed_directory(this->_relative_argv, allowed_data_dir))
 	{
 		if (chdir("www/cgi-bin/") == 0)
 		{
@@ -288,6 +315,7 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 			return (1);
 		}
 	}
+
 	if (extension.size() > 0)
 		this->_interpreter = loc.extract_interpreter(extension);
 	if (this->_interpreter.empty())
@@ -313,7 +341,7 @@ void    c_cgi::set_environment(const c_request &request)
     this->_map_env_vars["PATH_INFO"] = this->_path_info;
     this->_map_env_vars["TRANSLATED_PATH"] = this->_translated_path;
     this->_map_env_vars["SCRIPT_FILENAME"] = this->_script_filename;
-    this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_content_length());
+	this->_map_env_vars["CONTENT_LENGTH"] = int_to_string(request.get_body().size());
     this->_map_env_vars["CONTENT_TYPE"] = request.get_header_value("Content-Type");
     this->_map_env_vars["QUERY_STRING"] = request.get_query();
     this->_map_env_vars["SERVER_PROTOCOL"] = request.get_version();
@@ -340,7 +368,7 @@ string make_absolute(const string &path)
 	return (path);
 }
 
-int c_cgi::launch_cgi(const string &body)
+int c_cgi::launch_cgi(vector<char>& body)
 {
 	int server_to_cgi[2];
 	int cgi_to_server[2];
@@ -396,10 +424,13 @@ int c_cgi::launch_cgi(const string &body)
 			envp.push_back(const_cast<char *>(this->_vec_env_vars[i].c_str()));
 		envp.push_back(NULL);
 
+		
 		if (!this->_relative_argv.empty())
 		{
-			if (chdir("www/cgi-bin/") != 0) 
+			if (chdir(_loc->get_alias().c_str()) != 0) 
 				exit(1);
+
+			this->_relative_argv = "../" + this->_relative_argv.substr(5); // à adapter en fonction du root
 
 			char *argv[4];
 			argv[0] = const_cast<char*>(this->_interpreter.c_str());
