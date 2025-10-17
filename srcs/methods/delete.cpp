@@ -40,6 +40,7 @@ void	c_response::handle_delete_request(const c_request &request, string file_pat
 }
 
 /* LOads the page, insert all the taks and build success response */
+	
 
 void c_response::load_todo_page(const c_request &request)
 {
@@ -52,16 +53,30 @@ void c_response::load_todo_page(const c_request &request)
 	}
 
 	string upload_directory = location->get_upload_path();
-	
-	if (_server.get_root().empty() || !is_directory(_server.get_root()))
+	string page_upload_directory;
+
+	if (location->get_alias().empty())
 	{
-		_server.log_message("[ERROR] Cannot load todo.html page, no path for the root configured");
+		if (_server.get_root().empty() || !is_directory(_server.get_root()))
+		{
+			_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
+			build_error_response(500, request);
+			return ;
+		}
+		else
+			page_upload_directory = _server.get_root();
+	}
+	else if (!is_directory(location->get_alias()))
+	{
+		_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
 		build_error_response(500, request);
 		return ;
 	}
+	else
+		page_upload_directory = location->get_alias();
 
 	string filename = upload_directory + "todo.txt";
-	string todo_html = load_file_content(_server.get_root() + "todo.html");
+	string todo_html = load_file_content(page_upload_directory + "todo.html"); //MODIIIIIIIF
 	ifstream infile(filename.c_str());
 	string tasks_html;
 	string line;

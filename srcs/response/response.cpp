@@ -199,8 +199,12 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 
 	string root = _server.get_root();
-	if (root.empty() || root == "." || root == "./")
-		root = "./www";
+	if (!is_directory(root))
+	{
+		_server.log_message("[ERROR] There is no root defined for the server.");
+		build_error_response(500, request);
+		return ;
+	}
 	
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root, *this);
 
@@ -468,8 +472,11 @@ void c_response::build_error_response(int error_code, const c_request &request)
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
-			if (root.empty() || root == "." || root == "./")
+			// comment on fait ici si le root nest pas un directory valide?
+			// if !is_directory(root) error 500
+			if (root.empty() || root == "." || root == "./") 
 				root = "./www";
+			
 			error_path = root + error_path;
 		}
 		

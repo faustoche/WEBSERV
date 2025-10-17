@@ -668,7 +668,6 @@ void c_response::handle_todo_form(const c_request &request, const c_location *lo
 	
 	string filename = path + "todo.txt"; 
 
-	// string filename = "./www/data/todo.txt";
 	ofstream file(filename.c_str(), ios::app);
 	if (!file.is_open())
 	{
@@ -698,10 +697,8 @@ void	c_response::load_upload_page(const c_request &request)
 
 	if (location->get_alias().empty())
 	{
-		cout << __LINE__ << endl;
-		if (_server.get_root().empty())// || !is_directory(_server.get_root()))
+		if (_server.get_root().empty() || !is_directory(_server.get_root()))
 		{
-			cout << __LINE__ << endl;
 			_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
 			build_error_response(500, request);
 			return ;
@@ -709,9 +706,8 @@ void	c_response::load_upload_page(const c_request &request)
 		else
 			page_upload_directory = _server.get_root();
 	}
-	if (!is_directory(location->get_alias()))
+	else if (!is_directory(location->get_alias()))
 	{
-		cout << __LINE__ << endl;
 		_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
 		build_error_response(500, request);
 		return ;
