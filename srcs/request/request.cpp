@@ -215,7 +215,6 @@ int    c_request::fill_body_with_bytes(const char *buffer, size_t len)
 		this->_request_fully_parsed = true;
 		return (1);
 	}
-
 	this->_body.insert(this->_body.end(), buffer, buffer + len);
 	this->set_total_bytes(this->_body.size());
 	return (0);

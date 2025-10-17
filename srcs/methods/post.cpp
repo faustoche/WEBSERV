@@ -694,26 +694,21 @@ void c_response::handle_todo_form(const c_request &request, const c_location *lo
 
 void	c_response::load_upload_page(const c_request &request)
 {
+	c_location *location = _server.find_matching_location("/page_upload");
+	if (!location || location->get_upload_path().empty())
+	{
+		_server.log_message("[ERROR] Cannot load upload page, no path configured");
+		build_error_response(500, request);
+		return ;
+	}
+
+	string upload_directory = location->get_upload_path();
+	
 	string html_template = load_file_content("./www/page_upload.html");
 	string files_html;
 
 	size_t max_body_size = request.get_client_max_body_size();
 	string max_body_size_str = int_to_string(max_body_size);
-
-	c_location *location = _server.find_matching_location(request.get_target());
-
-	string upload_directory;
-	upload_directory = location->get_upload_path();           
-
-	// if (location && location->get_upload_path().empty())
-	// {
-	// }
-	// if (!directory_exists(upload_directory))
-	// {
-	// 	_server.log_message("[ERROR] Directory doesn't exist. Upload failed.");
-	// 	_status = 500;
-	// 	return ;
-	// }
 
 	DIR *dir = opendir(upload_directory.c_str());
 	if (dir)

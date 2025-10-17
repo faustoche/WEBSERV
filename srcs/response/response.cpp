@@ -85,7 +85,7 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 		load_upload_page(request);
 		return (true);
 	}
-	if (method == "DELETE" && (target.find("/delete_upload?") || target == "/delete_todo") == 0)
+	if (method == "DELETE" && (target.find("/page_upload?") == 0))
 	{
 		handle_delete_upload(request);
 		return (true);
@@ -765,6 +765,7 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		if (location->get_auto_index())
 			return full_path;
 
+		cout << __LINE__ << " / " << __FILE__ << endl;
 		response.set_status(403);
 		return "";
 	}
