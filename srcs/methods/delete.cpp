@@ -43,8 +43,25 @@ void	c_response::handle_delete_request(const c_request &request, string file_pat
 
 void c_response::load_todo_page(const c_request &request)
 {
-	string filename = "./www/data/todo.txt";
-	string todo_html = load_file_content("./www/todo.html");
+	c_location *location = _server.find_matching_location("/post_todo"); //ou ""todo?
+	if (!location || location->get_upload_path().empty())
+	{
+		_server.log_message("[ERROR] Cannot load todo task, no path configured for the download.");
+		build_error_response(500, request);
+		return ;
+	}
+
+	string upload_directory = location->get_upload_path();
+	
+	if (_server.get_root().empty() || !is_directory(_server.get_root()))
+	{
+		_server.log_message("[ERROR] Cannot load todo.html page, no path for the root configured");
+		build_error_response(500, request);
+		return ;
+	}
+
+	string filename = upload_directory + "todo.txt";
+	string todo_html = load_file_content(_server.get_root() + "todo.html");
 	ifstream infile(filename.c_str());
 	string tasks_html;
 	string line;

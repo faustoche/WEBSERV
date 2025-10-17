@@ -196,11 +196,6 @@ vector<s_multipart> const	c_response::parse_multipart_data(vector<char>& body, c
 	size_t			pos = 0;
 	vector<size_t>	boundary_pos;
 
-	// while((pos = body.find(delimiter, pos)) != string::npos)
-	// {
-	// 	boundary_pos.push_back(pos);
-	// 	pos += delimiter.size();
-	// }
 	while (pos < body.size())
 	{
 		vector<char>::iterator found = search(body.begin() + pos, body.end(), 
@@ -305,9 +300,8 @@ s_multipart const	c_response::parse_single_part(const string &raw_part)
 void	c_response::parse_header_section(const string &header_section, s_multipart &part)
 {
 	if (get_status() >= 400)
-	{
 		return;
-	}
+
 	// Headers possibles :
 	// - Content-Disposition: form-data; name="xxx"; filename="yyy"
 	// - Content-Type: image/jpeg
@@ -693,15 +687,40 @@ void	c_response::load_upload_page(const c_request &request)
 	c_location *location = _server.find_matching_location("/page_upload");
 	if (!location || location->get_upload_path().empty())
 	{
-		cout << __FILE__ << " | " << __LINE__ << endl;
+		cout << __LINE__ << endl;
 		_server.log_message("[ERROR] Cannot load upload page, no path configured");
 		build_error_response(500, request);
 		return ;
 	}
 
 	string upload_directory = location->get_upload_path();
-	
-	string html_template = load_file_content("./www/page_upload.html");
+	string page_upload_directory;
+
+	if (location->get_alias().empty())
+	{
+		cout << __LINE__ << endl;
+		if (_server.get_root().empty())// || !is_directory(_server.get_root()))
+		{
+			cout << __LINE__ << endl;
+			_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
+			build_error_response(500, request);
+			return ;
+		}
+		else
+			page_upload_directory = _server.get_root();
+	}
+	if (!is_directory(location->get_alias()))
+	{
+		cout << __LINE__ << endl;
+		_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
+		build_error_response(500, request);
+		return ;
+	}
+		
+	else
+		page_upload_directory = location->get_alias();
+
+	string html_template = load_file_content(page_upload_directory + "/page_upload.html");
 	string files_html;
 
 	size_t max_body_size = request.get_client_max_body_size();
