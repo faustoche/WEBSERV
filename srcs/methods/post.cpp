@@ -18,10 +18,8 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		handle_test_form(request);
 	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
 		handle_contact_form(request, location);
-	else if (content_type.find("multipart/form-data") != string::npos)
-	{
+	else if (target == "/page_upload.html" && content_type.find("multipart/form-data") != string::npos)
 		handle_upload_form_file(request, location);
-	}
 	else if (target == "/post_todo")
 		handle_todo_form(request, location);
 	else
@@ -60,7 +58,6 @@ void	c_response::handle_upload_form_file(const c_request &request, c_location *l
 		build_error_response(get_status(), request);
 		return ;
 	}
-
 	vector<string>	uploaded_files;
 	for(size_t i = 0; i < parts.size(); i++)
 	{
@@ -696,6 +693,7 @@ void	c_response::load_upload_page(const c_request &request)
 	c_location *location = _server.find_matching_location("/page_upload");
 	if (!location || location->get_upload_path().empty())
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		_server.log_message("[ERROR] Cannot load upload page, no path configured");
 		build_error_response(500, request);
 		return ;

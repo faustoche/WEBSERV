@@ -273,7 +273,6 @@ void	c_server::handle_client_read(int client_fd)
 
 		client->set_last_request(start_line);
 		client->set_last_modified();
-
 		response->define_response_content(*request);
 		if (response->get_is_cgi())
 		{

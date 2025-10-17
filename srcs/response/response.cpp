@@ -62,11 +62,13 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 {
 	if (method == "GET" && target == "/todo.html")
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		load_todo_page(request);
 		return (true);
 	}
 	if (method == "DELETE" && (target == "/delete_todo" || target.find("/delete_todo?") == 0))
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		handle_delete_todo(request);
 		return (true);
 	}
@@ -147,6 +149,7 @@ bool	c_response::handle_redirect(c_location *matching_location, const c_request 
 
 void	c_response::define_response_content(const c_request &request)
 {
+	cout << __FILE__ << " | " << __LINE__ << endl;
 	_response.clear();
 	_file_content.clear();
 	int status_code = request.get_status_code();
@@ -155,11 +158,13 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (status_code != 200)
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		build_error_response(status_code, request);
 		return ;
 	}
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		build_error_response(405, request);
 		return ;
 	}
@@ -234,6 +239,7 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (_file_content.empty() && !this->_is_cgi)
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 		{
 			this->_is_cgi = false;
@@ -245,21 +251,25 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	if (this->_is_cgi)
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
 	}
 	else if (method == "POST")
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		handle_post_request(request, matching_location);
 		return;
 	}
 	else if (method == "DELETE")
 	{
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		if (target == "/delete_todo")
 		{
 			handle_delete_todo(request);
 			return;
 		}
+		cout << __FILE__ << " | " << __LINE__ << endl;
 		handle_delete_request(request, file_path);
 		build_success_response(file_path, request);
 	}
