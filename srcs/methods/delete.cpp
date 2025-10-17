@@ -164,7 +164,7 @@ void c_response::handle_delete_upload(const c_request &request)
 
 	string filename = upload_directory + file_to_delete;
 
-	
+	cout << "filename: " << filename << endl;
 	if (remove(filename.c_str()) != 0)
 	{
 		_server.log_message("[ERROR] file not found or cannot be deleted: " + filename);
