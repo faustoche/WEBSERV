@@ -58,7 +58,7 @@ const string& c_response::get_header_value(const string& key) const
 
 /************ FILE CONTENT MANAGEMENT ************/
 
-bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target, const c_location *location)
+bool	c_response::handle_special_routes(const c_request &request, const string &method, const string &target, c_location *location)
 {
 	if (method == "GET" && target == "/todo.html")
 	{
@@ -76,6 +76,16 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 		{
 			handle_todo_form(request, location);
 			return (true);
+		}
+		else
+			return false;
+	}
+	if (method == "POST")
+	{
+		if (location)
+		{
+			handle_post_request(request, location);
+			return true;
 		}
 		else
 			return false;
@@ -121,7 +131,7 @@ bool	c_response::validate_location(c_location *matching_location, const string &
 		{
 			if (_server.get_indexes().empty())
 			{
-				_server.log_message("[ERROR] No location found for target " + target);
+				_server.log_message("[ERROR] No location found for target and no index for the server " + target);
 				build_error_response(404, request);
 				return (false);
 			}
@@ -189,8 +199,12 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 
 	string root = _server.get_root();
-	if (root.empty() || root == "." || root == "./")
-		root = "./www";
+	if (!is_directory(root))
+	{
+		_server.log_message("[ERROR] There is no root defined for the server.");
+		build_error_response(500, request);
+		return ;
+	}
 	
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root, *this);
 
@@ -247,11 +261,6 @@ void	c_response::define_response_content(const c_request &request)
 	{
 		if (!handle_cgi_response(request, matching_location, file_path))
 			return ;
-	}
-	else if (method == "POST")
-	{
-		handle_post_request(request, matching_location);
-		return;
 	}
 	else if (method == "DELETE")
 	{
@@ -463,8 +472,11 @@ void c_response::build_error_response(int error_code, const c_request &request)
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
-			if (root.empty() || root == "." || root == "./")
+			// comment on fait ici si le root nest pas un directory valide?
+			// if !is_directory(root) error 500
+			if (root.empty() || root == "." || root == "./") 
 				root = "./www";
+			
 			error_path = root + error_path;
 		}
 		

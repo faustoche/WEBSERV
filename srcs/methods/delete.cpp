@@ -40,11 +40,43 @@ void	c_response::handle_delete_request(const c_request &request, string file_pat
 }
 
 /* LOads the page, insert all the taks and build success response */
+	
 
 void c_response::load_todo_page(const c_request &request)
 {
-	string filename = "./www/data/todo.txt";
-	string todo_html = load_file_content("./www/todo.html");
+	c_location *location = _server.find_matching_location("/post_todo"); //ou ""todo?
+	if (!location || location->get_upload_path().empty())
+	{
+		_server.log_message("[ERROR] Cannot load todo task, no path configured for the download.");
+		build_error_response(500, request);
+		return ;
+	}
+
+	string upload_directory = location->get_upload_path();
+	string page_upload_directory;
+
+	if (location->get_alias().empty())
+	{
+		if (_server.get_root().empty() || !is_directory(_server.get_root()))
+		{
+			_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
+			build_error_response(500, request);
+			return ;
+		}
+		else
+			page_upload_directory = _server.get_root();
+	}
+	else if (!is_directory(location->get_alias()))
+	{
+		_server.log_message("[ERROR] Cannot load page_upload.html, no path configured or existing");
+		build_error_response(500, request);
+		return ;
+	}
+	else
+		page_upload_directory = location->get_alias();
+
+	string filename = upload_directory + "todo.txt";
+	string todo_html = load_file_content(page_upload_directory + "todo.html"); //MODIIIIIIIF
 	ifstream infile(filename.c_str());
 	string tasks_html;
 	string line;

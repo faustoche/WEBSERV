@@ -63,18 +63,6 @@ bool        is_executable_file(const string & path)
 	return access(path.c_str(), X_OK) == 0;
 }
 
-// fonction qui ne fonctionne qu'avec l'index du server a priori
-string      get_valid_index(string const & root, vector<string> const & indexes)
-{
-	for (vector<string>::const_iterator it = indexes.begin(); it != indexes.end(); it++)
-	{
-		string  full_path = root + "/www/" + *it;
-		if (is_readable_file(full_path))
-			return *it;
-	}
-	return "";
-}
-
 string  trim(const string &str)
 {
 	size_t start = str.find_first_not_of(" \t\r\n");

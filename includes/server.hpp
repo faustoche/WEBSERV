@@ -139,7 +139,6 @@ string int_to_string(int n);
 string int_to_hex(size_t value);
 bool is_valid_header_name(const string &key_name);
 string ft_trim(const string &str);
-string get_valid_index(const string &root, vector<string> const &indexes);
 bool is_executable_file(const string &path);
 bool is_existing_file(const string &path);
 bool is_readable_file(const string &path);
