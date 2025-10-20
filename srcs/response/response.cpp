@@ -153,7 +153,7 @@ void	c_response::define_response_content(const c_request &request)
 	if (!validate_http(request))
 		return ;
 
-	c_location *matching_location = _server.find_matching_location(target);
+	c_location *matching_location = _server.find_matching_location(request.get_path());
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
 		this->_is_cgi = true;
@@ -633,7 +633,7 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 	vector<string> allowed_methods = location->get_methods();
 	if (allowed_methods.empty())
 		return (true);
-	
+
 	for (size_t i = 0; i < allowed_methods.size(); i++)
 	{
 		if (allowed_methods[i] == method)
