@@ -39,12 +39,11 @@ void	c_response::handle_delete_request(const c_request &request, string file_pat
 	}
 }
 
-/* LOads the page, insert all the taks and build success response */
-	
+/* Loads the page, insert all the taks and build success response */
 
-void c_response::load_todo_page(const c_request &request)
+void	c_response::load_todo_page(const c_request &request)
 {
-	c_location *location = _server.find_matching_location("/post_todo"); //ou ""todo?
+	c_location *location = _server.find_matching_location("/post_todo");
 	if (!location || location->get_upload_path().empty())
 	{
 		_server.log_message("[ERROR] Cannot load todo task, no path configured for the download.");
@@ -76,7 +75,7 @@ void c_response::load_todo_page(const c_request &request)
 		page_upload_directory = location->get_alias();
 
 	string filename = upload_directory + "todo.txt";
-	string todo_html = load_file_content(page_upload_directory + "todo.html"); //MODIIIIIIIF
+	string todo_html = load_file_content(page_upload_directory + "todo.html");
 	ifstream infile(filename.c_str());
 	string tasks_html;
 	string line;
@@ -105,6 +104,15 @@ void c_response::load_todo_page(const c_request &request)
 
 void c_response::handle_delete_todo(const c_request &request)
 {
+	c_location *location = _server.find_matching_location("/post_todo");
+	if (!location || location->get_upload_path().empty())
+	{
+		_server.log_message("[ERROR] Cannot load todo task, no path configured for the download.");
+		build_error_response(500, request);
+		return ;
+	}
+
+	string upload_directory = location->get_upload_path();
 	string target = request.get_target();
 	string task_to_delete;
 	size_t pos = target.find("?task=");
@@ -119,10 +127,7 @@ void c_response::handle_delete_todo(const c_request &request)
 		return ;
 	}
 
-	cout << "target : " << target << endl;
-	c_location *location = _server.find_matching_location(target);
-	cout << "location: " << location << endl;
-	string filename = "./www/data/todo.txt";
+	string filename = upload_directory + "todo.txt";
 	ifstream infile(filename.c_str());
 	if (!infile.is_open())
 	{

@@ -282,7 +282,8 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 	if (resolve_cgi_paths(loc, request.get_target()))
 		return (1);
 
-	string allowed_data_dir = "./www/data/"; // à retirer en allant checher directement dans la location
+	string allowed_data_dir = loc.get_allowed_data_dir();
+	//string allowed_data_dir = "./www/data/"; // à retirer en allant checher directement dans la location
 	if (!this->_relative_argv.empty() && !is_argv_in_allowed_directory(this->_relative_argv, allowed_data_dir))
 	{
 		if (chdir("www/cgi-bin/") == 0)
