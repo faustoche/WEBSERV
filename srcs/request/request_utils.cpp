@@ -40,6 +40,11 @@ bool	c_request::is_uri_valid()
 	if (this->_target.empty())
 		return (false);
 
+	if (this->_target.size() > 4096)
+	{
+		_status_code = 414;
+		return (false);
+	}
 	if (this->_target.find("//") != string::npos || this->_target.find("..") != string::npos)
 		return (false);
 

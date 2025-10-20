@@ -150,9 +150,18 @@ int c_request::parse_start_line(string& start_line)
 	}
 	if (!is_uri_valid())
 	{
-		this->_status_code = 400;
-		this->_error = true;
-		return (1);
+		if (this->_status_code == 414)
+		{
+			//this->_status_code = 414;
+			this->_error = true;
+			return (1);
+		}
+		else
+		{
+			this->_status_code = 400;
+			this->_error = true;
+			return (1);
+		}
 	}
 
 	start = space_pos + 1;
