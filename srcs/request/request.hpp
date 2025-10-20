@@ -35,8 +35,6 @@ class c_request
 		c_request(c_server& server, c_client &client);
 		~c_request();
 
-		// c_request const& operator=(const c_request& rhs);
-	
 		void	read_request();
 		void	append_read_buffer(const char* buffer, ssize_t bytes);
 		int		parse_request(const string& str);
@@ -98,7 +96,6 @@ class c_request
 		c_server&			_server;
 		int					_socket_fd;
 		string				_ip_client;
-
 		vector<char>		_read_buffer;
 		string				_method;
 		string				_target;
@@ -106,14 +103,11 @@ class c_request
 		string				_query;
 		string				_path;
 		vector<char>		_body;
-		// string              _buffered_data;
 		map<string, string>	_headers;
 		c_client&			_client;
 		bool				_is_reading_request;
-
 		int					_status_code;
 		int					_port;
-	
 		bool				_headers_parsed;
 		bool				_request_fully_parsed;
 		bool				_error;

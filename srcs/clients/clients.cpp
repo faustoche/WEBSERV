@@ -25,7 +25,6 @@ c_client::c_client(c_server &server, int client_fd, string client_ip) : _server(
 
 c_client::~c_client() 
 {
-	//cout << "DESCTRUCTOR DE CLIENT" << endl;
 	delete	_request;
 	delete	_response;
 }
@@ -49,7 +48,6 @@ void    c_server::add_fd(int fd, short events)
 
 void c_server::add_client(int client_fd, string client_ip)
 {
-	// Vérifier que le client n'existe pas déjà
     if (_clients.find(client_fd) != _clients.end())
     {
         log_message("[WARN] Client " + int_to_string(client_fd) + " already exists!");

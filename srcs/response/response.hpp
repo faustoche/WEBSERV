@@ -52,8 +52,6 @@ public:
 	c_response(c_server& server, c_client &client);
 	~c_response();
 
-	// c_response const& operator=(const c_response& rhs);
-
 	void define_response_content(const c_request &request);
 	const string &get_response() const { return (_response); };
 	const string &get_file_content() const { return (_file_content); }

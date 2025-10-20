@@ -4,7 +4,6 @@
 
 void	c_response::handle_post_request(const c_request &request, c_location *location)
 {
-	// vector<char>	body = request.get_body();
 	string	content_type = request.get_header_value("Content-Type");
 	string	target = request.get_target();
 
@@ -30,8 +29,7 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 
 void	c_response::handle_upload_form_file(const c_request &request, c_location *location)
 {
-	// pour tester la size_max
-	size_t max_size = 1 * 1024 * 1024; // 1MB
+	size_t max_size = location->get_body_size();
     if (request.get_content_length() > max_size)
     {
         build_error_response(413, request);
@@ -302,11 +300,6 @@ void	c_response::parse_header_section(const string &header_section, s_multipart 
 	if (get_status() >= 400)
 		return;
 
-	// Headers possibles :
-	// - Content-Disposition: form-data; name="xxx"; filename="yyy"
-	// - Content-Type: image/jpeg
-
-	// Parsing Content-Disposition
 	size_t	pos_disposition = header_section.find("Content-Disposition");
 	if (pos_disposition != string::npos)
 	{
@@ -610,10 +603,6 @@ map<string, string> const	c_response::parse_form_data(const vector<char>& body)
 			key.assign(&body[start], &body[pos_equal]);
 		if (pos_equal < pos_and)
 			value.assign(&body[pos_equal + 1], &body[pos_and]);
-		// string pairs = body.substr(start, pos_and - start);
-		// pos_equal = pairs.find("=", 0);
-		// key = pairs.substr(0, pos_equal);
-		// value = pairs.substr(pos_equal + 1);
 
 		key = url_decode(key);
 		value = url_decode(value);
@@ -621,9 +610,6 @@ map<string, string> const	c_response::parse_form_data(const vector<char>& body)
 		form_data[key] = value;
 
 		start = pos_and + 1;
-
-		// start += pairs.size();
-		// start++;
 	}
 	return form_data;
 }
@@ -643,7 +629,7 @@ void c_response::handle_todo_form(const c_request &request, const c_location *lo
 	if (task.empty())
 	{
 		build_error_response(400, request);
-		return ; //mettre un booleen?
+		return ;
 	}
 
 	string path;
@@ -686,7 +672,6 @@ void	c_response::load_upload_page(const c_request &request)
 	c_location *location = _server.find_matching_location("/page_upload");
 	if (!location || location->get_upload_path().empty())
 	{
-		cout << __LINE__ << endl;
 		_server.log_message("[ERROR] Cannot load upload page, no path configured");
 		build_error_response(500, request);
 		return ;

@@ -190,7 +190,6 @@ string escape_html_attr(const string &text)
 	return (escaped);
 }
 
-/* fonciton qui verifie si on va pas join deux // cote a cote */
 string	join_path(const string &base, const string &path)
 {
 	if (base.empty())

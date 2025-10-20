@@ -1,6 +1,5 @@
 #include "server.hpp"
 
-
 /* Create and configure TCP socket for each port, with options,
 bind the socket with the network adress and the port,
 listen on the socket and set non blocking socket */

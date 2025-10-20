@@ -95,7 +95,6 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 
 c_cgi::~c_cgi()
 {
-	//cout << "DESCTRUCTOR DE CGI" << endl;
 	if (this->get_pipe_in() > 0)
 		close(this->get_pipe_in());
 	if (this->get_pipe_out() > 0)
@@ -417,7 +416,7 @@ int c_cgi::launch_cgi(vector<char>& body)
 			if (chdir(_loc->get_alias().c_str()) != 0) 
 				exit(1);
 
-			this->_relative_argv = "../" + this->_relative_argv.substr(5); // à adapter en fonction du root
+			this->_relative_argv = "../" + this->_relative_argv.substr(5);
 
 			char *argv[4];
 			argv[0] = const_cast<char*>(this->_interpreter.c_str());

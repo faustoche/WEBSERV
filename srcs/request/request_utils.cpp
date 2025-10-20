@@ -40,6 +40,11 @@ bool	c_request::is_uri_valid()
 	if (this->_target.empty())
 		return (false);
 
+	if (this->_target.size() > 4096)
+	{
+		_status_code = 414;
+		return (false);
+	}
 	if (this->_target.find("//") != string::npos || this->_target.find("..") != string::npos)
 		return (false);
 
@@ -158,8 +163,6 @@ void	c_request::extract_body_part()
 			found = true;
 	}
 
-	// Extraire la partie du body déjà reçue dans 'request'
-	// vector<char>	body_part;
 	if (body_start < this->_read_buffer.size())
 	{
 		this->_body.insert(_body.end(), this->_read_buffer.begin() + body_start, this->_read_buffer.end());
@@ -213,8 +216,6 @@ void	c_request::init_request()
 	this->_chunk_line_count = 0;
 	this->_expected_chunk_size = -1;
 	this->_total_bytes = 0;
-	// this->_request_fully_parsed = false;
-	// this->_headers_parsed = false;
 	this->set_headers_parsed(false);
 	this->set_request_fully_parsed(false);
 	this->_error = false;
