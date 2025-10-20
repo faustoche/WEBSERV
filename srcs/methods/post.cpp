@@ -437,7 +437,7 @@ bool	c_response::save_contact_data(const map<string, string> &data, c_location *
 	ofstream file(filename.c_str(), ios::binary | ios::app);
 	if (!file.is_open())
 	{
-		_server.log_message("[ERROR] The file can't be create " + filename);
+		_server.log_message("[ERROR] The file can't be created " + filename);
 		_status = 500;
 		return false;
 	}
