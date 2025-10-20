@@ -4,18 +4,11 @@
 
 c_server::c_server()
 { // REVOIR ENSEMBLE LES VALEURS PAR DEFAUT
-	// _names.push_back("default server");
-	// _ip = "0.0.0.0";
-	// _port = 80;
 	_root = "";
-	// ne pas definir d'index par defaut
-	_body_size = 1048576; // 1Mo en octet
+	_body_size = 1048576;
 	_fatal_error = false;
-	// _err_pages = /* generer une page html simple si non configure */
 }
-c_server::~c_server()
-{
-}
+c_server::~c_server(){}
 
 c_server const &	c_server::operator=(c_server const & rhs)
 {
@@ -32,7 +25,6 @@ c_server const &	c_server::operator=(c_server const & rhs)
 	}
 	return *this;
 }
-
 
 /*---------------------   CONFIGURATION FILE   ----------------------*/
 /*-------------------------   setters   -----------------------------*/
@@ -92,7 +84,6 @@ void	c_server::set_root(string const & root)
 	this->_root = root;
 }
 
-
 /*-------------------------   debug   -----------------------------*/
 
 void	c_server::print_indexes() const
@@ -131,7 +122,6 @@ void	c_server::print_ports() const
 		cout << *it << " ";
 	}
 }
-
 
 void	c_server::print_config() const
 {

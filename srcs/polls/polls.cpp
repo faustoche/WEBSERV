@@ -122,7 +122,6 @@ void c_server::handle_poll_events()
 			{
 				int port = get_port_from_socket(pfd.fd);
 				log_message("[ERROR] error on socket server on port " + int_to_string(port));
-				// close_all_sockets_and_fd();
 			}
 		}
 		else
@@ -181,7 +180,6 @@ void c_server::handle_poll_events()
 				{
 					kill(cgi->get_pid(), SIGTERM);
 					cleanup_cgi(cgi);
-					// close_all_sockets_and_fd();
 				}
 				remove_client(fd);
 			}	
@@ -403,7 +401,6 @@ void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 			return ;
 		else if (bytes_read == 0)
 		{
-    		// EOF : le pipe CGI est entièrement lu
     		if (cgi->get_content_length() == 0)
     		{
     		    std::string chunk = int_to_hex(0) + "\r\n\r\n";
@@ -464,6 +461,7 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 }
 
 /* Check if CGI are done and update status */
+
 void c_server::check_terminated_cgi_processes()
 {
 	pid_t pid;
@@ -494,6 +492,7 @@ void c_server::check_terminated_cgi_processes()
 }
 
 /* Free all the ressources linked to CGI */
+
 void c_server::cleanup_cgi(c_cgi* cgi) 
 {
 	if (!cgi) 

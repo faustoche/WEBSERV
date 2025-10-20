@@ -95,7 +95,6 @@ c_cgi const& c_cgi::operator=(const c_cgi& rhs)
 
 c_cgi::~c_cgi()
 {
-	//cout << "DESCTRUCTOR DE CGI" << endl;
 	if (this->get_pipe_in() > 0)
 		close(this->get_pipe_in());
 	if (this->get_pipe_out() > 0)
@@ -237,7 +236,6 @@ int    c_cgi::resolve_cgi_paths(const c_location &loc, string const& script_file
 	if (!this->_path_info.empty())
 	{
 		this->_relative_argv = "./www" + this->_path_info;
-		// changer en loc.get_root()
 		this->_translated_path = "./www" + this->_path_info;
 	}
 	return(0);
@@ -283,7 +281,6 @@ int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string t
 		return (1);
 
 	string allowed_data_dir = loc.get_allowed_data_dir();
-	//string allowed_data_dir = "./www/data/"; // à retirer en allant checher directement dans la location
 	if (!this->_relative_argv.empty() && !is_argv_in_allowed_directory(this->_relative_argv, allowed_data_dir))
 	{
 		if (chdir("www/cgi-bin/") == 0)
@@ -431,7 +428,7 @@ int c_cgi::launch_cgi(vector<char>& body)
 			if (chdir(_loc->get_alias().c_str()) != 0) 
 				exit(1);
 
-			this->_relative_argv = "../" + this->_relative_argv.substr(5); // à adapter en fonction du root
+			this->_relative_argv = "../" + this->_relative_argv.substr(5);
 
 			char *argv[4];
 			argv[0] = const_cast<char*>(this->_interpreter.c_str());

@@ -31,7 +31,6 @@ size_t	c_server::extract_content_length(string headers)
 	return (content_length);
 }
 
-
 void	c_server::transfer_by_bytes(c_cgi *cgi, const string& buffer, size_t bytes)
 {
 	c_client *client = find_client(cgi->get_client_fd());
@@ -92,7 +91,6 @@ void	c_server::handle_fully_sent_response(c_client *client)
 	log_message("[DEBUG] Client " + int_to_string(client->get_fd()) 
 				+ " can send a new request : POLLIN");
 	client->set_last_modified();
-	// client->set_creation_time();
 	client->set_bytes_written(0);
 	client->get_request()->init_request();
 	client->get_response()->init_response();

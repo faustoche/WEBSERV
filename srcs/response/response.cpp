@@ -9,10 +9,7 @@ c_response::c_response(c_server& server, c_client &client) : _server(server), _c
 	init_response();
 }
 
-c_response::~c_response()
-{
-	//cout << "DESCTRUCTOR DE RESPONSE" << endl;
-}
+c_response::~c_response(){}
 
 void	c_response::init_response()
 {
@@ -135,7 +132,7 @@ bool	c_response::validate_location(c_location *matching_location, const string &
 				build_error_response(404, request);
 				return (false);
 			}
-			return (true); // existing index
+			return (true);
 		}
 	}
 	return (true);
@@ -361,7 +358,6 @@ string c_response::get_content_type(const string &file_path)
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
 	this->_status = request.get_status_code();
-	// const string request_body = request.get_body();
 	vector<char> request_body = request.get_body();
 
 	if (cgi.get_interpreter().empty())
@@ -472,8 +468,6 @@ void c_response::build_error_response(int error_code, const c_request &request)
 		if (!error_path.empty() && error_path[0] == '/')
 		{
 			string root = _server.get_root();
-			// comment on fait ici si le root nest pas un directory valide?
-			// if !is_directory(root) error 500
 			if (root.empty() || root == "." || root == "./") 
 				root = "./www";
 			
@@ -624,21 +618,15 @@ c_location	*c_server::find_matching_location(const string &request_path)
 	for (map<string, c_location>::iterator it = _location_map.begin(); it != _location_map.end(); it++)
 	{
 		const string &location_path = it->first;
-
-		/* location doit etre prefixee du request_path */
 		if (request_path.compare(0, location_path.size(), location_path) == 0)
 		{
 			bool valid_match = false;
-			// correspondance exacte
 			if (request_path.size() == location_path.size())
 				valid_match = true;
-			// request path plus long
 			else if (request_path.size() > location_path.size())
 			{
-				// si la location se termine par / elle matche automatiquement
 				if (location_path[location_path.size() - 1] == '/')
 					valid_match = true;
-				// sinon verifier le caractere suivant
 				else
 				{
 					char next_char = request_path[location_path.size()];
@@ -677,32 +665,20 @@ bool c_server::is_method_allowed(const c_location *location, const string &metho
 }
 
 /* Convert the url given into a real file path to access all of the informations */
-/*
-tester =
-Cas 1: Aucune location définie
-Cas 2: Déterminer le root de base (alias ou root)
-Cas 3: Location qui n'est pas un dossier (endpoint logique)
-Cas 4: Location est un dossier -> construire le chemin réel
-Cas 5: Si c'est un dossier, chercher un fichier index
-Cas 6: Retourner le chemin construit (fichier direct)
-*/
-
 
 string c_server::convert_url_to_file_path(c_location *location, const string &request_path, const string &default_root, c_response &response)
 {
 	string real_path;
 
-	/* 1) no location defined */
 	if (location == NULL)
 	{
 		string base = join_path(default_root, request_path);
 
 		if (is_directory(base))
 		{
-			base = default_root; // if we are on a directory we search index from the server root
+			base = default_root;
 			
 			vector<string> index_files = get_indexes();
-			/* if index files defined for root */
 			for (size_t i = 0; i < index_files.size(); i++)
 			{
 				string index_path = join_path(base, index_files[i]);
@@ -712,18 +688,14 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			response.set_status(403);
 			return "";
 		}
-		/* if file exist */
 		if (is_existing_file(base))
 			return base;
-		/* if file/directory doesnt exist */
 		response.set_status(404);
-		return ""; // error 404
+		return "";
 	}
 
 	string location_root;
 
-	/* 2) Location */
-	/* with alias */
 	if (!location->get_alias().empty())
 	{
 		location_root = location->get_alias();
@@ -733,10 +705,9 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 			return "";
 		}
 	}
-	/* without alias */
 	else
 	{
-		location_root = default_root; // default root correspond au serveur root
+		location_root = default_root;
 		if (!directory_exists(default_root))
 		{
 			response.set_status(500);
@@ -746,13 +717,11 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 
 	string location_key = location->get_url_key();
 
-	/* Endpoint */
 	if (!location->get_bool_is_directory())
 	{
 		return join_path(location_root, request_path);
 	}
 
-	/* Location is a directory */
 	string relative_path;
 	if (request_path.find(location_key) == 0)
 		relative_path = request_path.substr(location_key.length());
@@ -764,22 +733,20 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 	if (is_directory(full_path) && location->get_bool_is_directory())
 	{
 		vector<string> index_files = location->get_indexes();
-
-		/* if index files defined */
 		for (size_t i = 0; i < index_files.size(); i++)
 		{
 			string index_path = join_path(full_path, index_files[i]);
 			if (is_existing_file(index_path))
 				return index_path;
 		}
-		/* index file doesn't exist */
+
 		if (location->get_auto_index())
 			return full_path;
 
 		response.set_status(403);
 		return "";
 	}
-	/* simple file */
+
 	if (is_existing_file(full_path))
 		return full_path;
 
