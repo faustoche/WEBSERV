@@ -77,7 +77,7 @@ private:
 	void    build_cgi_response(c_cgi & cgi, const c_request &request);
 	int		handle_cgi_response(const c_request &request, c_location *loc, const string& file_path);
 	void	build_redirect_response(int code, const string &location, const c_request &request);
-	void	build_directory_listing_response(const string &dir_path, const c_request &request);
+	void	build_directory_listing_response(c_location *loc, const string &dir_path, const c_request &request);
 	string	load_file_content(const string &file_path);
 	string	get_content_type(const string &file_path);
 	void	check_method_and_headers(const c_request &request, string method, string target, int status_code);
