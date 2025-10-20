@@ -189,7 +189,7 @@ void c_server::handle_poll_events()
 			}
 			else if (pfd.revents & POLLOUT)
 			{
-				
+				// cout << __FILE__ << " " << __LINE__ << endl;
 				handle_client_write(fd);
 				if (client->get_write_buffer().empty() || client->get_response_complete())
 				{
@@ -364,6 +364,7 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 				fill_cgi_response_body(read_buffer.data() + pos, read_buffer.size() - pos, cgi);
 			client->set_state(SENDING);
 			cgi->consume_read_buffer(cgi->get_read_buffer().size());
+			return ;
 		}
 		else
 			return ;
@@ -373,6 +374,7 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 		fill_cgi_response_body(buffer, bytes_read, cgi);
 		client->set_state(SENDING);
 		cgi->consume_read_buffer(cgi->get_read_buffer().size());
+		return ;
 	}
 	
 }	
