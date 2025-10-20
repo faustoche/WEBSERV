@@ -73,6 +73,11 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 		load_upload_page(request);
 		return (true);
 	}
+	// if (method == "GET" && request.get_path() == "/upload/")
+	// {
+	// 	cout << __FILE__ << " " << __LINE__ << endl;
+	// 	return (true);
+	// }
 	if (method == "DELETE" && (target.find("/page_upload?") == 0))
 	{
 		handle_delete_upload(request);
@@ -214,7 +219,7 @@ void	c_response::define_response_content(const c_request &request)
 		if (matching_location != NULL && matching_location->get_bool_is_directory() && matching_location->get_auto_index())
 		{
 			this->_is_cgi = false;
-			build_directory_listing_response(file_path, request);
+			build_directory_listing_response(matching_location, file_path, request);
 			return ;
 		}
 		if (_server.get_indexes().empty())
@@ -253,7 +258,8 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 		}
 		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index())
 		{
-			build_directory_listing_response(file_path, request);
+			cout << "file_path: " << file_path << endl;
+			build_directory_listing_response(loc, file_path, request);
 			return (1);
 		}
 	}
@@ -531,8 +537,13 @@ void	c_response::build_redirect_response(int code, const string &location, const
 
 /* Build the response according to the auto-index. If auto-index is on, list all of the files in the directory concerned. */
 
-void c_response::build_directory_listing_response(const string &dir_path, const c_request &request)
+void c_response::build_directory_listing_response(c_location *loc, const string &dir_path, const c_request &request)
 {
+	if (dir_path != loc->get_alias())
+	{
+		build_error_response(404, request);
+		return ;
+	}
 	string content = "<html><head><title>Index of " + dir_path + "</title></head>";
 	content += "<body><h1>Index of " + dir_path + "</h1><hr><ul>";
 	
