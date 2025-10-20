@@ -78,7 +78,7 @@ echo str_repeat(' ',1024); // force l’envoi sur certains serveurs
 flush();
 
 // Attente de 5 secondes
-sleep(15);
+sleep(5);
 
 echo <<<HTML
 <script>

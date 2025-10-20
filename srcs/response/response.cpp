@@ -15,31 +15,12 @@ void	c_response::init_response()
 {
 	_response.clear();
 	_file_content.clear();
-
 	_headers_response.clear();
 	_body.clear();
 	_status = 200;
 	_is_cgi = false;
 	_error = false;
 }
-
-// c_response const& c_response::operator=(const c_response& rhs)
-// {
-// 	if (this != &rhs)
-// 	{
-// 		_response = rhs._response;
-// 		_file_content = rhs._file_content;
-// 		_server = rhs._server;
-// 		_headers_response = rhs._headers_response;
-// 		_body = rhs._body;
-// 		_client_fd = rhs._client_fd;
-// 		_status = rhs._status;
-// 		_is_cgi = rhs._is_cgi;
-// 		_error = rhs._error;
-// 		_client = rhs._client;
-// 	}
-// 	return (*this);
-// }
 
 /************ GETTERS ************/
 
@@ -120,7 +101,6 @@ bool	c_response::validate_http(const c_request &request)
 
 bool	c_response::validate_location(c_location *matching_location, const string &target, const c_request &request)
 {
-	/* modif*/
 	if (matching_location == NULL)
 	{
 		string full_path = _server.get_root() + target;
@@ -176,9 +156,7 @@ void	c_response::define_response_content(const c_request &request)
 	c_location *matching_location = _server.find_matching_location(target);
 
 	if (matching_location != NULL && matching_location->get_cgi().size() > 0)
-	{
 		this->_is_cgi = true;
-	}
 
 	if (!validate_location(matching_location, target, request))
 		return ;
@@ -216,7 +194,7 @@ void	c_response::define_response_content(const c_request &request)
 		build_error_response(403, request);
 		return ;
 	}
-
+	
 	if (is_directory(file_path))
 	{
 		vector<string> indexes;
