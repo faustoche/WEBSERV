@@ -453,7 +453,8 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	const std::vector<char>& body = cgi->get_body_to_send();
 	ssize_t bytes = write(fd, body.data() + cgi->get_body_sent(), remaining);
 
-	if (bytes < 0)
+	// Attention au bytes == 0
+	if (bytes <= 0)
 	{
 		log_message("[WARNING] recv() returned < 0 for CGI " + int_to_string(fd) + ". Will retry on next POLLIN.");
 		return;

@@ -17,7 +17,8 @@ void	c_request::read_request()
 	char	buffer[BUFFER_SIZE];
 	ssize_t	receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
 
-	if (receivedBytes < 0)
+	// tester le == 0
+	if (receivedBytes <= 0)
 		return ;
 
 	this->append_read_buffer(buffer, receivedBytes);
@@ -294,7 +295,8 @@ void	c_request::read_body_with_chunks(int socket_fd)
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		this->append_read_buffer(buffer, receivedBytes);
 
-		if (receivedBytes < 0) 
+		// Attention == 0
+		if (receivedBytes <= 0) 
 				return;
 
 		_chunk_accumulator.insert(_chunk_accumulator.end(), buffer, buffer + receivedBytes);
