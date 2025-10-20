@@ -183,18 +183,6 @@ void	c_response::define_response_content(const c_request &request)
 	
 	string file_path = _server.convert_url_to_file_path(matching_location, target, root, *this);
 
-	char resolved_path[PATH_MAX];
-	if (!file_path.empty() && !realpath(file_path.c_str(), resolved_path) && !this->_is_cgi)
-	{
-		if (!is_existing_file(file_path))
-		{
-			build_error_response(404, request);
-			return ;
-		}
-		build_error_response(403, request);
-		return ;
-	}
-	
 	if (is_directory(file_path))
 	{
 		vector<string> indexes;
@@ -258,7 +246,7 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 	if (request.get_path().find(".") == string::npos)
 	{
 		this->_is_cgi = false;
-		if (request.get_target() != "/cgi-bin/" && request.get_target() != "/cgi-bin")
+		if (request.get_target() != loc->get_url_key())
 		{
 			build_error_response(404, request);
 			return (1);
@@ -366,6 +354,7 @@ void c_response::build_success_response(const string &file_path, const c_request
 {
 	if (_file_content.empty())
 	{
+		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(404, request);
 		return ;
 	}
@@ -668,6 +657,8 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		}
 		if (is_existing_file(base))
 			return base;
+		/* if file/directory doesnt exist */
+		cout << __FILE__ << " " << __LINE__ << endl;
 		response.set_status(404);
 		return "";
 	}
