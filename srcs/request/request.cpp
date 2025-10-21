@@ -17,7 +17,6 @@ void	c_request::read_request()
 	char	buffer[BUFFER_SIZE];
 	ssize_t	receivedBytes = recv(_socket_fd, buffer, BUFFER_SIZE, MSG_NOSIGNAL);
 
-	// tester le == 0
 	if (receivedBytes <= 0)
 		return ;
 
