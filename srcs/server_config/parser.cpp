@@ -215,8 +215,6 @@ void	c_parser::parse_allowed_data_dir(c_location & location)
 		throw invalid_argument("Invalid path for allowed_data_dir directive: " + allowed_dir + " (cannot contain '..')");
 	if (allowed_dir[allowed_dir.length() - 1] != '/')
 		allowed_dir.push_back('/');
-	if (!(is_directory(allowed_dir)))
-		throw invalid_argument("Invalid path for allowed_data_dir directive: " + allowed_dir + " (it must exists)");
 	
 	location.set_allowed_data_dir(allowed_dir);
 }
