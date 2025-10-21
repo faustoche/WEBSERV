@@ -57,8 +57,6 @@ void	c_request::read_request()
 	}
 }
 
-
-
 int c_request::parse_request(const string& raw_request)
 {
 	istringstream stream(raw_request);
@@ -295,7 +293,6 @@ void	c_request::read_body_with_chunks(int socket_fd)
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		this->append_read_buffer(buffer, receivedBytes);
 
-		// Attention == 0
 		if (receivedBytes <= 0) 
 				return;
 

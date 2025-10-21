@@ -26,8 +26,6 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		else 
 			build_error_response(404, request);
 	}
-	// else
-	// 	handle_generic_post(request);
 }
 
 
@@ -36,7 +34,7 @@ void	c_response::handle_generic_post(const c_request &request)
 	vector<char> body = request.get_body();
 	string body_str(body.begin(), body.end());
 
-	string escaped_body = escape_html(body_str); //escape HTML special char (< > &) 
+	string escaped_body = escape_html(body_str);
 
 	string html = "<!DOCTTYPE html>\n";
 	html += "<html><head><title>POST Data Received</title></head>\n";

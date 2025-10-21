@@ -90,8 +90,6 @@ class c_request
 
 		const map<string, string>	&get_headers() const { return _headers; }
 
-
-
 	private:
 		c_server&			_server;
 		int					_socket_fd;
