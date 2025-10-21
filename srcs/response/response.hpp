@@ -112,6 +112,7 @@ private:
 	string 						extract_extension(const string &filename, string &name, c_location *location);
 	void						buid_upload_success_response(const c_request &request);
 	string						sanitize_filename(const string &filename, c_location *location);
+	void						handle_generic_post(const c_request &request);
 
 	/***** DELETE method *****/
 	void						handle_delete_todo(const c_request &request);

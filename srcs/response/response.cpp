@@ -60,13 +60,13 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 	}
 	if (method == "POST")
 	{
-		if (location)
-		{
+		// if (location)
+		// {
 			handle_post_request(request, location);
 			return true;
-		}
-		else
-			return false;
+		// }
+		// else
+		// 	return false;
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{

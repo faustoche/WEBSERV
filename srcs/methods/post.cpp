@@ -13,17 +13,48 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		return ;
 	}
 
-	if (target == "/test_post")
-		handle_test_form(request);
-	else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
-		handle_contact_form(request, location);
-	else if (target == "/page_upload.html" && content_type.find("multipart/form-data") != string::npos)
-		handle_upload_form_file(request, location);
-	else if (target == "/post_todo")
-		handle_todo_form(request, location);
+	if (location)
+	{
+		if (target == "/test_post")
+			handle_test_form(request);
+		else if (content_type.find("application/x-www-form-urlencoded") != string::npos)
+			handle_contact_form(request, location);
+		else if (target == "/page_upload.html" && content_type.find("multipart/form-data") != string::npos)
+			handle_upload_form_file(request, location);
+		else if (target == "/post_todo")
+			handle_todo_form(request, location);
+		else 
+			build_error_response(404, request);
+	}
 	else
-		build_error_response(404, request);
+		handle_generic_post(request);
 }
+
+
+void	c_response::handle_generic_post(const c_request &request)
+{
+	vector<char> body = request.get_body();
+	string body_str(body.begin(), body.end());
+
+	string escaped_body = escape_html(body_str); //escape HTML special char (< > &) 
+
+	string html = "<!DOCTTYPE html>\n";
+	html += "<html><head><title>POST Data Received</title></head>\n";
+	html += "<body>\n";
+    html += "<h1>POST Request Received</h1>\n";
+	html += "<p><strong>Content-Type:</strong> " + request.get_header_value("Content-Type") + "</p>\n";
+    html += "<p><strong>Content-Length:</strong> " + int_to_string(body.size()) + " bytes</p>\n";
+    html += "<h2>Body:</h2>\n";
+    html += "<pre>" + escaped_body + "</pre>\n";
+    html += "<a href=\"/\">Back to home</a>\n";
+    html += "</body></html>";
+
+	_client.set_status_code (200);
+
+	_file_content = html;
+	build_success_response("response.html", request);
+}
+
 
 /* Process file uploads, validate size and content, saves files and redirect */
 

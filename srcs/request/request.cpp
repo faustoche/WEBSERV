@@ -402,6 +402,9 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 	if (this->_client_max_body_size == 0)
 		_client_max_body_size = 100 * 1024 * 1024;
 
+	if (matching_location == NULL)
+		this->set_client_max_body_size(_server.get_body_size());
+
 	if (this->_has_body)
 	{
 		if (this->get_content_length())
