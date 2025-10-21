@@ -333,7 +333,6 @@ string c_response::get_content_type(const string &file_path)
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
-	cout << __FILE__ << " " << __LINE__ << endl;
 	this->_status = request.get_status_code();
 	vector<char> request_body = request.get_body();
 
