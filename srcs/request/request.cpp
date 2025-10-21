@@ -168,7 +168,6 @@ int c_request::parse_start_line(string& start_line)
 	}
 	if (this->_version != "HTTP/1.1")
 	{
-		cout << "version : " << this->_version << " !" << endl;
 		this->_status_code = 505;
 		return (0);
 	}
