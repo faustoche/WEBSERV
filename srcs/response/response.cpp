@@ -73,11 +73,6 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 		load_upload_page(request);
 		return (true);
 	}
-	// if (method == "GET" && request.get_path() == "/upload/")
-	// {
-	// 	cout << __FILE__ << " " << __LINE__ << endl;
-	// 	return (true);
-	// }
 	if (method == "DELETE" && (target.find("/page_upload?") == 0))
 	{
 		handle_delete_upload(request);
@@ -232,13 +227,17 @@ void	c_response::define_response_content(const c_request &request)
 	}
 	else if (method == "DELETE")
 	{
-		if (target == "/delete_todo")
-		{
-			handle_delete_todo(request);
-			return;
-		}
 		handle_delete_request(request, file_path);
-		build_success_response(file_path, request);
+		if (!_response.empty())
+		{
+			return ;
+		}
+		// if (target == "/delete_todo")
+		// {
+		// 	handle_delete_todo(request);
+		// 	return;
+		// }
+		build_delete_response(request);
 	}
 	else if (_status != 200)
 		build_error_response(_status, request);
@@ -356,11 +355,28 @@ void	c_response::buid_upload_success_response(const c_request &request)
 	_file_content.clear();
 }
 
+void c_response::build_delete_response(const c_request &request)
+{
+	_client.set_status_code(204);
+
+	_response = "HTTP/1.1 204 No Content\r\n";
+	_response += "Server: webserv/1.0\r\n";
+
+	string connection;
+	connection = request.get_header_value("Connection");
+	if (connection.empty())
+		connection = "keep-alive";
+
+	_response += "Connection: " + connection + "\r\n";
+	_response += "\r\n";
+
+	_file_content.clear();
+}
+
 void c_response::build_success_response(const string &file_path, const c_request &request)
 {
 	if (_file_content.empty())
 	{
-		cout << __FILE__ << " " << __LINE__ << endl;
 		build_error_response(404, request);
 		return ;
 	}
@@ -668,8 +684,6 @@ string c_server::convert_url_to_file_path(c_location *location, const string &re
 		}
 		if (is_existing_file(base))
 			return base;
-		/* if file/directory doesnt exist */
-		cout << __FILE__ << " " << __LINE__ << endl;
 		response.set_status(404);
 		return "";
 	}

@@ -73,6 +73,7 @@ public:
 	void			init_response();
 
 private:
+	void	build_delete_response(const c_request &request);
 	void	build_success_response(const string &file_path, const c_request &request);
 	void    build_cgi_response(c_cgi & cgi, const c_request &request);
 	int		handle_cgi_response(const c_request &request, c_location *loc, const string& file_path);

@@ -189,7 +189,6 @@ void c_server::handle_poll_events()
 			}
 			else if (pfd.revents & POLLOUT)
 			{
-				// cout << __FILE__ << " " << __LINE__ << endl;
 				handle_client_write(fd);
 				if (client->get_write_buffer().empty() || client->get_response_complete())
 				{
