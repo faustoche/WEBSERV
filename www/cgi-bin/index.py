@@ -44,7 +44,7 @@ body = (
         }
     </style>
     <body>
-        <a href="javascript:history.back()" class="back-link">← Go back to the main page</a>
+        <a href="/cgi.html" class="back-link">← Go back to the main page</a>
     </body"""
 )
 

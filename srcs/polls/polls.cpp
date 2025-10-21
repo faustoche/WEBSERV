@@ -142,27 +142,30 @@ void c_server::handle_poll_events()
 				if ((pfd.revents & POLLOUT) && (fd == cgi->get_pipe_in()))
 				{
 					handle_cgi_write(cgi);
+					continue ;
 				}
 
 				if ((pfd.revents & POLLIN) && (fd == cgi->get_pipe_out()))
+				{
 					handle_cgi_read(cgi);
+					continue ;
+				}
 
 				if (pfd.revents & POLLHUP)
 				{
 					if (fd == cgi->get_pipe_out() && !client->get_response_complete())
 					{
 						handle_cgi_final_read(cgi->get_pipe_out(), cgi);
-						return ;
+						continue ;
 					}
 					else
 					{
 						if (!cgi->is_finished())
 							cgi->set_finished(true);
 						client->set_state(SENDING);
-						return ;
+						continue ;
 					}
 				}
-				continue ;
 			}
 			c_client *client = find_client(fd);
 			if (!client)
@@ -186,6 +189,7 @@ void c_server::handle_poll_events()
 			else if (pfd.revents & POLLIN)
 			{
 				handle_client_read(fd);
+				continue ;
 			}
 			else if (pfd.revents & POLLOUT)
 			{
@@ -199,6 +203,7 @@ void c_server::handle_poll_events()
 						client->set_state(READING);
 					}
 				}
+				continue ;
 			}		
 		}
 	}
@@ -452,7 +457,8 @@ void	c_server::handle_cgi_write(c_cgi* cgi)
 	const std::vector<char>& body = cgi->get_body_to_send();
 	ssize_t bytes = write(fd, body.data() + cgi->get_body_sent(), remaining);
 
-	if (bytes < 0)
+	// Attention au bytes == 0
+	if (bytes <= 0)
 	{
 		log_message("[WARNING] recv() returned < 0 for CGI " + int_to_string(fd) + ". Will retry on next POLLIN.");
 		return;

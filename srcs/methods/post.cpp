@@ -26,8 +26,8 @@ void	c_response::handle_post_request(const c_request &request, c_location *locat
 		else 
 			build_error_response(404, request);
 	}
-	else
-		handle_generic_post(request);
+	// else
+	// 	handle_generic_post(request);
 }
 
 
