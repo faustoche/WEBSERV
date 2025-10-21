@@ -65,6 +65,12 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 			handle_post_request(request, location);
 			return true;
 		}
+		else
+		{
+			handle_generic_post(request);
+			return true;
+		}
+
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
