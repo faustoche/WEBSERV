@@ -400,7 +400,7 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 		this->set_client_max_body_size(matching_location->get_body_size());
 
 	if (this->_client_max_body_size == 0)
-		_client_max_body_size = 100 * 1024 * 1024; // 100 MB
+		_client_max_body_size = 100 * 1024 * 1024;
 
 	if (this->_has_body)
 	{

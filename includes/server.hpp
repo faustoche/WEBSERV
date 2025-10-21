@@ -45,7 +45,7 @@ private:
 	map<int, c_client *> _clients;
 	vector<struct pollfd> _poll_fds;
 	map<int, c_cgi *> _active_cgi;
-	map<int, int> _multiple_ports; // on stocke socket_fd + port
+	map<int, int> _multiple_ports;
 	bool _fatal_error;
 
 	string _ip;

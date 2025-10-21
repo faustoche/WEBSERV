@@ -583,7 +583,6 @@ map<string, string> const	c_response::parse_form_data(const vector<char>& body)
 	if (body.empty())
 		return (form_data);
 
-	// size_t	pos_and = 0;
 	size_t start = 0;
 
 	while (start < body.size())
