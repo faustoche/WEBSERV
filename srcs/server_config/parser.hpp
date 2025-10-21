@@ -13,6 +13,7 @@
 using namespace std;
 
 /*------------  DEFINE -------------*/
+
 #define MY_SIZE_MAX static_cast<size_t>(-1)
 
 /*-------------  CLASS -------------*/

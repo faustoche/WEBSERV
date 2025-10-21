@@ -1,9 +1,4 @@
-# RESTE A FAIRE :
 
----> Definir les valeurs obligatoires a avoir dans le .conf pour lancer le serveur
----> Definir les valeurs par defaut 
----> definir une liste des codes d'erreur quon utilise (changer le parsing en fonction)
----> envoyer une erreur '/' si en double => location //images/
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Le bloc server donne la configuration par defaut pour un host::port

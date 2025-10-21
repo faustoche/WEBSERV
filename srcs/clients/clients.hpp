@@ -51,11 +51,8 @@ class c_client
 		c_response*		_response;
 
 	public:
-		// c_client();
 		c_client(c_server& server, int client_fd, string client_ip);
-		~c_client();
-
-		// c_client const& operator=(const c_client& rhs);
+		~c_client();;
 
 		/******* GETTERS ******* */
 		const int&				get_fd() const { return (_fd); }

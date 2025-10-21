@@ -327,8 +327,6 @@ void		c_parser::parse_alias(c_location & location)
 	location.set_alias(alias);
 }
 
-
-
 void        c_parser::parse_upload_path(c_location & location)
 {
 	advance_token();

@@ -238,11 +238,6 @@ void	c_response::define_response_content(const c_request &request)
 		{
 			return ;
 		}
-		// if (target == "/delete_todo")
-		// {
-		// 	handle_delete_todo(request);
-		// 	return;
-		// }
 		build_delete_response(request);
 	}
 	else if (_status != 200)

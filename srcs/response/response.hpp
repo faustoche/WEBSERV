@@ -101,7 +101,7 @@ private:
 	void 						load_todo_page(const c_request &request);
 	void						handle_todo_form(const c_request &request, const c_location *location);
 	void						handle_upload_form_file(const c_request &request, c_location *location);
-	vector<s_multipart> const	parse_multipart_data(vector<char>& body, const string &boundary); // return une reference ?
+	vector<s_multipart> const	parse_multipart_data(vector<char>& body, const string &boundary);
 	s_multipart const			parse_single_part(const string &raw_part);
 	void						parse_header_section(const string &header_section, s_multipart &part);
 	string						extract_line(const string &header_section, const size_t &pos);

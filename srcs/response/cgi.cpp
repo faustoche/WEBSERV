@@ -286,7 +286,6 @@ bool	c_cgi::is_argv_in_allowed_directory(const string& argv, const string& allow
 
 int    c_cgi::init_cgi(const c_request &request, const c_location &loc, string target)
 {
-	
 	this->_status_code = request.get_status_code();
 	this->_loc = &loc;
  

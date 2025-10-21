@@ -57,8 +57,6 @@ void	c_request::read_request()
 	}
 }
 
-
-
 int c_request::parse_request(const string& raw_request)
 {
 	istringstream stream(raw_request);
@@ -295,7 +293,6 @@ void	c_request::read_body_with_chunks(int socket_fd)
 		receivedBytes = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		this->append_read_buffer(buffer, receivedBytes);
 
-		// Attention == 0
 		if (receivedBytes <= 0) 
 				return;
 
@@ -402,7 +399,7 @@ void	c_request::determine_body_reading_strategy(int socket_fd)
 		this->set_client_max_body_size(matching_location->get_body_size());
 
 	if (this->_client_max_body_size == 0)
-		_client_max_body_size = 100 * 1024 * 1024; // 100 MB
+		_client_max_body_size = 100 * 1024 * 1024;
 
 	if (matching_location == NULL)
 		this->set_client_max_body_size(_server.get_body_size());

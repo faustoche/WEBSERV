@@ -3,7 +3,7 @@
 /*------------------  CONSTRUCTORS AND DESTRUCTORS  -------------------*/
 
 c_server::c_server()
-{ // REVOIR ENSEMBLE LES VALEURS PAR DEFAUT
+{
 	_root = "";
 	_body_size = 1048576;
 	_fatal_error = false;

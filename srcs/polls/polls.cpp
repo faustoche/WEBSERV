@@ -384,6 +384,7 @@ void	c_server::handle_cgi_read(c_cgi *cgi)
 }	
 
 /* CGI close its pipeline out. We send what's have been read to the client */
+
 void	c_server::handle_cgi_final_read(int fd, c_cgi* cgi)
 {
 	char buffer[BUFFER_SIZE];
