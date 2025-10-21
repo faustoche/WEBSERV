@@ -60,13 +60,11 @@ bool	c_response::handle_special_routes(const c_request &request, const string &m
 	}
 	if (method == "POST")
 	{
-		// if (location)
-		// {
+		if (location && location->get_cgi().size() == 0)
+		{
 			handle_post_request(request, location);
 			return true;
-		// }
-		// else
-		// 	return false;
+		}
 	}
 	if (method == "GET" && target == "/page_upload.html")
 	{
@@ -151,7 +149,8 @@ void	c_response::define_response_content(const c_request &request)
 		return ;
 	}
 	if (!validate_http(request))
-		return ;
+	{		return ;
+	}
 
 	c_location *matching_location = _server.find_matching_location(request.get_path());
 
@@ -169,9 +168,10 @@ void	c_response::define_response_content(const c_request &request)
 
 	if (handle_redirect(matching_location, request))
 		return ;
-
 	if (handle_special_routes(request, method, target, matching_location))
+	{
 		return ;
+	}
 
 	string root = _server.get_root();
 	if (!is_directory(root))
@@ -257,7 +257,6 @@ int	c_response::handle_cgi_response(const c_request &request, c_location *loc, c
 		}
 		if (loc != NULL && loc->get_bool_is_directory() && loc->get_auto_index())
 		{
-			cout << "file_path: " << file_path << endl;
 			build_directory_listing_response(loc, file_path, request);
 			return (1);
 		}
@@ -328,6 +327,7 @@ string c_response::get_content_type(const string &file_path)
 
 void	c_response::build_cgi_response(c_cgi & cgi, const c_request &request)
 {
+	cout << __FILE__ << " " << __LINE__ << endl;
 	this->_status = request.get_status_code();
 	vector<char> request_body = request.get_body();
 

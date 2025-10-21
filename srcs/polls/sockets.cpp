@@ -12,13 +12,13 @@ void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 		int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 		if (socket_fd < 0)
 		{
-			cerr << "Error: Socket's creation for port " << port << " - " << errno << endl;
+			log_message("[ERROR] Socket's creation for port " + int_to_string(port) + " - " + int_to_string(errno));
 			continue ;
 		}
 		int socket_option = 1;
 		if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option, sizeof(socket_option)) < 0)
 		{
-			cerr << "Error: Socket's option for port " << port << " - " << errno << endl;
+			log_message("[ERROR] Socket's option for port " + int_to_string(port) + " - " + int_to_string(errno));
 			close(socket_fd);
 			continue ;
 		}
@@ -30,13 +30,13 @@ void c_server::create_socket_for_each_port(const std::vector<int>&ports)
 
 		if (bind(socket_fd, (struct sockaddr*)&socket_address, sizeof(socket_address)) < 0)
 		{
-			cerr << "Error: bind for port " << port << " - " << errno << endl;
+			log_message("[ERROR] Bind for port " + int_to_string(port) + " - " + int_to_string(errno));
 			close (socket_fd);
 			continue ;
 		}
 		if (listen(socket_fd, SOMAXCONN) < 0)
 		{
-			cerr << "Error: listen for port " << port << " - " << errno << endl;
+			log_message("[ERROR] Listen for port " + int_to_string(port) + " - " + int_to_string(errno));
 			close(socket_fd);
 			continue ;
 		}

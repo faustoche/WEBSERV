@@ -34,7 +34,8 @@ echo '
         margin-top:2rem;
       }
     </style>
-    <p><a href="javascript:history.back()" style="
+    <p><a href="/cgi.html" 
+    style="
     display:inline-block;
     padding:10px 20px;
     background-color:#21ff00;
@@ -42,7 +43,7 @@ echo '
     text-decoration:none;
     font-weight:bold;
     border:2px solid #21ff00;
-    border-radius:5px;
-">← Go back to the CGI page</a></p>';
+    border-radius:5px;"
+    >← Go back to the CGI page</a></p>';
 ?>
 
